@@ -12,6 +12,7 @@ type AuthContextType = {
   isAuthenticated: boolean;
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
+  register: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   isLoading: boolean;
   error: string | null;
@@ -22,6 +23,7 @@ const defaultAuthContext: AuthContextType = {
   isAuthenticated: false,
   user: null,
   login: async () => false,
+  register: async () => false,
   logout: async () => {},
   isLoading: false,
   error: null,
@@ -99,6 +101,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
   
+  // Register function
+  const register = async (email: string, password: string): Promise<boolean> => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      setUser(formatUser(data.session));
+      setIsLoading(false);
+      return true;
+    } catch (error: any) {
+      setError(error.message || "Falha no registro. Tente novamente.");
+      setIsLoading(false);
+      return false;
+    }
+  };
+  
   // Logout function
   const logout = async () => {
     setIsLoading(true);
@@ -118,6 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: !!user,
       user,
       login,
+      register,
       logout,
       isLoading,
       error,
