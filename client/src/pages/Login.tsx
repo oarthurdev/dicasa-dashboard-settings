@@ -109,8 +109,10 @@ export default function Login() {
             </form>
           </Form>
           
-          <div className="mt-6 text-center text-xs text-gray-500">
-            <p>Para teste, use: admin@example.com / senha123</p>
+          <div className="mt-6 text-center text-sm">
+            <Link href="/register" className="text-primary hover:underline">
+              Não tem uma conta? Cadastre-se
+            </Link>
           </div>
         </CardContent>
       </Card>

@@ -3,6 +3,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "./lib/auth";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/Login";
+import Register from "@/pages/Register";
 import Welcome from "@/pages/Welcome";
 import Rules from "@/pages/Rules";
 import KommoConfig from "@/pages/KommoConfig";
@@ -16,13 +17,13 @@ function Router() {
   const [location, setLocation] = useLocation();
   
   useEffect(() => {
-    // Redirect to login if not authenticated
-    if (!isAuthenticated && location !== "/login") {
+    // Redirect to login if not authenticated and not on register or login pages
+    if (!isAuthenticated && location !== "/login" && location !== "/register") {
       setLocation("/login");
     }
     
-    // Redirect to welcome page if authenticated and on login page
-    if (isAuthenticated && location === "/login") {
+    // Redirect to welcome page if authenticated and on login or register page
+    if (isAuthenticated && (location === "/login" || location === "/register")) {
       setLocation("/welcome");
     }
   }, [isAuthenticated, location, setLocation]);
@@ -30,6 +31,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
       <Route path="/" component={() => <AuthWrapper><Welcome /></AuthWrapper>} />
       <Route path="/welcome" component={() => <AuthWrapper><Welcome /></AuthWrapper>} />
       <Route path="/rules" component={() => <AuthWrapper><Rules /></AuthWrapper>} />
