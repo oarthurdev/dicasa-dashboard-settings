@@ -109,7 +109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rules routes
   app.get("/api/rules", authenticateSupabaseJWT, async (req: Request, res: Response) => {
     try {
-      const rules = await storage.getAllRules();
+      const rules = await supabase.getAllRules();
       return res.status(200).json(rules);
     } catch (error) {
       console.error("Error fetching rules:", error);
@@ -130,16 +130,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { name, points, description } = validation.data;
       const columnName = convertToSnakeCase(name);
       
-      // Insert rule
-      const newRule = await storage.createRule({ 
+      // Criar a regra usando o Supabase
+      // O método createRule já adiciona automaticamente a coluna ao broker_points
+      const newRule = await supabase.createRule({ 
         name, 
         points, 
         description,
         column_name: columnName 
       });
-      
-      // Add column to broker_points table
-      await supabase.addColumnToBrokerPoints(columnName);
       
       return res.status(201).json(newRule);
     } catch (error) {
@@ -155,17 +153,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "ID de regra inválido" });
       }
       
-      // Get rule to access column name
-      const rule = await storage.getRule(ruleId);
-      if (!rule) {
-        return res.status(404).json({ message: "Regra não encontrada" });
-      }
-      
-      // Delete rule
-      await storage.deleteRule(ruleId);
-      
-      // Drop column from broker_points table
-      await supabase.dropColumnFromBrokerPoints(rule.column_name);
+      // Deletar a regra usando o Supabase
+      // O método deleteRule já remove automaticamente a coluna do broker_points
+      await supabase.deleteRule(ruleId);
       
       return res.status(200).json({ message: "Regra excluída com sucesso" });
     } catch (error) {
@@ -177,7 +167,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Kommo config routes
   app.get("/api/kommo-config", authenticateSupabaseJWT, async (req: Request, res: Response) => {
     try {
-      const config = await storage.getKommoConfig();
+      const config = await supabase.getKommoConfig();
       return res.status(200).json(config || {});
     } catch (error) {
       console.error("Error fetching Kommo config:", error);
@@ -198,12 +188,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { api_url, access_token, custom_endpoint, sync_interval } = validation.data;
       
       // Get current config
-      const existingConfig = await storage.getKommoConfig();
+      const existingConfig = await supabase.getKommoConfig();
       
       let config;
       if (existingConfig) {
         // Update existing config
-        config = await storage.updateKommoConfig({
+        config = await supabase.updateKommoConfig({
           ...existingConfig,
           api_url,
           access_token,
@@ -212,7 +202,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       } else {
         // Create new config
-        config = await storage.createKommoConfig({
+        config = await supabase.createKommoConfig({
           api_url,
           access_token,
           custom_endpoint,
@@ -231,7 +221,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/sync-logs", authenticateSupabaseJWT, async (req: Request, res: Response) => {
     try {
       const limit = parseInt(req.query.limit as string) || 10;
-      const logs = await storage.getSyncLogs(limit);
+      const logs = await supabase.getSyncLogs(limit);
       return res.status(200).json(logs);
     } catch (error) {
       console.error("Error fetching sync logs:", error);
@@ -241,8 +231,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/sync-status", authenticateSupabaseJWT, async (req: Request, res: Response) => {
     try {
-      const config = await storage.getKommoConfig();
-      const latestLog = await storage.getLatestSyncLog();
+      const config = await supabase.getKommoConfig();
+      const latestLog = await supabase.getLatestSyncLog();
       
       return res.status(200).json({
         lastSync: config?.last_sync || null,
