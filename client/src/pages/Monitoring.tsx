@@ -6,7 +6,7 @@ import { SyncLog } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CheckCircle, AlertCircle, Clock, RefreshCw } from "lucide-react";
-import { formatDate, getTimeRemaining } from "../../server/utils";
+import { formatDate, getTimeRemaining } from "@/lib/dateUtils";
 
 export default function Monitoring() {
   const [refreshCounter, setRefreshCounter] = useState(0);
