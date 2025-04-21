@@ -1,50 +1,13 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
 import { convertToSnakeCase } from "./utils";
 import { 
-  insertRuleSchema, 
-  insertKommoConfigSchema, 
-  ruleFormSchema, 
+  ruleFormSchema,
   kommoConfigFormSchema, 
   loginFormSchema 
 } from "@shared/schema";
 import { z } from "zod";
-import { createClient } from '@supabase/supabase-js';
-
-// Cria um cliente Supabase para o servidor
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
-
-if (!supabaseUrl || !supabaseKey) {
-  console.error('Supabase credentials not configured. Authentication will not work properly.');
-  throw new Error('SUPABASE_URL and SUPABASE_KEY must be defined in environment variables');
-}
-
-const supabaseServer = createClient(supabaseUrl, supabaseKey);
-
-// Definindo supabase para uso em outras partes do código (compatibilidade)
-const supabase = {
-  async addColumnToBrokerPoints(columnName: string): Promise<void> {
-    try {
-      // Implementação específica para adicionar coluna
-      console.log(`Added column ${columnName} to broker_points table`);
-    } catch (error) {
-      console.error('Error adding column to broker_points table:', error);
-      throw error;
-    }
-  },
-  
-  async dropColumnFromBrokerPoints(columnName: string): Promise<void> {
-    try {
-      // Implementação específica para remover coluna
-      console.log(`Dropped column ${columnName} from broker_points table`);
-    } catch (error) {
-      console.error('Error dropping column from broker_points table:', error);
-      throw error;
-    }
-  }
-};
+import { supabase, supabaseClient as supabaseServer } from './supabase';
 
 // Middleware de autenticação usando Supabase
 const authenticateSupabaseJWT = async (req: Request, res: Response, next: NextFunction) => {
