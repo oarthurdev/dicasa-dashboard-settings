@@ -55,6 +55,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Get session data
       const { data: { session } } = await supabase.auth.getSession();
       
+      // Armazenar o token no localStorage se existir uma sessão
+      if (session?.access_token) {
+        localStorage.setItem("supabase.auth.token", session.access_token);
+      } else {
+        // Remover token se não existir sessão
+        localStorage.removeItem("supabase.auth.token");
+      }
+      
       // Set the user if we have a session
       setUser(formatUser(session));
       setIsLoading(false);
@@ -62,6 +70,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Listen for auth changes
       const { data: { subscription } } = await supabase.auth.onAuthStateChange(
         (_event, session) => {
+          // Atualizar o token no localStorage quando a sessão mudar
+          if (session?.access_token) {
+            localStorage.setItem("supabase.auth.token", session.access_token);
+          } else {
+            localStorage.removeItem("supabase.auth.token");
+          }
+          
           setUser(formatUser(session));
           setIsLoading(false);
         }
@@ -91,6 +106,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw error;
       }
       
+      // Armazenar o token no localStorage para uso nas requisições
+      if (data.session?.access_token) {
+        localStorage.setItem("supabase.auth.token", data.session.access_token);
+      }
+      
       setUser(formatUser(data.session));
       setIsLoading(false);
       return true;
@@ -116,6 +136,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw error;
       }
       
+      // Armazenar o token no localStorage para uso nas requisições
+      if (data.session?.access_token) {
+        localStorage.setItem("supabase.auth.token", data.session.access_token);
+      }
+      
       setUser(formatUser(data.session));
       setIsLoading(false);
       return true;
@@ -132,6 +157,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     try {
       await supabase.auth.signOut();
+      // Remover o token do localStorage
+      localStorage.removeItem("supabase.auth.token");
       setUser(null);
     } catch (error: any) {
       setError(error.message || "Erro ao fazer logout.");
