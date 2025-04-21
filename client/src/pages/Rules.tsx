@@ -23,11 +23,13 @@ export default function Rules() {
   // Delete rule mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      await fetch(`/api/rules/${id}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("token")}`,
+      const token = localStorage.getItem("supabase.auth.token");
+      
+      // Use o queryClient para fazer a requisição com o token
+      await queryClient.fetchQuery({
+        queryKey: [`/api/rules/${id}`],
+        meta: {
+          method: 'DELETE'
         },
       });
     },

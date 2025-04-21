@@ -37,7 +37,7 @@ export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
-  async ({ queryKey }) => {
+  async ({ queryKey, signal, meta }) => {
     // Obter o token de autenticação do localStorage
     const token = localStorage.getItem("supabase.auth.token");
     
@@ -46,9 +46,21 @@ export const getQueryFn: <T>(options: {
       ? { "Authorization": `Bearer ${token}` } 
       : {};
     
+    // Extrai method e body de meta (se fornecidos)
+    const method = meta?.method as string || 'GET';
+    const body = meta?.body ? JSON.stringify(meta.body) : undefined;
+    
+    // Se tiver body, adiciona Content-Type
+    if (body) {
+      headers['Content-Type'] = 'application/json';
+    }
+    
     const res = await fetch(queryKey[0] as string, {
+      method,
+      headers,
+      body,
       credentials: "include",
-      headers
+      signal
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
@@ -56,6 +68,10 @@ export const getQueryFn: <T>(options: {
     }
 
     await throwIfResNotOk(res);
+    // Para DELETE, não tem body
+    if (method === 'DELETE' && res.status === 204) {
+      return null;
+    }
     return await res.json();
   };
 
