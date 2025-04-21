@@ -32,9 +32,9 @@ export default function CreateRuleModal({ isOpen, onClose }: CreateRuleModalProp
   const form = useForm<FormValues>({
     resolver: zodResolver(ruleFormSchema),
     defaultValues: {
-      name: "",
-      points: 0,
-      description: "",
+      nome: "",
+      pontos: 0,
+      descricao: "",
     },
   });
   

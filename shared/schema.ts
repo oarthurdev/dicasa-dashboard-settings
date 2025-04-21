@@ -10,11 +10,12 @@ export const users = pgTable("users", {
 
 export const rules = pgTable("rules", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  column_name: text("column_name").notNull().unique(),
-  points: integer("points").notNull(),
-  description: text("description"),
+  nome: text("nome").notNull(),
+  coluna_nome: text("coluna_nome").notNull().unique(),
+  pontos: integer("pontos").notNull(),
+  descricao: text("descricao"),
   created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
 });
 
 export const kommoConfig = pgTable("kommo_config", {
@@ -41,9 +42,9 @@ export const insertUserSchema = createInsertSchema(users).pick({
 });
 
 export const insertRuleSchema = createInsertSchema(rules).pick({
-  name: true,
-  points: true,
-  description: true,
+  nome: true,
+  pontos: true,
+  descricao: true,
 });
 
 export const insertKommoConfigSchema = createInsertSchema(kommoConfig).pick({
@@ -73,9 +74,9 @@ export type SyncLog = typeof syncLogs.$inferSelect;
 
 // Validation schemas for forms
 export const ruleFormSchema = z.object({
-  name: z.string().min(3, "O nome deve ter pelo menos 3 caracteres"),
-  points: z.number().min(-100, "O valor mínimo é -100").max(100, "O valor máximo é 100"),
-  description: z.string().optional(),
+  nome: z.string().min(3, "O nome deve ter pelo menos 3 caracteres"),
+  pontos: z.number().min(-100, "O valor mínimo é -100").max(100, "O valor máximo é 100"),
+  descricao: z.string().optional(),
 });
 
 export const kommoConfigFormSchema = z.object({

@@ -58,17 +58,17 @@ export default function RulesTable({ rules, onDelete }: RulesTableProps) {
                   {rule.id}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {rule.name}
+                  {rule.nome}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
-                  {rule.column_name}
+                  {rule.coluna_nome}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <Badge 
                     variant="outline" 
-                    className={cn(getPointsBadgeClass(rule.points))}
+                    className={cn(getPointsBadgeClass(rule.pontos))}
                   >
-                    {formatPoints(rule.points)}
+                    {formatPoints(rule.pontos)}
                   </Badge>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
