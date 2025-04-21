@@ -1,7 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { supabase } from "./supabase";
+import { Session, User as SupabaseUser } from "@supabase/supabase-js";
 
 // Types
 export type User = {
+  id: string;
   email: string;
 };
 
@@ -9,7 +12,7 @@ type AuthContextType = {
   isAuthenticated: boolean;
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isLoading: boolean;
   error: string | null;
 };
@@ -19,7 +22,7 @@ const defaultAuthContext: AuthContextType = {
   isAuthenticated: false,
   user: null,
   login: async () => false,
-  logout: () => {},
+  logout: async () => {},
   isLoading: false,
   error: null,
 };
@@ -27,26 +30,48 @@ const defaultAuthContext: AuthContextType = {
 // Create the context
 const AuthContext = createContext<AuthContextType>(defaultAuthContext);
 
+// Helper to convert Supabase user to our app User type
+const formatUser = (session: Session | null): User | null => {
+  if (!session?.user) return null;
+  
+  const user = session.user;
+  return {
+    id: user.id,
+    email: user.email || ""
+  };
+};
+
 // Auth Provider Component
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Check if we have a token in localStorage on initial load
+  // Check auth state on initial load
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
+    const getUser = async () => {
+      // Get session data
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      // Set the user if we have a session
+      setUser(formatUser(session));
+      setIsLoading(false);
+      
+      // Listen for auth changes
+      const { data: { subscription } } = await supabase.auth.onAuthStateChange(
+        (_event, session) => {
+          setUser(formatUser(session));
+          setIsLoading(false);
+        }
+      );
+      
+      // Cleanup the subscription
+      return () => {
+        subscription?.unsubscribe();
+      };
+    };
     
-    if (token && storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        // Invalid user JSON, reset auth state
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-      }
-    }
+    getUser();
   }, []);
   
   // Login function
@@ -55,39 +80,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
       });
       
-      if (!response.ok) {
-        throw new Error("Login failed");
+      if (error) {
+        throw error;
       }
       
-      const data = await response.json();
-      
-      // Save token and user in localStorage
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      
-      setUser(data.user);
+      setUser(formatUser(data.session));
       setIsLoading(false);
       return true;
-    } catch (e) {
-      setError("Falha na autenticação. Verifique suas credenciais.");
+    } catch (error: any) {
+      setError(error.message || "Falha na autenticação. Verifique suas credenciais.");
       setIsLoading(false);
       return false;
     }
   };
   
   // Logout function
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setUser(null);
+  const logout = async () => {
+    setIsLoading(true);
+    
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+    } catch (error: any) {
+      setError(error.message || "Erro ao fazer logout.");
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   return React.createElement(AuthContext.Provider, {

@@ -1,23 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Get Supabase credentials from env variables
-const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_KEY || '';
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
 
 // Validate credentials
 if (!supabaseUrl || !supabaseKey) {
-  console.warn('Supabase credentials not configured. Some functions will not work properly.');
+  console.error('Supabase credentials not configured. Authentication will not work properly.');
+  throw new Error('SUPABASE_URL and SUPABASE_KEY must be defined in environment variables');
 }
 
-// Initialize Supabase client if credentials are available
-let supabaseClient: any = null;
-try {
-  if (supabaseUrl && supabaseKey) {
-    supabaseClient = createClient(supabaseUrl, supabaseKey);
-  }
-} catch (error) {
-  console.error('Failed to initialize Supabase client:', error);
-}
+// Initialize Supabase client
+const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
 export const supabase = {
   /**

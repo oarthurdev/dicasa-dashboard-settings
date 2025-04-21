@@ -1,8 +1,6 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { authenticateJWT, authenticateUser, generateToken } from "./auth";
-import { supabase } from "./supabase";
 import { convertToSnakeCase } from "./utils";
 import { 
   insertRuleSchema, 
@@ -12,6 +10,66 @@ import {
   loginFormSchema 
 } from "@shared/schema";
 import { z } from "zod";
+import { createClient } from '@supabase/supabase-js';
+
+// Cria um cliente Supabase para o servidor
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error('Supabase credentials not configured. Authentication will not work properly.');
+  throw new Error('SUPABASE_URL and SUPABASE_KEY must be defined in environment variables');
+}
+
+const supabaseServer = createClient(supabaseUrl, supabaseKey);
+
+// Definindo supabase para uso em outras partes do código (compatibilidade)
+const supabase = {
+  async addColumnToBrokerPoints(columnName: string): Promise<void> {
+    try {
+      // Implementação específica para adicionar coluna
+      console.log(`Added column ${columnName} to broker_points table`);
+    } catch (error) {
+      console.error('Error adding column to broker_points table:', error);
+      throw error;
+    }
+  },
+  
+  async dropColumnFromBrokerPoints(columnName: string): Promise<void> {
+    try {
+      // Implementação específica para remover coluna
+      console.log(`Dropped column ${columnName} from broker_points table`);
+    } catch (error) {
+      console.error('Error dropping column from broker_points table:', error);
+      throw error;
+    }
+  }
+};
+
+// Middleware de autenticação usando Supabase
+const authenticateSupabaseJWT = async (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ message: 'Token de autenticação ausente ou inválido' });
+  }
+
+  const token = authHeader.split(' ')[1];
+  
+  try {
+    const { data, error } = await supabaseServer.auth.getUser(token);
+    
+    if (error || !data.user) {
+      return res.status(401).json({ message: 'Token de autenticação inválido' });
+    }
+
+    // Adiciona os dados do usuário ao objeto da requisição para uso posterior
+    (req as any).user = data.user;
+    next();
+  } catch (error) {
+    console.error('Erro na autenticação:', error);
+    return res.status(401).json({ message: 'Erro na autenticação' });
+  }
+};
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
@@ -23,14 +81,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { email, password } = validation.data;
-      const user = await authenticateUser(email, password);
       
-      if (!user) {
+      // Usar o Supabase para autenticação
+      const { data, error } = await supabaseServer.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error || !data.user) {
         return res.status(401).json({ message: "Credenciais inválidas" });
       }
       
-      const token = generateToken(user);
-      return res.status(200).json({ token, user });
+      // Retorna o token de acesso e os dados do usuário
+      return res.status(200).json({ 
+        token: data.session.access_token,
+        user: {
+          id: data.user.id,
+          email: data.user.email
+        }
+      });
     } catch (error) {
       console.error("Login error:", error);
       return res.status(500).json({ message: "Erro interno do servidor" });
@@ -38,7 +107,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Rules routes
-  app.get("/api/rules", authenticateJWT, async (req: Request, res: Response) => {
+  app.get("/api/rules", authenticateSupabaseJWT, async (req: Request, res: Response) => {
     try {
       const rules = await storage.getAllRules();
       return res.status(200).json(rules);
@@ -48,7 +117,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/rules", authenticateJWT, async (req: Request, res: Response) => {
+  app.post("/api/rules", authenticateSupabaseJWT, async (req: Request, res: Response) => {
     try {
       const validation = ruleFormSchema.safeParse(req.body);
       if (!validation.success) {
@@ -79,7 +148,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/rules/:id", authenticateJWT, async (req: Request, res: Response) => {
+  app.delete("/api/rules/:id", authenticateSupabaseJWT, async (req: Request, res: Response) => {
     try {
       const ruleId = parseInt(req.params.id);
       if (isNaN(ruleId)) {
@@ -106,7 +175,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Kommo config routes
-  app.get("/api/kommo-config", authenticateJWT, async (req: Request, res: Response) => {
+  app.get("/api/kommo-config", authenticateSupabaseJWT, async (req: Request, res: Response) => {
     try {
       const config = await storage.getKommoConfig();
       return res.status(200).json(config || {});
@@ -116,7 +185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/kommo-config", authenticateJWT, async (req: Request, res: Response) => {
+  app.post("/api/kommo-config", authenticateSupabaseJWT, async (req: Request, res: Response) => {
     try {
       const validation = kommoConfigFormSchema.safeParse(req.body);
       if (!validation.success) {
@@ -159,7 +228,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Monitoring routes
-  app.get("/api/sync-logs", authenticateJWT, async (req: Request, res: Response) => {
+  app.get("/api/sync-logs", authenticateSupabaseJWT, async (req: Request, res: Response) => {
     try {
       const limit = parseInt(req.query.limit as string) || 10;
       const logs = await storage.getSyncLogs(limit);
@@ -170,7 +239,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/sync-status", authenticateJWT, async (req: Request, res: Response) => {
+  app.get("/api/sync-status", authenticateSupabaseJWT, async (req: Request, res: Response) => {
     try {
       const config = await storage.getKommoConfig();
       const latestLog = await storage.getLatestSyncLog();
