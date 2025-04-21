@@ -1,0 +1,88 @@
+Crie um sistema web com as seguintes características:
+
+1. Autenticação
+Criar uma tela de login simples (sem sistema de cadastro por enquanto).
+
+Utilizar e-mail e senha fake (hardcoded) apenas para autenticação local de teste.
+
+Após login bem-sucedido, gerar um token JWT que será usado para proteger as rotas autenticadas.
+
+O usuário deve ser redirecionado para uma tela de boas-vindas com explicações sobre o uso do sistema.
+
+2. Tela de boas-vindas
+Após o login, mostrar uma página com explicações do sistema:
+
+Informar que é um sistema de configuração de uma dashboard em Python com Streamlit.
+
+Essa dashboard se conecta com a API da Kommo para buscar dados e armazena/atualiza os dados no Supabase a cada 5 minutos.
+
+3. Menu lateral
+Criar um menu lateral com pelo menos 3 opções, sendo a primeira obrigatoriamente:
+
+Regras
+
+Kommo Configurações (sugestão)
+
+Dashboard / Monitoramento (sugestão)
+
+4. Menu "Regras"
+Deve exibir uma lista de regras armazenadas na tabela rules do Supabase.
+
+Para cada regra, mostrar:
+
+Nome da regra
+
+Valor de pontos (entre -100 e +100)
+
+Botão para deletar individualmente
+
+Acima da lista, incluir um botão "Criar nova regra"
+
+Ao clicar, abrir um modal ou formulário inline pedindo:
+
+Nome da regra (campo de texto)
+
+Valor de pontos (slider ou número entre -100 e 100)
+
+Ao salvar:
+
+A nova regra deve ser salva na tabela rules
+
+A tabela broker_points deve ser alterada dinamicamente para adicionar uma nova coluna
+
+O nome da coluna será o nome da regra, mas convertido para snake_case:
+
+Exemplo: "Leads não respondidos em 5 dias" → leads_nao_respondidos_em_5_dias
+
+5. Menu "Kommo Configurações" (opcional, sugestão)
+Criar formulário para configurar:
+
+URL da API da Kommo
+
+Token de acesso
+
+Endpoint personalizado
+
+Salvar as informações na tabela kommo_config no Supabase
+
+6. Menu "Dashboard / Monitoramento" (opcional, sugestão)
+Mostrar visualmente:
+
+Status da última sincronização com a API da Kommo
+
+Horário da próxima atualização
+
+Logs básicos de erros/sucesso da integração
+
+7. Extras Técnicos
+Backend em Node.js (Express recomendado) ou Python (FastAPI)
+
+Banco de dados conectado com Supabase
+
+Uso de ORM se possível (Prisma para Node.js ou SQLAlchemy para Python)
+
+Frontend pode ser feito com React ou qualquer framework SPA moderno
+
+Estilização leve e responsiva
+
+JWT middleware para proteger rotas
