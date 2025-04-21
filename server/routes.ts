@@ -4,7 +4,8 @@ import { convertToSnakeCase } from "./utils";
 import { 
   ruleFormSchema,
   kommoConfigFormSchema, 
-  loginFormSchema 
+  loginFormSchema, 
+  Rule
 } from "@shared/schema";
 import { z } from "zod";
 import { supabase, supabaseClient as supabaseServer } from './supabase';
@@ -90,19 +91,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const { name, points, description } = validation.data;
-      const columnName = convertToSnakeCase(name);
-      
+      const { nome, pontos, descricao } = validation.data;
+      const columnName = convertToSnakeCase(nome);
+
       // Criar a regra usando o Supabase
       // O método createRule já adiciona automaticamente a coluna ao broker_points
       const newRule = await supabase.createRule({ 
-        name, 
-        points, 
-        description,
-        column_name: columnName 
+        nome, 
+        pontos, 
+        descricao,
+        coluna_nome: columnName 
       });
       
-      return res.status(201).json(newRule);
+      return res.status(201).json([newRule] as Rule[]);
     } catch (error) {
       console.error("Error creating rule:", error);
       return res.status(500).json({ message: "Erro ao criar regra" });

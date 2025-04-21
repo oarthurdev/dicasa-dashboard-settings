@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,13 +9,14 @@ import { Badge } from "@/components/ui/badge";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ruleFormSchema } from "@shared/schema";
+import { Rule, ruleFormSchema } from "@shared/schema";
 import { convertToSnakeCase } from "@/lib/stringUtils";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import axios from "axios";
 
 type FormValues = z.infer<typeof ruleFormSchema>;
 
@@ -27,8 +28,18 @@ type CreateRuleModalProps = {
 export default function CreateRuleModal({ isOpen, onClose }: CreateRuleModalProps) {
   const { toast } = useToast();
   const [previewColumnName, setPreviewColumnName] = useState("");
-  
-  // Form setup
+
+  const token = localStorage.getItem("supabase.auth.token");
+
+  const rulesQueryKey = ["/api/rules"];
+
+  useEffect(() => {
+    if (!token) {
+      console.error("No token found. Please log in again.");
+      return;
+    }
+  });
+
   const form = useForm<FormValues>({
     resolver: zodResolver(ruleFormSchema),
     defaultValues: {
@@ -53,9 +64,9 @@ export default function CreateRuleModal({ isOpen, onClose }: CreateRuleModalProp
       });
       onClose();
       form.reset({
-        name: "",
-        points: 0,
-        description: "",
+        nome: "",
+        pontos: 0,
+        descricao: "",
       });
     },
     onError: (error) => {
@@ -96,7 +107,7 @@ export default function CreateRuleModal({ isOpen, onClose }: CreateRuleModalProp
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
             <FormField
               control={form.control}
-              name="name"
+              name="nome"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nome da Regra</FormLabel>
@@ -122,7 +133,7 @@ export default function CreateRuleModal({ isOpen, onClose }: CreateRuleModalProp
             
             <FormField
               control={form.control}
-              name="points"
+              name="pontos"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Valor de Pontos</FormLabel>
@@ -158,7 +169,7 @@ export default function CreateRuleModal({ isOpen, onClose }: CreateRuleModalProp
             
             <FormField
               control={form.control}
-              name="description"
+              name="descricao"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Descrição (opcional)</FormLabel>

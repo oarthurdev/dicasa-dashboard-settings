@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { Rule, KommoConfig, SyncLog, InsertRule, InsertKommoConfig, InsertSyncLog } from '@shared/schema';
 
+import 'dotenv/config';
+
 // Get Supabase credentials from env variables
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
@@ -56,9 +58,9 @@ export const supabase = {
    * Create a new rule
    * @param rule The rule data to insert
    */
-  async createRule(rule: InsertRule & { column_name: string }): Promise<Rule> {
+  async createRule(rule: InsertRule & { coluna_nome: string }): Promise<Rule> {
     // Primeiro adiciona a coluna ao broker_points
-    await this.addColumnToBrokerPoints(rule.column_name);
+    await this.addColumnToBrokerPoints(rule.coluna_nome);
     
     // Depois cria a regra
     const { data, error } = await supabaseClient
@@ -108,7 +110,7 @@ export const supabase = {
     }
     
     // Remove a coluna da tabela broker_points
-    await this.dropColumnFromBrokerPoints(rule.column_name);
+    await this.dropColumnFromBrokerPoints(rule.coluna_nome);
     
     // Depois remove a regra
     const { error } = await supabaseClient
@@ -274,7 +276,7 @@ export const supabase = {
     try {
       // Using raw SQL via Supabase's rpc to drop column from table
       await supabaseClient.rpc('drop_column_from_broker_points', {
-        column_name: columnName
+        coluna_nome: columnName
       });
       
       console.log(`Dropped column ${columnName} from broker_points table`);
