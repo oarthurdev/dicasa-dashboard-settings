@@ -1,17 +1,14 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Rule } from "@shared/schema";
 import RulesTable from "@/components/rules/RulesTable";
-import CreateRuleModal from "@/components/rules/CreateRuleModal";
 import DeleteRuleModal from "@/components/rules/DeleteRuleModal";
-import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import axios from "axios";
+import { useState } from "react";
 
 export default function Rules() {
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [ruleToDelete, setRuleToDelete] = useState<Rule | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -59,6 +56,32 @@ export default function Rules() {
     },
   });
 
+  const updatePointsMutation = useMutation({
+    mutationFn: async ({ id, points }: { id: number; points: number }) => {
+      await axios.patch(`/api/rules/${id}/points`, { points }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: rulesQueryKey });
+      toast({
+        title: "Pontos atualizados",
+        description: "Os pontos foram atualizados com sucesso.",
+        variant: "default",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao atualizar pontos",
+        description: "Ocorreu um erro ao atualizar os pontos. Tente novamente.",
+        variant: "destructive",
+      });
+      console.error("Error updating points:", error);
+    },
+  });
+
   const handleDeleteRule = (rule: Rule) => {
     setRuleToDelete(rule);
   };
@@ -69,25 +92,18 @@ export default function Rules() {
     }
   };
 
+  const handleUpdatePoints = (rule: Rule, newPoints: number) => {
+    updatePointsMutation.mutate({ id: rule.id, points: newPoints });
+  };
+
   return (
     <section className="p-6">
       <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
+        <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-800">Gerenciamento de Regras</h1>
-          <Button onClick={() => setIsCreateModalOpen(true)}>
-            <Plus className="mr-1 h-4 w-4" />
-            <span>Criar nova regra</span>
-          </Button>
         </div>
 
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <div className="p-4 border-b border-gray-200">
-            <p className="text-gray-600">
-              As regras definem as pontuações (-100 a +100) que serão aplicadas aos dados da dashboard. 
-              Cada regra cria automaticamente uma coluna correspondente na tabela <code>broker_points</code>.
-            </p>
-          </div>
-
           {isLoading ? (
             <div className="p-6 space-y-4">
               <Skeleton className="h-12 w-full" />
@@ -101,24 +117,12 @@ export default function Rules() {
           ) : (
             <RulesTable 
               rules={rules || []} 
-              onDelete={handleDeleteRule} 
+              onDelete={handleDeleteRule}
+              onUpdatePoints={handleUpdatePoints}
             />
           )}
-
-          <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
-            <p className="text-sm text-gray-500">
-              {isLoading 
-                ? "Carregando regras..." 
-                : `Exibindo ${rules?.length || 0} regra${rules?.length !== 1 ? 's' : ''}`}
-            </p>
-          </div>
         </div>
       </div>
-
-      <CreateRuleModal 
-        isOpen={isCreateModalOpen} 
-        onClose={() => setIsCreateModalOpen(false)} 
-      />
 
       <DeleteRuleModal 
         isOpen={!!ruleToDelete} 
