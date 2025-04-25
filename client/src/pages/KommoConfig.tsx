@@ -239,6 +239,50 @@ export default function KommoConfig() {
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name="sync_start_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Data de Início da Sincronização</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="datetime-local"
+                        {...field}
+                        value={field.value ? new Date(field.value).toISOString().slice(0, 16) : ''}
+                        onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Data inicial para sincronização dos dados
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="sync_end_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Data Final da Sincronização</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="datetime-local"
+                        {...field}
+                        value={field.value ? new Date(field.value).toISOString().slice(0, 16) : ''}
+                        onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Data final para sincronização dos dados
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <div className="pt-4 border-t border-gray-200 flex justify-between items-center">
                 <div className="flex gap-2">
                   <Button

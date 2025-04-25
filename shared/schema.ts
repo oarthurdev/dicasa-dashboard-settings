@@ -26,6 +26,8 @@ export const kommoConfig = pgTable("kommo_config", {
   sync_interval: integer("sync_interval").default(5),
   last_sync: timestamp("last_sync"),
   next_sync: timestamp("next_sync"),
+  sync_start_date: timestamp("sync_start_date"),
+  sync_end_date: timestamp("sync_end_date"),
 });
 
 export const syncLogs = pgTable("sync_logs", {
@@ -84,6 +86,16 @@ export const kommoConfigFormSchema = z.object({
   access_token: z.string().min(5, "Token inválido"),
   custom_endpoint: z.string().optional(),
   sync_interval: z.number().min(1, "Mínimo 1 minuto").max(60, "Máximo 60 minutos"),
+  sync_start_date: z.date().optional(),
+  sync_end_date: z.date().optional(),
+}).refine((data) => {
+  if (data.sync_start_date && data.sync_end_date) {
+    return data.sync_end_date > data.sync_start_date;
+  }
+  return true;
+}, {
+  message: "A data final deve ser maior que a data inicial",
+  path: ["sync_end_date"],
 });
 
 export const loginFormSchema = z.object({
