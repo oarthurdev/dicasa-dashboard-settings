@@ -17,10 +17,12 @@ export default function Rules() {
 
   const rulesQueryKey = ["/api/rules"];
 
-  const { data: rules, isLoading, isError } = useQuery<Rule[]>({
-    queryKey: rulesQueryKey,
+  const [currentPage, setCurrentPage] = useState(1);
+  
+  const { data: paginatedData, isLoading, isError } = useQuery({
+    queryKey: [...rulesQueryKey, currentPage],
     queryFn: async () => {
-      const res = await axios.get("/api/rules", {
+      const res = await axios.get(`/api/rules?page=${currentPage}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         }
@@ -28,6 +30,9 @@ export default function Rules() {
       return res.data;
     },
   });
+
+  const rules = paginatedData?.rules || [];
+  const pagination = paginatedData?.pagination;
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -115,11 +120,27 @@ export default function Rules() {
               Erro ao carregar regras. Tente novamente.
             </div>
           ) : (
-            <RulesTable 
-              rules={rules || []} 
-              onDelete={handleDeleteRule}
-              onUpdatePoints={handleUpdatePoints}
-            />
+            <>
+              <RulesTable 
+                rules={rules} 
+                onDelete={handleDeleteRule}
+                onUpdatePoints={handleUpdatePoints}
+              />
+              {pagination && pagination.totalPages > 1 && (
+                <div className="flex justify-center mt-4 gap-2">
+                  {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
+                    <Button
+                      key={page}
+                      variant={page === currentPage ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

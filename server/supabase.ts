@@ -40,11 +40,12 @@ export const supabase = {
   /**
    * Get all rules
    */
-  async getAllRules(): Promise<Rule[]> {
+  async getRulesPaginated(offset: number, limit: number): Promise<Rule[]> {
     const { data, error } = await supabaseClient
       .from('rules')
       .select('*')
-      .order('id');
+      .order('id')
+      .range(offset, offset + limit - 1);
       
     if (error) {
       console.error('Error fetching rules:', error);
@@ -52,6 +53,19 @@ export const supabase = {
     }
     
     return data as Rule[];
+  },
+
+  async getTotalRules(): Promise<number> {
+    const { count, error } = await supabaseClient
+      .from('rules')
+      .select('*', { count: 'exact', head: true });
+      
+    if (error) {
+      console.error('Error counting rules:', error);
+      return 0;
+    }
+    
+    return count || 0;
   },
   
   /**

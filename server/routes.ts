@@ -73,8 +73,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rules routes
   app.get("/api/rules", authenticateSupabaseJWT, async (req: Request, res: Response) => {
     try {
-      const rules = await supabase.getAllRules();
-      return res.status(200).json(rules);
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = 7;
+      const offset = (page - 1) * limit;
+      
+      const rules = await supabase.getRulesPaginated(offset, limit);
+      const totalRules = await supabase.getTotalRules();
+      const totalPages = Math.ceil(totalRules / limit);
+      
+      return res.status(200).json({
+        rules,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalItems: totalRules
+        }
+      });
     } catch (error) {
       console.error("Error fetching rules:", error);
       return res.status(500).json({ message: "Erro ao buscar regras" });
