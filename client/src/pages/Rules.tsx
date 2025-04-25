@@ -5,6 +5,7 @@ import RulesTable from "@/components/rules/RulesTable";
 import DeleteRuleModal from "@/components/rules/DeleteRuleModal";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import axios from "axios";
 import { useState } from "react";
 
