@@ -248,7 +248,7 @@ export default function KommoConfig() {
                     <FormControl>
                       <Input
                         type="datetime-local"
-                        value={field.value instanceof Date ? field.value.toISOString().slice(0, 16) : ''}
+                        value={field.value || ''}
                         onChange={(e) => {
                           const date = e.target.value ? new Date(e.target.value) : null;
                           field.onChange(date);
@@ -272,7 +272,7 @@ export default function KommoConfig() {
                     <FormControl>
                       <Input
                         type="datetime-local"
-                        value={field.value instanceof Date ? field.value.toISOString().slice(0, 16) : ''}
+                        value={field.value || ''}
                         onChange={(e) => {
                           const date = e.target.value ? new Date(e.target.value) : null;
                           field.onChange(date);
