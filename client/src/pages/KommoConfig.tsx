@@ -16,7 +16,8 @@ import { Button } from "@/components/ui/button";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, RefreshCw } from "lucide-react";
+import { Eye, EyeOff, RefreshCw, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Card } from "@/components/ui/card";
 import type { z } from "zod";
 import type { KommoConfig } from "@shared/schema";
@@ -50,7 +51,6 @@ export default function KommoConfig() {
     defaultValues: {
       api_url: "",
       access_token: "",
-      custom_endpoint: "",
       sync_interval: 5,
     },
   });
@@ -61,9 +61,8 @@ export default function KommoConfig() {
       form.reset({
         api_url: config.api_url,
         access_token: config.access_token,
-        custom_endpoint: config.custom_endpoint || "",
         sync_interval: config.sync_interval ?? 5,
-      });
+      }, { keepValues: false });
     }
   }, [config, form]);
 
@@ -202,22 +201,7 @@ export default function KommoConfig() {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="custom_endpoint"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Endpoint Personalizado</FormLabel>
-                    <FormControl>
-                      <Input placeholder="/leads/custom" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Endpoint específico a ser usado na integração
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              
 
               <FormField
                 control={form.control}
@@ -244,13 +228,14 @@ export default function KommoConfig() {
                 )}
               />
 
-              <div className="pt-4 border-t border-gray-200 flex justify-between">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={testConnection}
-                  disabled={isTestingConnection}
-                >
+              <div className="pt-4 border-t border-gray-200 flex justify-between items-center">
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={testConnection}
+                    disabled={isTestingConnection}
+                  >
                   {isTestingConnection ? (
                     <>
                       <RefreshCw className="mr-1 h-4 w-4 animate-spin" />
@@ -263,6 +248,51 @@ export default function KommoConfig() {
                     </>
                   )}
                 </Button>
+
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" type="button">
+                        <Trash2 className="mr-1 h-4 w-4" />
+                        Limpar Dados
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Excluir todos os dados?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta ação irá excluir permanentemente todos os dados das tabelas brokers, broker_points, activities e leads.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={async () => {
+                            try {
+                              await fetch("/api/data/delete-all", {
+                                method: "POST",
+                                headers: {
+                                  Authorization: `Bearer ${token}`,
+                                },
+                              });
+                              toast({
+                                title: "Dados excluídos",
+                                description: "Todos os dados foram excluídos com sucesso.",
+                              });
+                            } catch (error) {
+                              toast({
+                                title: "Erro",
+                                description: "Erro ao excluir dados.",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                        >
+                          Excluir
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
 
                 <Button
                   type="submit"

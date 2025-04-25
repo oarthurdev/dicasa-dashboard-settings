@@ -281,6 +281,10 @@ export const supabase = {
    * Drop a column from the broker_points table
    * @param columnName The name of the column to drop
    */
+  async deleteAllData(): Promise<void> {
+    await supabaseClient.rpc('truncate_all_data');
+  },
+
   async dropColumnFromBrokerPoints(columnName: string): Promise<void> {
     if (!supabaseUrl || !supabaseKey) {
       console.warn('Supabase not configured. Cannot drop column.');

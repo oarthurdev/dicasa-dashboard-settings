@@ -220,6 +220,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Data management routes
+  app.post("/api/data/delete-all", authenticateSupabaseJWT, async (req: Request, res: Response) => {
+    try {
+      await supabase.deleteAllData();
+      return res.status(200).json({ message: "Todos os dados foram excluídos com sucesso" });
+    } catch (error) {
+      console.error("Error deleting data:", error);
+      return res.status(500).json({ message: "Erro ao excluir dados" });
+    }
+  });
+
   // Monitoring routes
   app.get("/api/sync-logs", authenticateSupabaseJWT, async (req: Request, res: Response) => {
     try {
