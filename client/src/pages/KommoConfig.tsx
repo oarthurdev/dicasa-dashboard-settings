@@ -17,7 +17,17 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, RefreshCw, Trash2 } from "lucide-react";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Card } from "@/components/ui/card";
 import type { z } from "zod";
 import type { KommoConfig } from "@shared/schema";
@@ -58,11 +68,14 @@ export default function KommoConfig() {
   // Update form when config is loaded
   useEffect(() => {
     if (config) {
-      form.reset({
-        api_url: config.api_url,
-        access_token: config.access_token,
-        sync_interval: config.sync_interval ?? 5,
-      }, { keepValues: false });
+      form.reset(
+        {
+          api_url: config.api_url,
+          access_token: config.access_token,
+          sync_interval: config.sync_interval ?? 5,
+        },
+        { keepValues: false },
+      );
     }
   }, [config, form]);
 
@@ -201,8 +214,6 @@ export default function KommoConfig() {
                 )}
               />
 
-              
-
               <FormField
                 control={form.control}
                 name="sync_interval"
@@ -236,31 +247,35 @@ export default function KommoConfig() {
                     onClick={testConnection}
                     disabled={isTestingConnection}
                   >
-                  {isTestingConnection ? (
-                    <>
-                      <RefreshCw className="mr-1 h-4 w-4 animate-spin" />
-                      <span>Testando...</span>
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="mr-1 h-4 w-4" />
-                      <span>Testar Conexão</span>
-                    </>
-                  )}
-                </Button>
+                    {isTestingConnection ? (
+                      <>
+                        <RefreshCw className="mr-1 h-4 w-4 animate-spin" />
+                        <span>Testando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="mr-1 h-4 w-4" />
+                        <span>Testar Conexão</span>
+                      </>
+                    )}
+                  </Button>
 
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button variant="destructive" type="button">
                         <Trash2 className="mr-1 h-4 w-4" />
-                        Limpar Dados
+                        Resetar Dashboard
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Excluir todos os dados?</AlertDialogTitle>
+                        <AlertDialogTitle>
+                          Excluir todos os dados?
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
-                          Esta ação irá excluir permanentemente todos os dados das tabelas brokers, broker_points, activities e leads.
+                          Esta ação irá excluir permanentemente todos os dados
+                          das tabelas brokers, broker_points, activities e
+                          leads.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -276,7 +291,8 @@ export default function KommoConfig() {
                               });
                               toast({
                                 title: "Dados excluídos",
-                                description: "Todos os dados foram excluídos com sucesso.",
+                                description:
+                                  "Todos os dados foram excluídos com sucesso.",
                               });
                             } catch (error) {
                               toast({
