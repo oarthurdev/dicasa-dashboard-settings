@@ -128,6 +128,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/rules/:id/points", authenticateSupabaseJWT, async (req: Request, res: Response) => {
+    try {
+      const ruleId = parseInt(req.params.id);
+      const { points } = req.body;
+
+      if (isNaN(ruleId)) {
+        return res.status(400).json({ message: "ID de regra inválido" });
+      }
+
+      if (typeof points !== 'number' || points < -100 || points > 100) {
+        return res.status(400).json({ message: "Valor de pontos inválido" });
+      }
+
+      const updatedRule = await supabase.updateRule(ruleId, { pontos: points });
+      if (!updatedRule) {
+        return res.status(404).json({ message: "Regra não encontrada" });
+      }
+
+      return res.status(200).json(updatedRule);
+    } catch (error) {
+      console.error("Error updating rule points:", error);
+      return res.status(500).json({ message: "Erro ao atualizar pontos da regra" });
+    }
+  });
+
   // Kommo config routes
   app.get("/api/kommo-config", authenticateSupabaseJWT, async (req: Request, res: Response) => {
     try {
