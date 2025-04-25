@@ -1,17 +1,25 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { kommoConfigFormSchema } from "@shared/schema";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, RefreshCw } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import type { z } from "zod";
+import type { KommoConfig } from "@shared/schema";
 
 type FormValues = z.infer<typeof kommoConfigFormSchema>;
 
@@ -19,12 +27,23 @@ export default function KommoConfig() {
   const [showPassword, setShowPassword] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const { toast } = useToast();
-  
+
+  const token = localStorage.getItem("supabase.auth.token");
+
   // Fetch existing config
-  const { data: config, isLoading } = useQuery({
+  const { data: config, isLoading } = useQuery<KommoConfig>({
     queryKey: ["/api/kommo-config"],
+    queryFn: async () => {
+      const res = await fetch("/api/kommo-config", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) throw new Error("Failed to fetch config");
+      return res.json();
+    },
   });
-  
+
   // Form setup
   const form = useForm<FormValues>({
     resolver: zodResolver(kommoConfigFormSchema),
@@ -35,27 +54,35 @@ export default function KommoConfig() {
       sync_interval: 5,
     },
   });
-  
+
   // Update form when config is loaded
   useEffect(() => {
     if (config) {
       form.reset({
-        api_url: config.api_url || "https://api.kommo.com/v4/",
-        access_token: config.access_token || "",
-        custom_endpoint: config.custom_endpoint || "/leads/list",
-        sync_interval: config.sync_interval || 5,
+        api_url: config.api_url,
+        access_token: config.access_token,
+        custom_endpoint: config.custom_endpoint || "",
+        sync_interval: config.sync_interval ?? 5,
       });
     }
   }, [config, form]);
-  
+
   // Save config mutation
   const saveConfigMutation = useMutation({
     mutationFn: async (data: FormValues) => {
-      const response = await apiRequest("POST", "/api/kommo-config", data);
+      const response = await fetch("/api/kommo-config", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error("Failed to save config");
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/kommo-config"] });
+      queryClient.invalidateQueries({ queryKey: ["kommo-config"] });
       toast({
         title: "Configurações salvas",
         description: "As configurações da Kommo foram salvas com sucesso.",
@@ -65,27 +92,36 @@ export default function KommoConfig() {
     onError: (error) => {
       toast({
         title: "Erro ao salvar configurações",
-        description: "Ocorreu um erro ao salvar as configurações. Tente novamente.",
+        description:
+          "Ocorreu um erro ao salvar as configurações. Tente novamente.",
         variant: "destructive",
       });
       console.error("Error saving config:", error);
     },
   });
-  
+
   // Form submission
   const onSubmit = (data: FormValues) => {
     saveConfigMutation.mutate(data);
   };
-  
+
   // Test connection
   const testConnection = async () => {
     const formData = form.getValues();
     setIsTestingConnection(true);
-    
+
     try {
-      // Simulate API call for testing connection
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+      const response = await fetch("/api/kommo-config/test", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) throw new Error("Connection test failed");
+
       toast({
         title: "Conexão estabelecida",
         description: "Conexão com a API Kommo testada com sucesso.",
@@ -101,12 +137,18 @@ export default function KommoConfig() {
       setIsTestingConnection(false);
     }
   };
-  
+
+  if (isLoading) {
+    return <div>Carregando configurações...</div>;
+  }
+
   return (
     <section className="p-6">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">Configurações Kommo</h1>
-        
+        <h1 className="text-2xl font-bold text-gray-800 mb-6">
+          Configurações Kommo
+        </h1>
+
         <Card className="bg-white rounded-lg shadow-sm p-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -117,14 +159,14 @@ export default function KommoConfig() {
                   <FormItem>
                     <FormLabel>URL da API da Kommo</FormLabel>
                     <FormControl>
-                      <Input placeholder="https://api.kommo.com/v4/" {...field} />
+                      <Input {...field} />
                     </FormControl>
                     <FormDescription>URL base da API da Kommo</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="access_token"
@@ -133,10 +175,10 @@ export default function KommoConfig() {
                     <FormLabel>Token de Acesso</FormLabel>
                     <div className="flex">
                       <FormControl>
-                        <Input 
-                          type={showPassword ? "text" : "password"} 
-                          className="flex-1 rounded-r-none" 
-                          {...field} 
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          className="flex-1 rounded-r-none"
+                          {...field}
                         />
                       </FormControl>
                       <Button
@@ -145,15 +187,21 @@ export default function KommoConfig() {
                         className="rounded-l-none"
                         onClick={() => setShowPassword(!showPassword)}
                       >
-                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                        {showPassword ? (
+                          <EyeOff size={16} />
+                        ) : (
+                          <Eye size={16} />
+                        )}
                       </Button>
                     </div>
-                    <FormDescription>Token de autenticação para acessar a API</FormDescription>
+                    <FormDescription>
+                      Token de autenticação para acessar a API
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="custom_endpoint"
@@ -163,12 +211,14 @@ export default function KommoConfig() {
                     <FormControl>
                       <Input placeholder="/leads/custom" {...field} />
                     </FormControl>
-                    <FormDescription>Endpoint específico a ser usado na integração</FormDescription>
+                    <FormDescription>
+                      Endpoint específico a ser usado na integração
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="sync_interval"
@@ -176,12 +226,14 @@ export default function KommoConfig() {
                   <FormItem>
                     <FormLabel>Intervalo de Sincronização (minutos)</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
-                        min={1} 
-                        max={60} 
+                      <Input
+                        type="number"
+                        min={1}
+                        max={60}
                         {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        onChange={(e) =>
+                          field.onChange(parseInt(e.target.value))
+                        }
                       />
                     </FormControl>
                     <FormDescription>
@@ -191,7 +243,7 @@ export default function KommoConfig() {
                   </FormItem>
                 )}
               />
-              
+
               <div className="pt-4 border-t border-gray-200 flex justify-between">
                 <Button
                   type="button"
@@ -211,12 +263,14 @@ export default function KommoConfig() {
                     </>
                   )}
                 </Button>
-                
-                <Button 
-                  type="submit" 
+
+                <Button
+                  type="submit"
                   disabled={saveConfigMutation.isPending || isLoading}
                 >
-                  {saveConfigMutation.isPending ? "Salvando..." : "Salvar Configurações"}
+                  {saveConfigMutation.isPending
+                    ? "Salvando..."
+                    : "Salvar Configurações"}
                 </Button>
               </div>
             </form>
