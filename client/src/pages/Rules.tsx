@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
 import { useState } from "react";
+import api from "@/lib/api";
 
 export default function Rules() {
   const [ruleToDelete, setRuleToDelete] = useState<Rule | null>(null);
@@ -23,7 +24,7 @@ export default function Rules() {
   const { data: paginatedData, isLoading, isError } = useQuery({
     queryKey: [...rulesQueryKey, currentPage],
     queryFn: async () => {
-      const res = await axios.get(`/api/rules?page=${currentPage}`, {
+      const res = await api.get(`/api/rules?page=${currentPage}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         }
@@ -37,7 +38,7 @@ export default function Rules() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      await axios.delete(`/api/rules/${id}`, {
+      await api.delete(`/api/rules/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -64,7 +65,7 @@ export default function Rules() {
 
   const updatePointsMutation = useMutation({
     mutationFn: async ({ id, points }: { id: number; points: number }) => {
-      await axios.patch(`/api/rules/${id}/points`, { points }, {
+      await api.patch(`/api/rules/${id}/points`, { points }, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
