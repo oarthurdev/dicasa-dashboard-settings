@@ -1,4 +1,12 @@
-import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  serial,
+  integer,
+  boolean,
+  timestamp,
+  numeric,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -26,8 +34,8 @@ export const kommoConfig = pgTable("kommo_config", {
   sync_interval: integer("sync_interval").default(5),
   last_sync: timestamp("last_sync"),
   next_sync: timestamp("next_sync"),
-  sync_start_date: timestamp("sync_start_date"),
-  sync_end_date: timestamp("sync_end_date"),
+  sync_start_date: numeric("sync_start_date"),
+  sync_end_date: numeric("sync_end_date"),
 });
 
 export const syncLogs = pgTable("sync_logs", {
@@ -77,37 +85,52 @@ export type SyncLog = typeof syncLogs.$inferSelect;
 // Validation schemas for forms
 export const ruleFormSchema = z.object({
   nome: z.string().min(3, "O nome deve ter pelo menos 3 caracteres"),
-  pontos: z.number().min(-100, "O valor mínimo é -100").max(100, "O valor máximo é 100"),
+  pontos: z
+    .number()
+    .min(-100, "O valor mínimo é -100")
+    .max(100, "O valor máximo é 100"),
   descricao: z.string().optional(),
 });
 
-export const kommoConfigFormSchema = z.object({
-  api_url: z.string().url("URL inválida"),
-  access_token: z.string().min(5, "Token inválido"),
-  custom_endpoint: z.string().optional(),
-  sync_interval: z.number().min(1, "Mínimo 1 minuto").max(60, "Máximo 60 minutos"),
-  sync_start_date: z.date().optional(),
-  sync_end_date: z.date().optional(),
-}).refine((data) => {
-  if (data.sync_start_date && data.sync_end_date) {
-    return data.sync_end_date > data.sync_start_date;
-  }
-  return true;
-}, {
-  message: "A data final deve ser maior que a data inicial",
-  path: ["sync_end_date"],
-});
+export const kommoConfigFormSchema = z
+  .object({
+    api_url: z.string().url("URL inválida"),
+    access_token: z.string().min(5, "Token inválido"),
+    custom_endpoint: z.string().optional(),
+    sync_interval: z
+      .number()
+      .min(1, "Mínimo 1 minuto")
+      .max(60, "Máximo 60 minutos"),
+    sync_start_date: z.union([z.date(), z.number()]),
+    sync_end_date: z.union([z.date(), z.number()]),
+  })
+  .refine(
+    (data) => {
+      if (data.sync_start_date && data.sync_end_date) {
+        return data.sync_end_date > data.sync_start_date;
+      }
+      return true;
+    },
+    {
+      message: "A data final deve ser maior que a data inicial",
+      path: ["sync_end_date"],
+    },
+  );
 
 export const loginFormSchema = z.object({
   email: z.string().email("Email inválido"),
   password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
 });
 
-export const registerFormSchema = z.object({
-  email: z.string().email("Email inválido"),
-  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
-  confirmPassword: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "As senhas não coincidem",
-  path: ["confirmPassword"],
-});
+export const registerFormSchema = z
+  .object({
+    email: z.string().email("Email inválido"),
+    password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
+    confirmPassword: z
+      .string()
+      .min(6, "A senha deve ter pelo menos 6 caracteres"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "As senhas não coincidem",
+    path: ["confirmPassword"],
+  });

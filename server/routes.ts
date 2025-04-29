@@ -220,10 +220,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const parsedBody = {
           ...req.body,
           sync_start_date: req.body.sync_start_date
-            ? new Date(req.body.sync_start_date)
+            ? Math.floor(Date.parse(req.body.sync_start_date) / 1000)
             : null,
           sync_end_date: req.body.sync_end_date
-            ? new Date(req.body.sync_end_date)
+            ? Math.floor(Date.parse(req.body.sync_end_date) / 1000)
             : null,
         };
 
