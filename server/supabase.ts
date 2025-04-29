@@ -1,11 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
-import { Rule, KommoConfig, SyncLog, InsertRule, InsertKommoConfig, InsertSyncLog } from '@shared/schema';
+import { Rule, KommoConfig, SyncLog, InsertRule, InsertKommoConfig, InsertSyncLog } from '@shared/schema.ts';
 
-import 'dotenv/config';
+import dotenv from 'dotenv';
+dotenv.config();
 
 // Get Supabase credentials from env variables
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
+const supabaseUrl = process.env.VITE_SUPABASE_URL || "";
+const supabaseKey = process.env.VITE_SUPABASE_KEY || "";
 
 // Validate credentials
 if (!supabaseUrl || !supabaseKey) {
