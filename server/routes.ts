@@ -287,9 +287,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const streamlitUrl = process.env.STREAMLIT_URL || "http://0.0.0.0:8501";
         
-        // Faz uma requisição para o Streamlit recarregar os dados
-        const response = await fetch(`${streamlitUrl}/_stcore/page-reload`);
-        
+        // Atualiza o status de sincronização no banco
+        await supabase.updateKommoConfig({
+          last_sync: Math.floor(Date.now() / 1000),
+          next_sync: Math.floor(Date.now() / 1000) + 3600 // Próxima sync em 1h
+        });
+
+        // Registra o evento de sincronização
+        await supabase.createSyncLog({
+          type: "SYNC",
+          message: "Sincronização manual iniciada",
+          created_at: new Date().toISOString()
+        });
+
+        // Envia comando para o Streamlit
+        const response = await fetch(`${streamlitUrl}/sync`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ force: true })
+        });
+
         if (!response.ok) {
           throw new Error('Falha ao forçar sincronização');
         }
@@ -297,6 +316,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(200).json({ message: "Sincronização forçada com sucesso" });
       } catch (error) {
         console.error("Error forcing sync:", error);
+
+        // Registra o erro
+        await supabase.createSyncLog({
+          type: "ERROR",
+          message: `Erro ao forçar sincronização: ${error.message}`,
+          created_at: new Date().toISOString()
+        });
+
         return res.status(500).json({ message: "Erro ao forçar sincronização" });
       }
     }
