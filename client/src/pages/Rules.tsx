@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Rule } from "@shared/schema";
 import RulesTable from "@/components/rules/RulesTable";
@@ -14,13 +13,13 @@ export default function Rules() {
   const [ruleToDelete, setRuleToDelete] = useState<Rule | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const token = localStorage.getItem("supabase.auth.token");
 
   const rulesQueryKey = ["/api/rules"];
 
   const [currentPage, setCurrentPage] = useState(1);
-  
+
   const { data: paginatedData, isLoading, isError } = useQuery({
     queryKey: [...rulesQueryKey, currentPage],
     queryFn: async () => {
@@ -106,8 +105,32 @@ export default function Rules() {
   return (
     <section className="p-6">
       <div className="max-w-6xl mx-auto">
-        <div className="mb-6">
+        <div className="mb-6 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-800">Gerenciamento de Regras</h1>
+          <Button 
+            onClick={async () => {
+              try {
+                await api.post('/api/sync/force', null, {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                });
+                toast({
+                  title: "Sincronização iniciada",
+                  description: "A sincronização foi iniciada com sucesso.",
+                  variant: "default",
+                });
+              } catch (error) {
+                toast({
+                  title: "Erro ao forçar sincronização",
+                  description: "Ocorreu um erro ao iniciar a sincronização.",
+                  variant: "destructive",
+                });
+              }
+            }}
+          >
+            Forçar Sincronização
+          </Button>
         </div>
 
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
