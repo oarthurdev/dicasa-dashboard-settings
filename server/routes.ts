@@ -1,14 +1,14 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
-import { convertToSnakeCase } from "./utils";
+import { convertToSnakeCase } from "./utils.ts";
 import {
   ruleFormSchema,
   kommoConfigFormSchema,
   loginFormSchema,
   Rule,
-} from "@shared/schema";
+} from "@shared/schema.ts";
 import { z } from "zod";
-import { supabase, supabaseClient as supabaseServer } from "./supabase";
+import { supabase, supabaseClient as supabaseServer } from "./supabase.ts";
 
 // Middleware de autenticação usando Supabase
 const authenticateSupabaseJWT = async (

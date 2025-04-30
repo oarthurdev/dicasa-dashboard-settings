@@ -34,6 +34,8 @@ import type { KommoConfig } from "@shared/schema";
 
 type FormValues = z.infer<typeof kommoConfigFormSchema>;
 
+const BASE_URL = "http://45.90.120.55:5000";
+
 export default function KommoConfig() {
   const [showPassword, setShowPassword] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
@@ -45,7 +47,7 @@ export default function KommoConfig() {
   const { data: config, isLoading } = useQuery<KommoConfig>({
     queryKey: ["/api/kommo-config"],
     queryFn: async () => {
-      const res = await fetch("/api/kommo-config", {
+      const res = await fetch(`${BASE_URL}/api/kommo-config`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -82,7 +84,7 @@ export default function KommoConfig() {
   // Save config mutation
   const saveConfigMutation = useMutation({
     mutationFn: async (data: FormValues) => {
-      const response = await fetch("/api/kommo-config", {
+      const response = await fetch(`${BASE_URL}/api/kommo-config`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -123,7 +125,7 @@ export default function KommoConfig() {
     setIsTestingConnection(true);
 
     try {
-      const response = await fetch("/api/kommo-config/test", {
+      const response = await fetch(`${BASE_URL}/api/kommo-config/test`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

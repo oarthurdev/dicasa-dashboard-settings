@@ -13,11 +13,25 @@ export default function Monitoring() {
   const [timeRemaining, setTimeRemaining] = useState("");
   
   // Fetch sync status
+  interface SyncStatus {
+    nextSync: string | null;
+    status: string;
+    lastSync: string | null;
+    rulesCount: number;
+  }
+
+  interface SyncLog {
+    id: string;
+    timestamp: string;
+    type: string;
+    message: string;
+  }
+
   const { 
     data: syncStatus,
     isLoading: isStatusLoading,
     refetch: refetchStatus 
-  } = useQuery({
+  } = useQuery<SyncStatus>({
     queryKey: ["/api/sync-status", refreshCounter],
   });
   
@@ -26,7 +40,7 @@ export default function Monitoring() {
     data: syncLogs,
     isLoading: isLogsLoading,
     refetch: refetchLogs
-  } = useQuery({
+  } = useQuery<SyncLog[]>({
     queryKey: ["/api/sync-logs", refreshCounter],
   });
   

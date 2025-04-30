@@ -1,5 +1,7 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
@@ -7,29 +9,20 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-export async function apiRequest(
-  method: string,
+export async function apiRequest<T = any>(
   url: string,
+  method: string = 'GET',
   data?: unknown | undefined,
-): Promise<Response> {
-  // Obter o token de autenticação do localStorage
-  const token = localStorage.getItem("supabase.auth.token");
-  
-  // Preparar os headers com o token se disponível
-  const headers: Record<string, string> = {
-    ...(data ? { "Content-Type": "application/json" } : {}),
-    ...(token ? { "Authorization": `Bearer ${token}` } : {})
-  };
-  
-  const res = await fetch(url, {
+): Promise<T> {
+  const res = await fetch(API_URL + url, {
     method,
-    headers,
+    headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
 
   await throwIfResNotOk(res);
-  return res;
+  return res.json();
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
@@ -37,30 +30,9 @@ export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
-  async ({ queryKey, signal, meta }) => {
-    // Obter o token de autenticação do localStorage
-    const token = localStorage.getItem("supabase.auth.token");
-    
-    // Configurar os headers com o token de autenticação
-    const headers: Record<string, string> = token 
-      ? { "Authorization": `Bearer ${token}` } 
-      : {};
-    
-    // Extrai method e body de meta (se fornecidos)
-    const method = meta?.method as string || 'GET';
-    const body = meta?.body ? JSON.stringify(meta.body) : undefined;
-    
-    // Se tiver body, adiciona Content-Type
-    if (body) {
-      headers['Content-Type'] = 'application/json';
-    }
-    
+  async ({ queryKey }) => {
     const res = await fetch(queryKey[0] as string, {
-      method,
-      headers,
-      body,
       credentials: "include",
-      signal
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
@@ -68,10 +40,6 @@ export const getQueryFn: <T>(options: {
     }
 
     await throwIfResNotOk(res);
-    // Para DELETE, não tem body
-    if (method === 'DELETE' && res.status === 204) {
-      return null;
-    }
     return await res.json();
   };
 
@@ -89,3 +57,4 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
