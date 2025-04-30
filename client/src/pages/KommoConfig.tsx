@@ -157,11 +157,11 @@ export default function KommoConfig() {
   return (
     <section className="p-6">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">
+        <h1 className="text-2xl font-bold text-foreground mb-6">
           Configurações Kommo
         </h1>
 
-        <Card className="bg-white rounded-lg shadow-sm p-6">
+        <Card className="bg-card rounded-lg shadow-sm p-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField

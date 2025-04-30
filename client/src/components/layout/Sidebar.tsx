@@ -42,9 +42,9 @@ export default function Sidebar() {
   const [location] = useLocation();
   
   return (
-    <aside className="w-60 bg-white border-r border-gray-200 flex flex-col h-full">
-      <div className="p-4 border-b border-gray-200">
-        <h1 className="text-xl font-bold text-gray-800">Dashboard Config</h1>
+    <aside className="w-60 bg-background border-r border-border flex flex-col h-full">
+      <div className="p-4 border-b border-border">
+        <h1 className="text-xl font-bold text-foreground">Dashboard Config</h1>
       </div>
       
       <nav className="flex-1 overflow-y-auto py-4">
