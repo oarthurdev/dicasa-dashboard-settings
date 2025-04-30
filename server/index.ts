@@ -2,17 +2,20 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes.ts";
 import { setupVite, serveStatic, log } from "./vite.ts";
 
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 dotenv.config();
 
 import cors from "cors";
 
 const app = express();
 
-app.use(cors({
-  origin: "http://127.0.0.1:8082",
-  credentials: true
-}));
+app.use(
+  cors({
+    origin:
+      "https://a9c00c0f-ec5e-485b-9ba7-a7b4c0cf011b-00-4t4wc8v0r9td.riker.replit.dev",
+    credentials: true,
+  }),
+);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -61,12 +64,15 @@ app.use((req, res, next) => {
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
+  const port = 5001;
+  server.listen(
+    {
+      port,
+      host: "0.0.0.0",
+      reusePort: true,
+    },
+    () => {
+      log(`serving on port ${port}`);
+    },
+  );
 })();

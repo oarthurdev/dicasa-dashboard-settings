@@ -1,5 +1,5 @@
 modules = ["nodejs-20", "web"]
-run = "npm run dev"
+run = "cd dist && http-server"
 hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
 [nix]
@@ -31,11 +31,15 @@ agentRequireRestartOnSave = false
 [[workflows.workflow.tasks]]
 task = "packager.installForAll"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm run dev"
-waitForPort = 5000
+# [[workflows.workflow.tasks]]
+# task = "shell.exec"
+# args = "npm run dev"
+# waitForPort = 8080
 
 [[ports]]
-localPort = 5000
+localPort = 5001
+externalPort = 3000
+
+[[ports]]
+localPort = 8080
 externalPort = 80
