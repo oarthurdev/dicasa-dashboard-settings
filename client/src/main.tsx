@@ -8,7 +8,7 @@ import { ThemeProvider } from "next-themes";
 
 createRoot(document.getElementById("root")!).render(
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider defaultTheme="light" attribute="class">
+    <ThemeProvider defaultTheme="dark" attribute="class" enableSystem={false} disableTransitionOnChange>
       <App />
       <Toaster />
     </ThemeProvider>
