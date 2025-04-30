@@ -40,13 +40,13 @@ const SidebarItem = ({ href, icon, children, active }: SidebarItemProps) => {
 export default function Sidebar() {
   const { logout } = useAuth();
   const [location] = useLocation();
-  
+
   return (
-    <aside className="w-60 bg-background border-r border-border flex flex-col h-full">
+    <aside className="w-60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/95 pb-12 border-r border-border flex flex-col h-full">
       <div className="p-4 border-b border-border">
         <h1 className="text-xl font-bold text-foreground">Dashboard Config</h1>
       </div>
-      
+
       <nav className="flex-1 overflow-y-auto py-4">
         <ul className="space-y-1">
           <SidebarItem 
@@ -79,7 +79,7 @@ export default function Sidebar() {
           </SidebarItem>
         </ul>
       </nav>
-      
+
       <div className="p-4 border-t border-gray-200">
         <Button 
           variant="ghost" 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SyncLog } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ import { formatDate, getTimeRemaining } from "@/lib/dateUtils";
 export default function Monitoring() {
   const [refreshCounter, setRefreshCounter] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState("");
-  
+
   // Fetch sync status
   interface SyncStatus {
     nextSync: string | null;
@@ -34,7 +34,7 @@ export default function Monitoring() {
   } = useQuery<SyncStatus>({
     queryKey: ["/api/sync-status", refreshCounter],
   });
-  
+
   // Fetch sync logs
   const { 
     data: syncLogs,
@@ -43,27 +43,27 @@ export default function Monitoring() {
   } = useQuery<SyncLog[]>({
     queryKey: ["/api/sync-logs", refreshCounter],
   });
-  
+
   // Update time remaining
   useEffect(() => {
     if (!syncStatus?.nextSync) return;
-    
+
     const nextSync = new Date(syncStatus.nextSync);
-    
+
     const interval = setInterval(() => {
       setTimeRemaining(getTimeRemaining(nextSync));
     }, 1000);
-    
+
     return () => clearInterval(interval);
   }, [syncStatus?.nextSync]);
-  
+
   // Refresh data
   const refreshData = () => {
     setRefreshCounter(prev => prev + 1);
     refetchStatus();
     refetchLogs();
   };
-  
+
   // Get log badge color based on type
   const getLogTypeColor = (type: string) => {
     switch (type) {
@@ -77,17 +77,19 @@ export default function Monitoring() {
         return "bg-gray-100 text-gray-800";
     }
   };
-  
+
   return (
     <section className="p-6">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-2xl font-bold text-gray-800 mb-6">Dashboard / Monitoramento</h1>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           {/* Status Card */}
-          <Card>
-            <CardContent className="pt-6">
-              <h2 className="text-lg font-medium text-gray-700 mb-2">Status da Sincronização</h2>
+          <Card className="border-0 bg-card/90 shadow-md hover:shadow-lg transition-shadow">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-xl font-medium">Status da Sincronização</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
               {isStatusLoading ? (
                 <Skeleton className="h-10 w-full" />
               ) : (
@@ -114,11 +116,13 @@ export default function Monitoring() {
               </p>
             </CardContent>
           </Card>
-          
+
           {/* Next Update Card */}
-          <Card>
-            <CardContent className="pt-6">
-              <h2 className="text-lg font-medium text-gray-700 mb-2">Próxima Atualização</h2>
+          <Card className="border-0 bg-card/90 shadow-md hover:shadow-lg transition-shadow">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-xl font-medium">Próxima Atualização</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
               {isStatusLoading ? (
                 <Skeleton className="h-10 w-full" />
               ) : (
@@ -143,11 +147,13 @@ export default function Monitoring() {
               </p>
             </CardContent>
           </Card>
-          
+
           {/* Statistics Card */}
-          <Card>
-            <CardContent className="pt-6">
-              <h2 className="text-lg font-medium text-gray-700 mb-2">Estatísticas</h2>
+          <Card className="border-0 bg-card/90 shadow-md hover:shadow-lg transition-shadow">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-xl font-medium">Estatísticas</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
               {isStatusLoading ? (
                 <div className="space-y-2">
                   <Skeleton className="h-4 w-full" />
@@ -175,7 +181,7 @@ export default function Monitoring() {
             </CardContent>
           </Card>
         </div>
-        
+
         {/* Sync Logs Card */}
         <Card className="overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
@@ -191,7 +197,7 @@ export default function Monitoring() {
               <span>Atualizar</span>
             </Button>
           </div>
-          
+
           <div className="overflow-x-auto" style={{ maxHeight: "300px" }}>
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -240,7 +246,7 @@ export default function Monitoring() {
               </tbody>
             </table>
           </div>
-          
+
           <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
             <Button variant="link" size="sm" className="text-primary-600 p-0">
               Ver todos os logs

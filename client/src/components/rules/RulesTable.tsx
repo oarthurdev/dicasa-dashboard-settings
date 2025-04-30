@@ -1,4 +1,3 @@
-
 import { Rule } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,7 +20,7 @@ export default function RulesTable({ rules, onDelete, onUpdatePoints }: RulesTab
     if (points > 0) return "bg-green-100 text-green-800";
     return "bg-gray-200 text-gray-800";
   };
-  
+
   const formatPoints = (points: number) => {
     return points > 0 ? `+${points}` : points;
   };
@@ -36,24 +35,24 @@ export default function RulesTable({ rules, onDelete, onUpdatePoints }: RulesTab
       onUpdatePoints(rule, newPoints);
     }
   };
-  
+
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
+      <table className="w-full text-left text-sm text-gray-500 border border-gray-200 rounded-lg shadow-sm">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-left font-medium text-gray-900 uppercase tracking-wider">
               Nome da Regra
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-left font-medium text-gray-900 uppercase tracking-wider">
               Valor de Pontos
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-6 py-3 text-right font-medium text-gray-900 uppercase tracking-wider">
               Ações
             </th>
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+        <tbody className="divide-y divide-gray-200">
           {rules.length === 0 ? (
             <tr>
               <td colSpan={3} className="px-6 py-4 text-center text-gray-500">
@@ -63,11 +62,11 @@ export default function RulesTable({ rules, onDelete, onUpdatePoints }: RulesTab
           ) : (
             rules.map((rule) => (
               <tr key={rule.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <td className="px-6 py-4 whitespace-nowrap">
                   {rule.nome}
                 </td>
                 <td className="px-6 py-4">
-                  <div className="flex items-center space-x-4 min-w-[300px]">
+                  <div className="flex items-center space-x-4">
                     <Slider
                       min={-100}
                       max={100}
@@ -77,10 +76,10 @@ export default function RulesTable({ rules, onDelete, onUpdatePoints }: RulesTab
                       className="flex-1"
                       onValueCommit={() => handlePointsSave(rule)}
                     />
-                    <Badge 
-                      variant="outline" 
+                    <Badge
+                      variant="outline"
                       className={cn(
-                        "min-w-[60px] text-center justify-center",
+                        "min-w-[60px] text-center",
                         getPointsBadgeClass(editingPoints[rule.id] ?? rule.pontos)
                       )}
                     >
@@ -88,7 +87,7 @@ export default function RulesTable({ rules, onDelete, onUpdatePoints }: RulesTab
                     </Badge>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-6 py-4 text-right">
                   <Button
                     variant="ghost"
                     size="icon"
