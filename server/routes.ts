@@ -279,7 +279,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-  // Data management routes
+  // Sync management routes  
+  app.post(
+    "/api/sync/force",
+    authenticateSupabaseJWT,
+    async (req: Request, res: Response) => {
+      try {
+        const streamlitUrl = process.env.STREAMLIT_URL || "http://0.0.0.0:8501";
+        
+        // Faz uma requisição para o Streamlit recarregar os dados
+        const response = await fetch(`${streamlitUrl}/_stcore/page-reload`);
+        
+        if (!response.ok) {
+          throw new Error('Falha ao forçar sincronização');
+        }
+
+        return res.status(200).json({ message: "Sincronização forçada com sucesso" });
+      } catch (error) {
+        console.error("Error forcing sync:", error);
+        return res.status(500).json({ message: "Erro ao forçar sincronização" });
+      }
+    }
+  );
+
+// Data management routes
   app.post(
     "/api/data/delete-all",
     authenticateSupabaseJWT,
