@@ -304,10 +304,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           );
 
           if (stderr) {
-            throw new Error(stderr.message);
+            throw new Error(typeof stderr === 'string' ? stderr : 'Erro na sincronização');
           }
         } catch (error) {
-          throw new Error(error.message);
+          const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido na sincronização';
+          throw new Error(errorMessage);
         }
 
         return res
