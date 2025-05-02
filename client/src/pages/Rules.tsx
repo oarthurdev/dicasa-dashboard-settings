@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCcw } from "lucide-react";
 import api from "@/lib/api";
 
 export default function Rules() {
@@ -22,13 +22,17 @@ export default function Rules() {
 
   const [currentPage, setCurrentPage] = useState(1);
 
-  const { data: paginatedData, isLoading, isError } = useQuery({
+  const {
+    data: paginatedData,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: [...rulesQueryKey, currentPage],
     queryFn: async () => {
       const res = await api.get(`/api/rules?page=${currentPage}`, {
         headers: {
           Authorization: `Bearer ${token}`,
-        }
+        },
       });
       return res.data;
     },
@@ -66,11 +70,15 @@ export default function Rules() {
 
   const updatePointsMutation = useMutation({
     mutationFn: async ({ id, points }: { id: number; points: number }) => {
-      await api.patch(`/api/rules/${id}/points`, { points }, {
-        headers: {
-          Authorization: `Bearer ${token}`,
+      await api.patch(
+        `/api/rules/${id}/points`,
+        { points },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         },
-      });
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: rulesQueryKey });
@@ -108,17 +116,19 @@ export default function Rules() {
     <section className="p-6">
       <div className="max-w-6xl mx-auto">
         <div className="mb-6 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-800">Gerenciamento de Regras</h1>
-          <Button 
+          <h1 className="text-2xl font-bold text-gray-800">
+            Gerenciamento de Regras
+          </h1>
+          <Button
             onClick={async () => {
               try {
                 setSyncLoading(true);
-                const response = await api.post('/api/sync/force', null, {
+                const response = await api.post("/api/sync/force", null, {
                   headers: {
                     Authorization: `Bearer ${token}`,
-                  }
+                  },
                 });
-                
+
                 if (response.status === 200) {
                   toast({
                     title: "Sincronização finalizada",
@@ -144,7 +154,10 @@ export default function Rules() {
                 Sincronizando...
               </>
             ) : (
-              "Forçar Sincronização"
+              <>
+                <RefreshCcw className="mr-2 h-4 w-4" />
+                &nbsp;&nbsp;Forçar Sincronização
+              </>
             )}
           </Button>
         </div>
@@ -162,14 +175,17 @@ export default function Rules() {
             </div>
           ) : (
             <>
-              <RulesTable 
-                rules={rules} 
+              <RulesTable
+                rules={rules}
                 onDelete={handleDeleteRule}
                 onUpdatePoints={handleUpdatePoints}
               />
               {pagination && pagination.totalPages > 1 && (
                 <div className="flex justify-center mt-4 gap-2">
-                  {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
+                  {Array.from(
+                    { length: pagination.totalPages },
+                    (_, i) => i + 1,
+                  ).map((page) => (
                     <Button
                       key={page}
                       variant={page === currentPage ? "default" : "outline"}
@@ -186,8 +202,8 @@ export default function Rules() {
         </div>
       </div>
 
-      <DeleteRuleModal 
-        isOpen={!!ruleToDelete} 
+      <DeleteRuleModal
+        isOpen={!!ruleToDelete}
         onClose={() => setRuleToDelete(null)}
         onConfirm={confirmDeleteRule}
         isPending={deleteMutation.isPending}

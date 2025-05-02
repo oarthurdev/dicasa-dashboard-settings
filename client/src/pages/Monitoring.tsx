@@ -12,6 +12,8 @@ export default function Monitoring() {
   const [refreshCounter, setRefreshCounter] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState("");
 
+  const token = localStorage.getItem("supabase.auth.token");
+
   // Fetch sync status
   interface SyncStatus {
     nextSync: string | null;
@@ -27,23 +29,39 @@ export default function Monitoring() {
     message: string;
   }
 
-  const { 
+  const {
     data: syncStatus,
     isLoading: isStatusLoading,
-    refetch: refetchStatus 
+    refetch: refetchStatus,
   } = useQuery<SyncStatus>({
     queryKey: ["/api/sync-status", refreshCounter],
+    queryFn: async () => {
+      const res = await fetch(`${BASE_URL}/api/sync-status`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) throw new Error("Failed to fetch sync status");
+      return res.json();
+    },
   });
 
-  // Fetch sync logs
-  const { 
+  const {
     data: syncLogs,
     isLoading: isLogsLoading,
-    refetch: refetchLogs
+    refetch: refetchLogs,
   } = useQuery<SyncLog[]>({
     queryKey: ["/api/sync-logs", refreshCounter],
+    queryFn: async () => {
+      const res = await fetch(`${BASE_URL}/api/sync-logs`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) throw new Error("Failed to fetch sync logs");
+      return res.json();
+    },
   });
-
   // Update time remaining
   useEffect(() => {
     if (!syncStatus?.nextSync) return;
@@ -59,7 +77,7 @@ export default function Monitoring() {
 
   // Refresh data
   const refreshData = () => {
-    setRefreshCounter(prev => prev + 1);
+    setRefreshCounter((prev) => prev + 1);
     refetchStatus();
     refetchLogs();
   };
@@ -81,13 +99,17 @@ export default function Monitoring() {
   return (
     <section className="p-6">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">Dashboard / Monitoramento</h1>
+        <h1 className="text-2xl font-bold text-gray-800 mb-6">
+          Dashboard / Monitoramento
+        </h1>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           {/* Status Card */}
           <Card className="border-0 bg-card/90 shadow-md hover:shadow-lg transition-shadow">
             <CardHeader className="space-y-1">
-              <CardTitle className="text-xl font-medium">Status da Sincronização</CardTitle>
+              <CardTitle className="text-xl font-medium">
+                Status da Sincronização
+              </CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
               {isStatusLoading ? (
@@ -97,21 +119,32 @@ export default function Monitoring() {
                   {syncStatus?.status === "connected" ? (
                     <>
                       <CheckCircle className="text-green-500 mr-2 h-5 w-5" />
-                      <span className="text-green-700 font-medium">Conectado</span>
+                      <span className="text-green-700 font-medium">
+                        Conectado
+                      </span>
                     </>
                   ) : (
                     <>
                       <AlertCircle className="text-red-500 mr-2 h-5 w-5" />
-                      <span className="text-red-700 font-medium">Erro de conexão</span>
+                      <span className="text-red-700 font-medium">
+                        Erro de conexão
+                      </span>
                     </>
                   )}
                 </div>
               )}
               <p className="mt-2 text-sm text-gray-500">
-                Última sincronização: <span className="font-medium">
-                  {isStatusLoading 
-                    ? <Skeleton className="h-4 w-28 inline-block" /> 
-                    : formatDate(syncStatus?.lastSync ? new Date(syncStatus.lastSync) : null)}
+                Última sincronização:{" "}
+                <span className="font-medium">
+                  {isStatusLoading ? (
+                    <Skeleton className="h-4 w-28 inline-block" />
+                  ) : (
+                    formatDate(
+                      syncStatus?.lastSync
+                        ? new Date(syncStatus.lastSync)
+                        : null,
+                    )
+                  )}
                 </span>
               </p>
             </CardContent>
@@ -120,7 +153,9 @@ export default function Monitoring() {
           {/* Next Update Card */}
           <Card className="border-0 bg-card/90 shadow-md hover:shadow-lg transition-shadow">
             <CardHeader className="space-y-1">
-              <CardTitle className="text-xl font-medium">Próxima Atualização</CardTitle>
+              <CardTitle className="text-xl font-medium">
+                Próxima Atualização
+              </CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
               {isStatusLoading ? (
@@ -128,21 +163,27 @@ export default function Monitoring() {
               ) : (
                 <div className="flex items-center">
                   <Clock className="text-blue-500 mr-2 h-5 w-5" />
-                  <span className="text-gray-700 font-medium" id="nextUpdateTime">
+                  <span
+                    className="text-gray-700 font-medium"
+                    id="nextUpdateTime"
+                  >
                     {timeRemaining}
                   </span>
                 </div>
               )}
               <p className="mt-2 text-sm text-gray-500">
-                Agendada para: <span className="font-medium">
-                  {isStatusLoading 
-                    ? <Skeleton className="h-4 w-20 inline-block" /> 
-                    : syncStatus?.nextSync 
-                      ? new Date(syncStatus.nextSync).toLocaleTimeString('pt-BR', { 
-                          hour: '2-digit', 
-                          minute: '2-digit' 
-                        }) 
-                      : "N/A"}
+                Agendada para:{" "}
+                <span className="font-medium">
+                  {isStatusLoading ? (
+                    <Skeleton className="h-4 w-20 inline-block" />
+                  ) : syncStatus?.nextSync ? (
+                    new Date(syncStatus.nextSync).toLocaleTimeString("pt-BR", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  ) : (
+                    "N/A"
+                  )}
                 </span>
               </p>
             </CardContent>
@@ -151,7 +192,9 @@ export default function Monitoring() {
           {/* Statistics Card */}
           <Card className="border-0 bg-card/90 shadow-md hover:shadow-lg transition-shadow">
             <CardHeader className="space-y-1">
-              <CardTitle className="text-xl font-medium">Estatísticas</CardTitle>
+              <CardTitle className="text-xl font-medium">
+                Estatísticas
+              </CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
               {isStatusLoading ? (
@@ -163,11 +206,15 @@ export default function Monitoring() {
               ) : (
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-500">Registros Processados:</span>
+                    <span className="text-sm text-gray-500">
+                      Registros Processados:
+                    </span>
                     <span className="font-medium">1,254</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-500">Regras Aplicadas:</span>
+                    <span className="text-sm text-gray-500">
+                      Regras Aplicadas:
+                    </span>
                     <span className="font-medium">
                       {syncStatus?.rulesCount || "..."}
                     </span>
@@ -186,14 +233,16 @@ export default function Monitoring() {
         <Card className="overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
             <h2 className="font-medium text-gray-700">Logs de Sincronização</h2>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               className="text-primary-600 hover:text-primary-800 text-sm flex items-center"
               onClick={refreshData}
               disabled={isLogsLoading}
             >
-              <RefreshCw className={`h-4 w-4 mr-1 ${isLogsLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw
+                className={`h-4 w-4 mr-1 ${isLogsLoading ? "animate-spin" : ""}`}
+              />
               <span>Atualizar</span>
             </Button>
           </div>
@@ -214,35 +263,40 @@ export default function Monitoring() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {isLogsLoading ? (
-                  Array(6).fill(0).map((_, index) => (
-                    <tr key={index}>
-                      <td className="px-6 py-4">
-                        <Skeleton className="h-4 w-20" />
-                      </td>
-                      <td className="px-6 py-4">
-                        <Skeleton className="h-4 w-16" />
-                      </td>
-                      <td className="px-6 py-4">
-                        <Skeleton className="h-4 w-full" />
-                      </td>
-                    </tr>
-                  ))
-                ) : (syncLogs || []).map((log: SyncLog) => (
-                  <tr key={log.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(log.timestamp).toLocaleTimeString('pt-BR')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge variant="outline" className={getLogTypeColor(log.type)}>
-                        {log.type}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      {log.message}
-                    </td>
-                  </tr>
-                ))}
+                {isLogsLoading
+                  ? Array(6)
+                      .fill(0)
+                      .map((_, index) => (
+                        <tr key={index}>
+                          <td className="px-6 py-4">
+                            <Skeleton className="h-4 w-20" />
+                          </td>
+                          <td className="px-6 py-4">
+                            <Skeleton className="h-4 w-16" />
+                          </td>
+                          <td className="px-6 py-4">
+                            <Skeleton className="h-4 w-full" />
+                          </td>
+                        </tr>
+                      ))
+                  : (syncLogs || []).map((log: SyncLog) => (
+                      <tr key={log.id}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(log.timestamp).toLocaleTimeString("pt-BR")}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Badge
+                            variant="outline"
+                            className={getLogTypeColor(log.type)}
+                          >
+                            {log.type}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {log.message}
+                        </td>
+                      </tr>
+                    ))}
               </tbody>
             </table>
           </div>
