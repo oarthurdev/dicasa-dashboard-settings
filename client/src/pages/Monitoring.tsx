@@ -36,13 +36,12 @@ export default function Monitoring() {
   } = useQuery<SyncStatus>({
     queryKey: ["/api/sync-status", refreshCounter],
     queryFn: async () => {
-      const res = await fetch(`${BASE_URL}/api/sync-status`, {
+      const res = await api.get('/api/sync-status', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      if (!res.ok) throw new Error("Failed to fetch sync status");
-      return res.json();
+      return res.data;
     },
   });
 
@@ -53,13 +52,12 @@ export default function Monitoring() {
   } = useQuery<SyncLog[]>({
     queryKey: ["/api/sync-logs", refreshCounter],
     queryFn: async () => {
-      const res = await fetch(`${BASE_URL}/api/sync-logs`, {
+      const res = await api.get('/api/sync-logs', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      if (!res.ok) throw new Error("Failed to fetch sync logs");
-      return res.json();
+      return res.data;
     },
   });
   // Update time remaining
