@@ -309,8 +309,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             throw new Error(`Falha na resposta: ${response.status}`);
           }
 
-          const data = await response.text();
-          console.log("Resposta do Streamlit:", data);
+          // Ignora a resposta HTML e considera sucesso se o status for 200
+          console.log("Sincronização iniciada com sucesso");
         } catch (error) {
           console.error("Erro ao chamar Streamlit:", error);
           throw new Error(`Falha ao forçar sincronização: ${error.message}`);
