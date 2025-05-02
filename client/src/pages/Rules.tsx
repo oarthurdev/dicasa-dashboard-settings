@@ -113,16 +113,19 @@ export default function Rules() {
             onClick={async () => {
               try {
                 setSyncLoading(true);
-                await api.post('/api/sync/force', null, {
+                const response = await api.post('/api/sync/force', null, {
                   headers: {
                     Authorization: `Bearer ${token}`,
-                  },
+                  }
                 });
-                toast({
-                  title: "Sincronização iniciada",
-                  description: "A sincronização foi iniciada com sucesso.",
-                  variant: "default",
-                });
+                
+                if (response.status === 200) {
+                  toast({
+                    title: "Sincronização finalizada",
+                    description: "A sincronização foi concluída com sucesso.",
+                    variant: "default",
+                  });
+                }
               } catch (error) {
                 toast({
                   title: "Erro ao forçar sincronização",
