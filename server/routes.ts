@@ -295,7 +295,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Envia comando para o Streamlit
         const { exec } = await import("child_process");
-        const { promisify } = await import("util"); 
+        const { promisify } = await import("util");
         const execAsync = promisify(exec);
 
         try {
@@ -304,10 +304,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           );
 
           if (stderr) {
-            throw new Error("Falha ao forçar sincronização");
+            throw new Error(stderr.message);
           }
         } catch (error) {
-          throw new Error("Falha ao forçar sincronização");
+          throw new Error(error.message);
         }
 
         return res
