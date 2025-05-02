@@ -7,10 +7,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 import api from "@/lib/api";
 
 export default function Rules() {
   const [ruleToDelete, setRuleToDelete] = useState<Rule | null>(null);
+  const [syncLoading, setSyncLoading] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -110,6 +112,7 @@ export default function Rules() {
           <Button 
             onClick={async () => {
               try {
+                setSyncLoading(true);
                 await api.post('/api/sync/force', null, {
                   headers: {
                     Authorization: `Bearer ${token}`,
@@ -126,10 +129,20 @@ export default function Rules() {
                   description: "Ocorreu um erro ao iniciar a sincronização.",
                   variant: "destructive",
                 });
+              } finally {
+                setSyncLoading(false);
               }
             }}
+            disabled={syncLoading}
           >
-            Forçar Sincronização
+            {syncLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Sincronizando...
+              </>
+            ) : (
+              "Forçar Sincronização"
+            )}
           </Button>
         </div>
 
