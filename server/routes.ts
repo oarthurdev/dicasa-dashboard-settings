@@ -300,11 +300,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         try {
           const { stdout, stderr } = await execAsync(
-            `curl -X POST ${streamlitUrl}/sync -H "Content-Type: application/json" -d '{"force": true}'`,
+            `curl -s -X POST ${streamlitUrl}/sync -H "Content-Type: application/json" -d '{"force": true}'`,
           );
 
-          if (stderr) {
-            throw new Error(typeof stderr === 'string' ? stderr : 'Erro na sincronização');
+          // Verifica se a resposta é válida
+          try {
+            const response = JSON.parse(stdout);
+            if (!response.success) {
+              throw new Error(response.message || 'Erro na sincronização');
+            }
+          } catch (parseError) {
+            console.error('Erro ao processar resposta:', stdout);
+            throw new Error('Erro ao processar resposta da sincronização');
           }
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido na sincronização';
