@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CheckCircle, AlertCircle, Clock, RefreshCw } from "lucide-react";
 import { formatDate, getTimeRemaining } from "@/lib/dateUtils";
+import api from "@/lib/api";
 
 export default function Monitoring() {
   const [refreshCounter, setRefreshCounter] = useState(0);
@@ -36,7 +37,7 @@ export default function Monitoring() {
   } = useQuery<SyncStatus>({
     queryKey: ["/api/sync-status", refreshCounter],
     queryFn: async () => {
-      const res = await api.get('/api/sync-status', {
+      const res = await api.get("/api/sync-status", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -52,7 +53,7 @@ export default function Monitoring() {
   } = useQuery<SyncLog[]>({
     queryKey: ["/api/sync-logs", refreshCounter],
     queryFn: async () => {
-      const res = await api.get('/api/sync-logs', {
+      const res = await api.get("/api/sync-logs", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
