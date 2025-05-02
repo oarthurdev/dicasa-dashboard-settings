@@ -294,15 +294,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         // Envia comando para o Streamlit
-        const response = await fetch(`${streamlitUrl}/sync`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ force: true }),
-        });
+        const { exec } = require('child_process');
+        const util = require('util');
+        const execAsync = util.promisify(exec);
 
-        if (!response.ok) {
+        try {
+          const { stdout, stderr } = await execAsync(`curl -X POST ${streamlitUrl}/sync -H "Content-Type: application/json" -d '{"force": true}'`);
+          
+          if (stderr) {
+            throw new Error("Falha ao forçar sincronização");
+          }
+        } catch (error) {
           throw new Error("Falha ao forçar sincronização");
         }
 
