@@ -285,8 +285,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     authenticateSupabaseJWT,
     async (req: Request, res: Response) => {
       try {
-        const streamlitUrl =
-          "https://651855a2-0572-49c2-bc31-70d8ca10ef6e-00-11plhknhr96es.janeway.replit.dev";
+        const streamlitUrl = process.env.STREAMLIT_URL;
+        if (!streamlitUrl) {
+          throw new Error("URL do Streamlit não configurada");
+        }
 
         // Registra o evento de sincronização
         await supabase.createSyncLog({
@@ -294,16 +296,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: "Sincronização manual iniciada",
         });
 
-        // Envia comando para o Streamlit
-        const response = await fetch(`${streamlitUrl}/sync`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
+        try {
+          // Envia comando para o Streamlit
+          const response = await fetch(`${streamlitUrl}/sync`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
 
-        if (!response.ok) {
-          throw new Error("Falha ao forçar sincronização");
+          if (!response.ok) {
+            throw new Error(`Falha na resposta: ${response.status}`);
+          }
+
+          const data = await response.text();
+          console.log("Resposta do Streamlit:", data);
+        } catch (error) {
+          console.error("Erro ao chamar Streamlit:", error);
+          throw new Error(`Falha ao forçar sincronização: ${error.message}`);
         }
 
         return res
