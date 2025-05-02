@@ -294,9 +294,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         // Envia comando para o Streamlit
-        const { exec } = require("child_process");
-        const util = require("util");
-        const execAsync = util.promisify(exec);
+        const { exec } = await import("child_process");
+        const { promisify } = await import("util"); 
+        const execAsync = promisify(exec);
 
         try {
           const { stdout, stderr } = await execAsync(
