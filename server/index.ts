@@ -12,7 +12,7 @@ const app = express();
 app.use(
   cors({
     origin:
-      "https://a9c00c0f-ec5e-485b-9ba7-a7b4c0cf011b-00-4t4wc8v0r9td.riker.replit.dev",
+      "https://6db57cf8-f160-41c2-8379-6ccc11832ca4-00-3m8tt5ewcmiux.picard.replit.dev",
     credentials: true,
   }),
 );
