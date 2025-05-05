@@ -222,36 +222,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!api_url || !access_token) {
           return res.status(400).json({
             success: false,
-            message: "URL da API e token de acesso são obrigatórios"
+            message: "URL da API e token de acesso são obrigatórios",
           });
         }
 
         // Testa a conexão fazendo uma requisição para a API da Kommo
-        const response = await fetch(`${api_url}/api/v4/account`, {
+        const response = await fetch(`${api_url}/account`, {
           headers: {
-            'Authorization': `Bearer ${access_token}`
-          }
+            Authorization: `Bearer ${access_token}`,
+          },
         });
 
         if (!response.ok) {
           return res.status(400).json({
             success: false,
-            message: "Não foi possível conectar com a API Kommo. Verifique suas credenciais."
+            message:
+              "Não foi possível conectar com a API Kommo. Verifique suas credenciais.",
           });
         }
 
         return res.status(200).json({
           success: true,
-          message: "Conexão com a API Kommo estabelecida com sucesso"
+          message: "Conexão com a API Kommo estabelecida com sucesso",
         });
       } catch (error) {
         console.error("Erro ao testar conexão com Kommo:", error);
         return res.status(500).json({
           success: false,
-          message: "Erro ao testar conexão com a API Kommo"
+          message: "Erro ao testar conexão com a API Kommo",
         });
       }
-    }
+    },
   );
 
   app.post(
