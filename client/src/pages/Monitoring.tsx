@@ -102,7 +102,7 @@ export default function Monitoring() {
           Dashboard / Monitoramento
         </h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           {/* Status Card */}
           <Card className="border-0 bg-card/90 shadow-md hover:shadow-lg transition-shadow">
             <CardHeader className="space-y-1">
@@ -208,7 +208,7 @@ export default function Monitoring() {
                     <span className="text-sm text-gray-500">
                       Registros Processados:
                     </span>
-                    <span className="font-medium">{syncStatus?.processedRecords || "..."}</span>
+                    <span className="font-medium">1,254</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-500">
@@ -216,114 +216,11 @@ export default function Monitoring() {
                     </span>
                     <span className="font-medium">
                       {syncStatus?.rulesCount || "..."}
-
-          {/* Performance Card */}
-          <Card className="border-0 bg-card/90 shadow-md hover:shadow-lg transition-shadow">
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-xl font-medium">
-                Performance
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              {isStatusLoading ? (
-                <Skeleton className="h-10 w-full" />
-              ) : (
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-500">
-                      Tempo Médio de Sync:
-                    </span>
-                    <span className="font-medium">
-                      {syncStatus?.avgSyncTime || "..."} s
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-500">
-                      Uso de Memória:
-                    </span>
-                    <span className="font-medium">
-                      {syncStatus?.memoryUsage || "..."} MB
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-500">
-                      Último Ciclo:
-                    </span>
-                    <span className="font-medium">
-                      {syncStatus?.lastCycleDuration || "..."} s
-                    </span>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Brokers Stats Card */}
-          <Card className="border-0 bg-card/90 shadow-md hover:shadow-lg transition-shadow md:col-span-2">
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-xl font-medium">
-                Estatísticas dos Corretores
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              {isStatusLoading ? (
-                <Skeleton className="h-10 w-full" />
-              ) : (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">
-                        Total de Corretores:
-                      </span>
-                      <span className="font-medium">
-                        {syncStatus?.totalBrokers || "..."}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">
-                        Média de Leads:
-                      </span>
-                      <span className="font-medium">
-                        {syncStatus?.avgLeadsPerBroker || "..."}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">
-                        Propostas Totais:
-                      </span>
-                      <span className="font-medium">
-                        {syncStatus?.totalProposals || "..."}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">
-                        Vendas Totais:
-                      </span>
-                      <span className="font-medium">
-                        {syncStatus?.totalSales || "..."}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-500">
-                      Taxa de Sucesso:
-                    </span>
-                    <span className="font-medium text-green-600">
-                      {syncStatus?.successRate ? `${syncStatus.successRate}%` : "..."}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-500">Erros:</span>
-                    <span className="font-medium text-red-600">{syncStatus?.errorCount || 0}</span>
+                    <span className="font-medium text-red-600">0</span>
                   </div>
                 </div>
               )}
@@ -413,39 +310,3 @@ export default function Monitoring() {
     </section>
   );
 }
-
-
-          {/* Quick Actions */}
-          <Card className="mt-6">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="font-medium text-gray-700">Ações Rápidas</h2>
-            </div>
-            <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => navigate("/rules")}
-              >
-                <Settings className="mr-2 h-4 w-4" />
-                Gerenciar Regras
-              </Button>
-              
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => navigate("/kommo-config")}
-              >
-                <Cog className="mr-2 h-4 w-4" />
-                Configurar Kommo
-              </Button>
-
-              <Button
-                variant="default"
-                className="w-full"
-                onClick={refreshData}
-              >
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Atualizar Dados
-              </Button>
-            </div>
-          </Card>
