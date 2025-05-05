@@ -22,12 +22,6 @@ export default function Monitoring() {
 
   const token = localStorage.getItem("supabase.auth.token");
 
-  const refreshData = () => {
-    setRefreshCounter((prev) => prev + 1);
-    refetchStatus();
-    refetchLogs();
-  };
-
   // Fetch sync status
   interface SyncStatus {
     nextSync: string | null;
