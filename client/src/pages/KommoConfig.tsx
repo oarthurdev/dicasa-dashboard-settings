@@ -31,6 +31,7 @@ import {
 import { Card } from "@/components/ui/card";
 import type { z } from "zod";
 import type { KommoConfig } from "@shared/schema";
+import api from "@/lib/api";
 
 type FormValues = z.infer<typeof kommoConfigFormSchema>;
 
@@ -302,6 +303,27 @@ export default function KommoConfig() {
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name="active"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Ativa</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="checkbox"
+                        checked={field.value}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Ativa a sincronização dos dados
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <div className="pt-4 border-t border-gray-200 flex justify-between items-center">
                 <div className="flex gap-2">
                   <Button
@@ -346,8 +368,7 @@ export default function KommoConfig() {
                         <AlertDialogAction
                           onClick={async () => {
                             try {
-                              await fetch("/api/data/delete-all", {
-                                method: "POST",
+                              await api.post("/api/data/delete-all", null, {
                                 headers: {
                                   Authorization: `Bearer ${token}`,
                                 },

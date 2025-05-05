@@ -36,6 +36,7 @@ export const kommoConfig = pgTable("kommo_config", {
   next_sync: timestamp("next_sync"),
   sync_start_date: numeric("sync_start_date"),
   sync_end_date: numeric("sync_end_date"),
+  active: boolean("active").default(true),
 });
 
 export const syncLogs = pgTable("sync_logs", {
@@ -103,6 +104,7 @@ export const kommoConfigFormSchema = z
       .max(60, "Máximo 60 minutos"),
     sync_start_date: z.union([z.date(), z.number()]),
     sync_end_date: z.union([z.date(), z.number()]),
+    active: z.boolean().default(true),
   })
   .refine(
     (data) => {
