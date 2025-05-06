@@ -445,15 +445,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-  // Add these routes to your existing routes.ts file
-  app.get("/api/brokers", async (req, res) => {
+  // Broker routes
+  app.get("/api/brokers", authenticateSupabaseJWT, async (req, res) => {
     try {
-      const brokers = await db
-        .select()
-        .from("brokers")
-        .where(eq("cargo", "Corretor"))
-        .execute();
+      const { data: brokers, error } = await supabaseServer
+        .from('brokers')
+        .select('*')
+        .eq('cargo', 'Corretor');
 
+      if (error) throw error;
       res.json(brokers);
     } catch (error) {
       console.error("Error fetching brokers:", error);
@@ -461,17 +461,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/brokers/:id", async (req, res) => {
+  app.patch("/api/brokers/:id", authenticateSupabaseJWT, async (req, res) => {
     const { id } = req.params;
     const { active } = req.body;
 
     try {
-      await db
-        .update("brokers")
-        .set({ active })
-        .where(eq("id", parseInt(id)))
-        .execute();
+      const { error } = await supabaseServer
+        .from('brokers')
+        .update({ active })
+        .eq('id', id);
 
+      if (error) throw error;
       res.json({ success: true });
     } catch (error) {
       console.error("Error updating broker:", error);
