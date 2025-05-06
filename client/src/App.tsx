@@ -11,17 +11,18 @@ import Monitoring from "@/pages/Monitoring";
 import AuthWrapper from "@/components/layout/AuthWrapper";
 import Sidebar from "@/components/layout/Sidebar";
 import { useEffect } from "react";
+import GeneralSettings from "@/pages/GeneralSettings"; // Placeholder - needs to be created
 
 function Router() {
   const { isAuthenticated } = useAuth();
   const [location, setLocation] = useLocation();
-  
+
   useEffect(() => {
     // Redirect to login if not authenticated and not on register or login pages
     if (!isAuthenticated && location !== "/login" && location !== "/register") {
       setLocation("/login");
     }
-    
+
     // Redirect to welcome page if authenticated and on login or register page
     if (isAuthenticated && (location === "/login" || location === "/register")) {
       setLocation("/welcome");
@@ -35,7 +36,8 @@ function Router() {
       <Route path="/" component={() => <AuthWrapper><Welcome /></AuthWrapper>} />
       <Route path="/welcome" component={() => <AuthWrapper><Welcome /></AuthWrapper>} />
       <Route path="/rules" component={() => <AuthWrapper><Rules /></AuthWrapper>} />
-      <Route path="/kommo-config" component={() => <AuthWrapper><KommoConfig /></AuthWrapper>} />
+      <Route path="/settings/general" component={() => <AuthWrapper><GeneralSettings /></AuthWrapper>} /> {/* Added route */}
+      <Route path="/settings/kommo" component={() => <AuthWrapper><KommoConfig /></AuthWrapper>} /> {/* Modified route */}
       <Route path="/monitoring" component={() => <AuthWrapper><Monitoring /></AuthWrapper>} />
       <Route component={NotFound} />
     </Switch>

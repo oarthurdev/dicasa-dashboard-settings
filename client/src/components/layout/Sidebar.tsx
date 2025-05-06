@@ -63,12 +63,31 @@ export default function Sidebar() {
           >
             Regras
           </SidebarItem>
-          <SidebarItem 
-            href="/kommo-config" 
-            icon={<Settings size={20} />} 
-            active={location === "/kommo-config"}
+          <SidebarItem
+            href="#"
+            icon={<Settings size={20} />}
+            active={location.includes("/settings")}
+            onClick={(e) => e.preventDefault()}
           >
-            Kommo Configurações
+            <details className="group">
+              <summary className="list-none cursor-pointer">Configurações</summary>
+              <ul className="pl-6 mt-2 space-y-1">
+                <SidebarItem 
+                  href="/settings/general" 
+                  icon={<Settings size={16} />} 
+                  active={location === "/settings/general"}
+                >
+                  Geral
+                </SidebarItem>
+                <SidebarItem 
+                  href="/settings/kommo" 
+                  icon={<Settings size={16} />} 
+                  active={location === "/settings/kommo"}
+                >
+                  Kommo
+                </SidebarItem>
+              </ul>
+            </details>
           </SidebarItem>
           <SidebarItem 
             href="/monitoring" 
