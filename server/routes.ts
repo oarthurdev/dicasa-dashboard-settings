@@ -227,7 +227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Testa a conexão fazendo uma requisição para a API da Kommo
-        const response = await fetch(`${api_url}/api/v4/account`, {
+        const response = await fetch(`${api_url}/account`, {
           headers: {
             Authorization: `Bearer ${access_token}`,
           },

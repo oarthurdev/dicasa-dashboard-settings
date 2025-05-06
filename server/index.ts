@@ -11,8 +11,7 @@ const app = express();
 
 app.use(
   cors({
-    origin:
-      "https://6db57cf8-f160-41c2-8379-6ccc11832ca4-00-3m8tt5ewcmiux.picard.replit.dev",
+    origin: process.env.DOMAIN_URL,
     credentials: true,
   }),
 );
