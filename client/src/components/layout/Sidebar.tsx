@@ -3,6 +3,7 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Home, BookOpen, Settings, BarChart3, LogOut } from "lucide-react";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 
 type SidebarItemProps = {
   href: string;
@@ -64,34 +65,34 @@ export default function Sidebar() {
           >
             Regras
           </SidebarItem>
-          <SidebarItem
-            href="#"
-            icon={<Settings size={20} />}
-            active={location.includes("/settings")}
-            onClick={(e) => e.preventDefault()}
-          >
-            <details className="group">
-              <summary className="list-none cursor-pointer select-none">
-                Configurações
-              </summary>
-              <ul className="pl-6 mt-2 space-y-1 transition-all duration-300 ease-in-out">
-                <SidebarItem
-                  href="/settings/general"
-                  icon={<Settings size={16} />}
-                  active={location === "/settings/general"}
-                >
-                  Geral
-                </SidebarItem>
-                <SidebarItem
-                  href="/settings/kommo"
-                  icon={<Settings size={16} />}
-                  active={location === "/settings/kommo"}
-                >
-                  Kommo
-                </SidebarItem>
-              </ul>
-            </details>
-          </SidebarItem>
+          <li>
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center w-full px-4 py-3 text-gray-700 hover:bg-gray-100 pl-6">
+                <span className="mr-3 text-gray-500">
+                  <Settings size={20} />
+                </span>
+                <span>Configurações</span>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <ul className="pl-6 mt-2 space-y-1">
+                  <SidebarItem
+                    href="/settings/general"
+                    icon={<Settings size={16} />}
+                    active={location === "/settings/general"}
+                  >
+                    Geral
+                  </SidebarItem>
+                  <SidebarItem
+                    href="/settings/kommo"
+                    icon={<Settings size={16} />}
+                    active={location === "/settings/kommo"}
+                  >
+                    Kommo
+                  </SidebarItem>
+                </ul>
+              </CollapsibleContent>
+            </Collapsible>
+          </li>
           <SidebarItem
             href="/monitoring"
             icon={<BarChart3 size={20} />}
