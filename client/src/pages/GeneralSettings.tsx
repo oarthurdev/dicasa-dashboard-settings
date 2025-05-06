@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
@@ -12,20 +11,32 @@ type Broker = {
   name: string;
   cargo: string;
   active: boolean;
-}
+};
 
 export default function GeneralSettings() {
   const { data: brokers, isLoading } = useQuery<Broker[]>({
     queryKey: ["brokers"],
     queryFn: async () => {
-      const response = await api.get("/api/brokers");
+      const response = await api.get("/api/brokers", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("supabase.auth.token")}`,
+        },
+      });
       return response.data;
     },
   });
 
   const updateBrokerMutation = useMutation({
     mutationFn: async ({ id, active }: { id: number; active: boolean }) => {
-      await api.patch(`/api/brokers/${id}`, { active });
+      await api.patch(
+        `/api/brokers/${id}`,
+        { active },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("supabase.auth.token")}`,
+          },
+        },
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["brokers"] });
@@ -42,11 +53,16 @@ export default function GeneralSettings() {
         </h1>
 
         <Card className="bg-card rounded-lg shadow-sm p-6">
-          <h2 className="text-xl font-semibold mb-4">Corretores na Dashboard</h2>
+          <h2 className="text-xl font-semibold mb-4">
+            Corretores na Dashboard
+          </h2>
           <div className="space-y-4">
             {brokers?.map((broker) => (
-              <div key={broker.id} className="flex items-center justify-between border-b pb-2">
-                <span>{broker.name}</span>
+              <div
+                key={broker.id}
+                className="flex items-center justify-between border-b pb-2"
+              >
+                <span>{broker.nome}</span>
                 <Checkbox
                   checked={broker.active}
                   onCheckedChange={(checked) => {
