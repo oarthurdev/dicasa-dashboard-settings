@@ -445,39 +445,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Add these routes to your existing routes.ts file
+  app.get("/api/brokers", async (req, res) => {
+    try {
+      const brokers = await db
+        .select()
+        .from("brokers")
+        .where(eq("cargo", "Corretor"))
+        .execute();
+
+      res.json(brokers);
+    } catch (error) {
+      console.error("Error fetching brokers:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.patch("/api/brokers/:id", async (req, res) => {
+    const { id } = req.params;
+    const { active } = req.body;
+
+    try {
+      await db
+        .update("brokers")
+        .set({ active })
+        .where(eq("id", parseInt(id)))
+        .execute();
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating broker:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
-// Add these routes to your existing routes.ts file
-app.get("/api/brokers", async (req, res) => {
-  try {
-    const brokers = await db
-      .select()
-      .from(brokersTable)
-      .where(eq(brokersTable.cargo, "Corretor"))
-      .execute();
-    
-    res.json(brokers);
-  } catch (error) {
-    console.error("Error fetching brokers:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-app.patch("/api/brokers/:id", async (req, res) => {
-  const { id } = req.params;
-  const { active } = req.body;
-
-  try {
-    await db
-      .update(brokersTable)
-      .set({ active })
-      .where(eq(brokersTable.id, parseInt(id)))
-      .execute();
-    
-    res.json({ success: true });
-  } catch (error) {
-    console.error("Error updating broker:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
