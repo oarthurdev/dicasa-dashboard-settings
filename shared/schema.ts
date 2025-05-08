@@ -35,6 +35,7 @@ export const rules = pgTable("rules", {
 
 export const kommoConfig = pgTable("kommo_config", {
   id: serial("id").primaryKey(),
+  company_id: integer("company_id").references(() => companies.id),
   api_url: text("api_url").notNull(),
   access_token: text("access_token").notNull(),
   custom_endpoint: text("custom_endpoint"),

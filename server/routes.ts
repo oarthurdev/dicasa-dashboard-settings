@@ -287,6 +287,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
+        // Obter o company_id do usuário
+        const { data: userData } = await supabaseServer
+          .from('users')
+          .select('company_id')
+          .eq('id', (req as any).user.id)
+          .single();
+
+        if (!userData?.company_id) {
+          return res.status(403).json({ message: "Company ID não encontrado" });
+        }
+
         const {
           api_url,
           access_token,
@@ -320,6 +331,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             sync_start_date,
             sync_end_date,
             active,
+            company_id: userData.company_id
           });
         }
 
