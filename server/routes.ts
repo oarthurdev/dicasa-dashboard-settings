@@ -129,8 +129,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "ID de regra inválido" });
         }
 
-        // Deletar a regra usando o Supabase
-        // O método deleteRule já remove automaticamente a coluna do broker_points
+        // Verificar se a regra pertence à empresa do usuário
+        const { data: userData } = await supabaseServer
+          .from("users")
+          .select("company_id")
+          .eq("id", (req as any).user.id)
+          .single();
+
+        if (!userData?.company_id) {
+          return res.status(403).json({ message: "Empresa não encontrada" });
+        }
+
+        // Verificar se a regra existe e pertence à empresa
+        const { data: rule } = await supabaseServer
+          .from("rules")
+          .select("*")
+          .eq("id", ruleId)
+          .single();
+
+        if (!rule) {
+          return res.status(404).json({ message: "Regra não encontrada" });
+        }
+
+        // Impedir deleção de regras padrão do sistema
+        if (rule.company_id === null) {
+          return res.status(403).json({ message: "Não é possível deletar regras padrão do sistema" });
+        }
+
+        // Verificar se a regra pertence à empresa
+        if (rule.company_id !== userData.company_id) {
+          return res.status(403).json({ message: "Você não tem permissão para deletar esta regra" });
+        }
+
+        // Deletar a regra
         await supabase.deleteRule(ruleId);
 
         return res.status(200).json({ message: "Regra excluída com sucesso" });
@@ -157,12 +188,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Valor de pontos inválido" });
         }
 
+        // Verificar se a regra pertence à empresa do usuário
+        const { data: userData } = await supabaseServer
+          .from("users")
+          .select("company_id")
+          .eq("id", (req as any).user.id)
+          .single();
+
+        if (!userData?.company_id) {
+          return res.status(403).json({ message: "Empresa não encontrada" });
+        }
+
+        // Verificar se a regra existe e pertence à empresa
+        const { data: rule } = await supabaseServer
+          .from("rules")
+          .select("*")
+          .eq("id", ruleId)
+          .single();
+
+        if (!rule) {
+          return res.status(404).json({ message: "Regra não encontrada" });
+        }
+
+        // Impedir modificação de regras padrão do sistema
+        if (rule.company_id === null) {
+          return res.status(403).json({ message: "Não é possível modificar regras padrão do sistema" });
+        }
+
+        // Verificar se a regra pertence à empresa
+        if (rule.company_id !== userData.company_id) {
+          return res.status(403).json({ message: "Você não tem permissão para modificar esta regra" });
+        }
+
         const updatedRule = await supabase.updateRule(ruleId, {
           pontos: points,
         });
-        if (!updatedRule) {
-          return res.status(404).json({ message: "Regra não encontrada" });
-        }
 
         return res.status(200).json(updatedRule);
       } catch (error) {
