@@ -61,7 +61,9 @@ export default function Rules() {
     onError: (error) => {
       toast({
         title: "Erro ao excluir regra",
-        description: "Ocorreu um erro ao excluir a regra. Tente novamente.",
+        description:
+          error.response?.data.message ??
+          "Ocorreu um erro ao excluir a regra, tente novamente.",
         variant: "destructive",
       });
       console.error("Error deleting rule:", error);
@@ -91,7 +93,9 @@ export default function Rules() {
     onError: (error) => {
       toast({
         title: "Erro ao atualizar pontos",
-        description: "Ocorreu um erro ao atualizar os pontos. Tente novamente.",
+        description:
+          error.response?.data.message ??
+          "Ocorreu um erro ao atualizar os pontos. Tente novamente.",
         variant: "destructive",
       });
       console.error("Error updating points:", error);
