@@ -90,13 +90,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Obter o company_id do usuário autenticado
         const { data: userData } = await supabaseServer
-          .from('users')
-          .select('company_id')
-          .eq('id', (req as any).user.id)
+          .from("users")
+          .select("company_id")
+          .eq("id", (req as any).user.id)
           .single();
 
         // Buscar regras padrão e regras personalizadas da empresa
-        const rules = await supabase.getRulesPaginated(offset, limit, userData?.company_id);
+        const rules = await supabase.getRulesPaginated(
+          offset,
+          limit,
+          userData?.company_id,
+        );
         const totalRules = await supabase.getTotalRules(userData?.company_id);
         const totalPages = Math.ceil(totalRules / limit);
 
@@ -111,39 +115,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         console.error("Error fetching rules:", error);
         return res.status(500).json({ message: "Erro ao buscar regras" });
-      }
-    },
-  );
-
-  app.post(
-    "/api/rules",
-    authenticateSupabaseJWT,
-    async (req: Request, res: Response) => {
-      try {
-        const validation = ruleFormSchema.safeParse(req.body);
-        if (!validation.success) {
-          return res.status(400).json({
-            message: "Dados da regra inválidos",
-            errors: validation.error.format(),
-          });
-        }
-
-        const { nome, pontos, descricao } = validation.data;
-        const columnName = convertToSnakeCase(nome);
-
-        // Criar a regra usando o Supabase
-        // O método createRule já adiciona automaticamente a coluna ao broker_points
-        const newRule = await supabase.createRule({
-          nome,
-          pontos,
-          descricao,
-          coluna_nome: columnName,
-        });
-
-        return res.status(201).json([newRule] as Rule[]);
-      } catch (error) {
-        console.error("Error creating rule:", error);
-        return res.status(500).json({ message: "Erro ao criar regra" });
       }
     },
   );
@@ -211,9 +182,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         // Obter o company_id do usuário autenticado
         const { data: userData } = await supabaseServer
-          .from('users')
-          .select('company_id')
-          .eq('id', (req as any).user.id)
+          .from("users")
+          .select("company_id")
+          .eq("id", (req as any).user.id)
           .single();
 
         if (!userData?.company_id) {
@@ -221,14 +192,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const { data: config, error } = await supabaseServer
-          .from('kommo_config')
-          .select('*')
-          .eq('company_id', userData.company_id)
-          .order('created_at', { ascending: false })
+          .from("kommo_config")
+          .select("*")
+          .eq("company_id", userData.company_id)
+          .order("created_at", { ascending: false })
           .limit(1)
           .single();
 
-        if (error && error.code !== 'PGRST116') {
+        if (error && error.code !== "PGRST116") {
           throw error;
         }
 
@@ -311,9 +282,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Obter o company_id do usuário
         const { data: userData } = await supabaseServer
-          .from('users')
-          .select('company_id')
-          .eq('id', (req as any).user.id)
+          .from("users")
+          .select("company_id")
+          .eq("id", (req as any).user.id)
           .single();
 
         if (!userData?.company_id) {
@@ -331,16 +302,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Sempre criar uma nova configuração
         const { data: config, error } = await supabaseServer
-          .from('kommo_config')
-          .insert([{
-            api_url,
-            access_token,
-            sync_interval,
-            sync_start_date,
-            sync_end_date,
-            active,
-            company_id: userData.company_id
-          }])
+          .from("kommo_config")
+          .insert([
+            {
+              api_url,
+              access_token,
+              sync_interval,
+              sync_start_date,
+              sync_end_date,
+              active,
+              company_id: userData.company_id,
+            },
+          ])
           .select()
           .single();
 
@@ -482,9 +455,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/brokers", authenticateSupabaseJWT, async (req, res) => {
     try {
       const { data: brokers, error } = await supabaseServer
-        .from('brokers')
-        .select('*')
-        .eq('cargo', 'Corretor');
+        .from("brokers")
+        .select("*")
+        .eq("cargo", "Corretor");
 
       if (error) throw error;
       res.json(brokers);
@@ -500,9 +473,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const { error } = await supabaseServer
-        .from('brokers')
+        .from("brokers")
         .update({ active })
-        .eq('id', id);
+        .eq("id", id);
 
       if (error) throw error;
       res.json({ success: true });
