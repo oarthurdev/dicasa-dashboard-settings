@@ -13,6 +13,7 @@ type AuthContextType = {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
   register: (email: string, password: string) => Promise<boolean>;
+  registerWithCompany: (email: string, password: string, companyName: string) => Promise<boolean>;
   logout: () => Promise<void>;
   isLoading: boolean;
   error: string | null;
@@ -121,27 +122,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
   
-  // Register function
-  const register = async (email: string, password: string): Promise<boolean> => {
+  // Register with company function
+  const registerWithCompany = async (email: string, password: string, companyName: string): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
     
     try {
-      const { data, error } = await supabase.auth.signUp({
+      // Create auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password
       });
       
-      if (error) {
-        throw error;
+      if (authError) {
+        throw authError;
+      }
+
+      if (!authData.user) {
+        throw new Error("Failed to create user");
+      }
+
+      // Create company
+      const { data: companyData, error: companyError } = await supabase
+        .from('companies')
+        .insert([{ name: companyName }])
+        .select()
+        .single();
+
+      if (companyError || !companyData) {
+        throw companyError || new Error("Failed to create company");
+      }
+
+      // Create user record
+      const { error: userError } = await supabase
+        .from('users')
+        .insert([{
+          id: authData.user.id,
+          username: email,
+          company_id: companyData.id,
+          role: 'admin'
+        }]);
+
+      if (userError) {
+        throw userError;
       }
       
-      // Armazenar o token no localStorage para uso nas requisições
-      if (data.session?.access_token) {
-        localStorage.setItem("supabase.auth.token", data.session.access_token);
+      if (authData.session?.access_token) {
+        localStorage.setItem("supabase.auth.token", authData.session.access_token);
       }
       
-      setUser(formatUser(data.session));
+      setUser(formatUser(authData.session));
       setIsLoading(false);
       return true;
     } catch (error: any) {
@@ -149,6 +179,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
       return false;
     }
+  };
+
+  // Register function (keeping for backward compatibility)
+  const register = async (email: string, password: string): Promise<boolean> => {
+    return registerWithCompany(email, password, email.split('@')[0]);
   };
   
   // Logout function

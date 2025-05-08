@@ -15,7 +15,7 @@ import { Link, useLocation } from "wouter";
 type FormValues = z.infer<typeof registerFormSchema>;
 
 export default function Register() {
-  const { register, isLoading, error } = useAuth();
+  const { registerWithCompany, isLoading, error } = useAuth();
   const [registerError, setRegisterError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [_, setLocation] = useLocation();
@@ -26,12 +26,13 @@ export default function Register() {
       email: "",
       password: "",
       confirmPassword: "",
+      companyName: "",
     },
   });
   
   const onSubmit = async (data: FormValues) => {
     setRegisterError(null);
-    const success = await register(data.email, data.password);
+    const success = await registerWithCompany(data.email, data.password, data.companyName);
     if (success) {
       setSuccess(true);
       // Redireciona para a página inicial após 2 segundos
@@ -81,6 +82,25 @@ export default function Register() {
                 />
                 
                 <FormField
+
+                <FormField
+                  control={form.control}
+                  name="companyName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome da Empresa</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Sua Empresa"
+                          {...field}
+                          disabled={isLoading}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                   control={form.control}
                   name="password"
                   render={({ field }) => (

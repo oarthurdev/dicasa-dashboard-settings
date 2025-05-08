@@ -10,10 +10,19 @@ import {
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = pgTable("users", {
+export const companies = pgTable("companies", {
   id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+export const users = pgTable("users", {
+  id: text("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  company_id: integer("company_id").references(() => companies.id),
+  role: text("role").notNull().default('admin'),
+  created_at: timestamp("created_at").defaultNow(),
 });
 
 export const rules = pgTable("rules", {
@@ -131,6 +140,7 @@ export const registerFormSchema = z
     confirmPassword: z
       .string()
       .min(6, "A senha deve ter pelo menos 6 caracteres"),
+    companyName: z.string().min(2, "O nome da empresa deve ter pelo menos 2 caracteres"),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "As senhas não coincidem",
