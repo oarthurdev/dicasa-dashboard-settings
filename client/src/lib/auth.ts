@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 import { supabase } from "./supabase";
 import { Session, User as SupabaseUser } from "@supabase/supabase-js";
 
@@ -13,7 +19,11 @@ type AuthContextType = {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
   register: (email: string, password: string) => Promise<boolean>;
-  registerWithCompany: (email: string, password: string, companyName: string) => Promise<boolean>;
+  registerWithCompany: (
+    email: string,
+    password: string,
+    companyName: string,
+  ) => Promise<boolean>;
   logout: () => Promise<void>;
   isLoading: boolean;
   error: string | null;
@@ -41,7 +51,7 @@ const formatUser = (session: Session | null): User | null => {
   const user = session.user;
   return {
     id: user.id,
-    email: user.email || ""
+    email: user.email || "",
   };
 };
 
@@ -55,7 +65,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const getUser = async () => {
       // Get session data
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
       // Armazenar o token no localStorage se existir uma sessão
       if (session?.access_token) {
@@ -70,19 +82,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
 
       // Listen for auth changes
-      const { data: { subscription } } = await supabase.auth.onAuthStateChange(
-        (_event, session) => {
-          // Atualizar o token no localStorage quando a sessão mudar
-          if (session?.access_token) {
-            localStorage.setItem("supabase.auth.token", session.access_token);
-          } else {
-            localStorage.removeItem("supabase.auth.token");
-          }
-
-          setUser(formatUser(session));
-          setIsLoading(false);
+      const {
+        data: { subscription },
+      } = await supabase.auth.onAuthStateChange((_event, session) => {
+        // Atualizar o token no localStorage quando a sessão mudar
+        if (session?.access_token) {
+          localStorage.setItem("supabase.auth.token", session.access_token);
+        } else {
+          localStorage.removeItem("supabase.auth.token");
         }
-      );
+
+        setUser(formatUser(session));
+        setIsLoading(false);
+      });
 
       // Cleanup the subscription
       return () => {
@@ -101,7 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        password
+        password,
       });
 
       if (error) {
@@ -117,14 +129,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
       return true;
     } catch (error: any) {
-      setError(error.message || "Falha na autenticação. Verifique suas credenciais.");
+      setError(
+        error.message || "Falha na autenticação. Verifique suas credenciais.",
+      );
       setIsLoading(false);
       return false;
     }
   };
 
   // Register with company function
-  const registerWithCompany = async (email: string, password: string, companyName: string): Promise<boolean> => {
+  const registerWithCompany = async (
+    email: string,
+    password: string,
+    companyName: string,
+  ): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
 
@@ -132,7 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
-        password
+        password,
       });
 
       if (authError) {
@@ -145,7 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Create company
       const { data: companyData, error: companyError } = await supabase
-        .from('companies')
+        .from("companies")
         .insert([{ name: companyName }])
         .select()
         .single();
@@ -155,21 +173,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // Create user record
-      const { error: userError } = await supabase
-        .from('users')
-        .insert([{
+      const { error: userError } = await supabase.from("users").insert([
+        {
           id: authData.user.id,
-          username: email,
           company_id: companyData.id,
-          role: 'admin'
-        }]);
+          role: "admin",
+        },
+      ]);
 
       if (userError) {
         throw userError;
       }
 
       if (authData.session?.access_token) {
-        localStorage.setItem("supabase.auth.token", authData.session.access_token);
+        localStorage.setItem(
+          "supabase.auth.token",
+          authData.session.access_token,
+        );
       }
 
       setUser(formatUser(authData.session));
@@ -183,8 +203,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // Register function (keeping for backward compatibility)
-  const register = async (email: string, password: string): Promise<boolean> => {
-    return registerWithCompany(email, password, email.split('@')[0]);
+  const register = async (
+    email: string,
+    password: string,
+  ): Promise<boolean> => {
+    return registerWithCompany(email, password, email.split("@")[0]);
   };
 
   // Logout function
@@ -203,18 +226,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  return React.createElement(AuthContext.Provider, {
-    value: {
-      isAuthenticated: !!user,
-      user,
-      login,
-      register,
-      registerWithCompany,
-      logout,
-      isLoading,
-      error,
-    }
-  }, children);
+  return React.createElement(
+    AuthContext.Provider,
+    {
+      value: {
+        isAuthenticated: !!user,
+        user,
+        login,
+        register,
+        registerWithCompany,
+        logout,
+        isLoading,
+        error,
+      },
+    },
+    children,
+  );
 }
 
 // Auth Hook
