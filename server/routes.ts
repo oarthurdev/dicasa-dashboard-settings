@@ -399,7 +399,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     authenticateSupabaseJWT,
     async (req: Request, res: Response) => {
       try {
-        await supabase.deleteAllData();
+        const { data: userData } = await supabaseServer
+          .from("users")
+          .select("company_id")
+          .eq("id", (req as any).user.id)
+          .single();
+
+        if (!userData?.company_id) {
+          return res.status(403).json({ message: "Empresa não encontrada" });
+        }
+
+        await supabase.deleteAllData(userData.company_id);
         return res
           .status(200)
           .json({ message: "Todos os dados foram excluídos com sucesso" });
@@ -416,9 +426,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     authenticateSupabaseJWT,
     async (req: Request, res: Response) => {
       try {
+        const { data: userData } = await supabaseServer
+          .from("users")
+          .select("company_id")
+          .eq("id", (req as any).user.id)
+          .single();
+
+        if (!userData?.company_id) {
+          return res.status(403).json({ message: "Empresa não encontrada" });
+        }
+
         const limit = parseInt(req.query.limit as string) || 10;
-        const logs = await supabase.getSyncLogs(limit);
-        return res.status(200).json(logs);
+        const { data: logs } = await supabaseServer
+          .from("sync_logs")
+          .select("*")
+          .eq("company_id", userData.company_id)
+          .order("created_at", { ascending: false })
+          .limit(limit);
+
+        return res.status(200).json(logs || []);
       } catch (error) {
         console.error("Error fetching sync logs:", error);
         return res
@@ -433,8 +459,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     authenticateSupabaseJWT,
     async (req: Request, res: Response) => {
       try {
-        const config = await supabase.getKommoConfig();
-        const latestLog = await supabase.getLatestSyncLog();
+        const { data: userData } = await supabaseServer
+          .from("users")
+          .select("company_id")
+          .eq("id", (req as any).user.id)
+          .single();
+
+        if (!userData?.company_id) {
+          return res.status(403).json({ message: "Empresa não encontrada" });
+        }
+
+        const { data: config } = await supabaseServer
+          .from("kommo_config")
+          .select("*")
+          .eq("company_id", userData.company_id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
+
+        const { data: latestLog } = await supabaseServer
+          .from("sync_logs")
+          .select("*")
+          .eq("company_id", userData.company_id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
 
         return res.status(200).json({
           lastSync: config?.last_sync || null,
@@ -454,9 +503,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Broker routes
   app.get("/api/brokers", authenticateSupabaseJWT, async (req, res) => {
     try {
+      const { data: userData } = await supabaseServer
+        .from("users")
+        .select("company_id")
+        .eq("id", (req as any).user.id)
+        .single();
+
+      if (!userData?.company_id) {
+        return res.status(403).json({ message: "Empresa não encontrada" });
+      }
+
       const { data: brokers, error } = await supabaseServer
         .from("brokers")
         .select("*")
+        .eq("company_id", userData.company_id) // Added company_id filter
         .eq("cargo", "Corretor");
 
       if (error) throw error;
@@ -472,10 +532,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const { active } = req.body;
 
     try {
+      const { data: userData } = await supabaseServer
+        .from("users")
+        .select("company_id")
+        .eq("id", (req as any).user.id)
+        .single();
+
+      if (!userData?.company_id) {
+        return res.status(403).json({ message: "Empresa não encontrada" });
+      }
+
       const { error } = await supabaseServer
         .from("brokers")
         .update({ active })
-        .eq("id", id);
+        .eq("id", id)
+        .eq("company_id", userData.company_id); // Added company_id filter
 
       if (error) throw error;
       res.json({ success: true });
