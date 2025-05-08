@@ -88,8 +88,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const limit = 7;
         const offset = (page - 1) * limit;
 
-        const rules = await supabase.getRulesPaginated(offset, limit);
-        const totalRules = await supabase.getTotalRules();
+        // Obter o company_id do usuário autenticado
+        const { data: userData } = await supabaseServer
+          .from('users')
+          .select('company_id')
+          .eq('id', (req as any).user.id)
+          .single();
+
+        // Buscar regras padrão e regras personalizadas da empresa
+        const rules = await supabase.getRulesPaginated(offset, limit, userData?.company_id);
+        const totalRules = await supabase.getTotalRules(userData?.company_id);
         const totalPages = Math.ceil(totalRules / limit);
 
         return res.status(200).json({

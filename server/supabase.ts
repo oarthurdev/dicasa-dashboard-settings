@@ -41,10 +41,17 @@ export const supabase = {
   /**
    * Get all rules
    */
-  async getRulesPaginated(offset: number, limit: number): Promise<Rule[]> {
-    const { data, error } = await supabaseClient
+  async getRulesPaginated(offset: number, limit: number, companyId?: number): Promise<Rule[]> {
+    let query = supabaseClient
       .from('rules')
-      .select('*')
+      .select('*');
+    
+    if (companyId) {
+      // Buscar regras padrão (company_id é null) ou regras da empresa específica
+      query = query.or(`company_id.is.null,company_id.eq.${companyId}`);
+    }
+    
+    const { data, error } = await query
       .order('id')
       .range(offset, offset + limit - 1);
       
@@ -56,10 +63,17 @@ export const supabase = {
     return data as Rule[];
   },
 
-  async getTotalRules(): Promise<number> {
-    const { count, error } = await supabaseClient
+  async getTotalRules(companyId?: number): Promise<number> {
+    let query = supabaseClient
       .from('rules')
       .select('*', { count: 'exact', head: true });
+
+    if (companyId) {
+      // Contar regras padrão (company_id é null) ou regras da empresa específica
+      query = query.or(`company_id.is.null,company_id.eq.${companyId}`);
+    }
+    
+    const { count, error } = await query;
       
     if (error) {
       console.error('Error counting rules:', error);
