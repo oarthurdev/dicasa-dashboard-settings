@@ -381,6 +381,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           throw error;
         }
 
+        // Notificar o streamlit sobre a nova configuração
+        const streamlitUrl = process.env.STREAMLIT_URL || "http://0.0.0.0:8501";
+        try {
+          await fetch(`${streamlitUrl}/sync_status/${userData.company_id}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(config)
+          });
+        } catch (error) {
+          console.error('Error notifying streamlit:', error);
+          // Não interrompe o fluxo se a notificação falhar
+        }
+
         return res.status(201).json(config);
       } catch (error) {
         console.error("Error creating Kommo config:", error);
