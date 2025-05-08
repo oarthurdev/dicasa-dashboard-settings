@@ -12,6 +12,7 @@ import { Session, User as SupabaseUser } from "@supabase/supabase-js";
 export type User = {
   id: string;
   email: string;
+  company_id?: number;
 };
 
 type AuthContextType = {
@@ -45,13 +46,22 @@ const defaultAuthContext: AuthContextType = {
 const AuthContext = createContext<AuthContextType>(defaultAuthContext);
 
 // Helper to convert Supabase user to our app User type
-const formatUser = (session: Session | null): User | null => {
+const formatUser = async (session: Session | null): Promise<User | null> => {
   if (!session?.user) return null;
 
   const user = session.user;
+  
+  // Buscar informações adicionais do usuário no Supabase
+  const { data: userData } = await supabase
+    .from('users')
+    .select('company_id')
+    .eq('id', user.id)
+    .single();
+
   return {
     id: user.id,
     email: user.email || "",
+    company_id: userData?.company_id
   };
 };
 
