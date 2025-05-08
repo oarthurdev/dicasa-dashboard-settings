@@ -216,7 +216,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .eq('id', (req as any).user.id)
           .single();
 
-        const config = await supabase.getKommoConfig(userData?.company_id);
+        if (!userData?.company_id) {
+          return res.status(403).json({ message: "Empresa não encontrada" });
+        }
+
+        const { data: config, error } = await supabaseServer
+          .from('kommo_config')
+          .select('*')
+          .eq('company_id', userData.company_id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (error && error.code !== 'PGRST116') {
+          throw error;
+        }
+
         return res.status(200).json(config || {});
       } catch (error) {
         console.error("Error fetching Kommo config:", error);
@@ -314,24 +329,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           active,
         } = validation.data;
 
-        // Get current config
-        const existingConfig = await supabase.getKommoConfig(userData.company_id);
-
-        let config;
-        if (existingConfig) {
-          // Update existing config
-          config = await supabase.updateKommoConfig({
-            ...existingConfig,
-            api_url,
-            access_token,
-            sync_interval,
-            sync_start_date,
-            sync_end_date,
-            active,
-          });
-        } else {
-          // Create new config
-          config = await supabase.createKommoConfig({
+        // Sempre criar uma nova configuração
+        const { data: config, error } = await supabaseServer
+          .from('kommo_config')
+          .insert([{
             api_url,
             access_token,
             sync_interval,
@@ -339,15 +340,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
             sync_end_date,
             active,
             company_id: userData.company_id
-          });
+          }])
+          .select()
+          .single();
+
+        if (error) {
+          throw error;
         }
 
-        return res.status(200).json(config);
+        return res.status(201).json(config);
       } catch (error) {
-        console.error("Error updating Kommo config:", error);
+        console.error("Error creating Kommo config:", error);
         return res
           .status(500)
-          .json({ message: "Erro ao atualizar configurações Kommo" });
+          .json({ message: "Erro ao criar configurações Kommo" });
       }
     },
   );

@@ -52,16 +52,21 @@ const formatUser = async (session: Session | null): Promise<User | null> => {
   const user = session.user;
   
   // Buscar informações adicionais do usuário no Supabase
-  const { data: userData } = await supabase
+  const { data: userData, error } = await supabase
     .from('users')
     .select('company_id')
     .eq('id', user.id)
     .single();
 
+  if (error || !userData?.company_id) {
+    console.error('Error fetching user data:', error);
+    return null;
+  }
+
   return {
     id: user.id,
     email: user.email || "",
-    company_id: userData?.company_id
+    company_id: userData.company_id
   };
 };
 
