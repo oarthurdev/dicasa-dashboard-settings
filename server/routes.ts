@@ -209,7 +209,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     authenticateSupabaseJWT,
     async (req: Request, res: Response) => {
       try {
-        const config = await supabase.getKommoConfig();
+        // Obter o company_id do usuário autenticado
+        const { data: userData } = await supabaseServer
+          .from('users')
+          .select('company_id')
+          .eq('id', (req as any).user.id)
+          .single();
+
+        const config = await supabase.getKommoConfig(userData?.company_id);
         return res.status(200).json(config || {});
       } catch (error) {
         console.error("Error fetching Kommo config:", error);
@@ -308,7 +315,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } = validation.data;
 
         // Get current config
-        const existingConfig = await supabase.getKommoConfig();
+        const existingConfig = await supabase.getKommoConfig(userData.company_id);
 
         let config;
         if (existingConfig) {
