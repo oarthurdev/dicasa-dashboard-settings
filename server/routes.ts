@@ -153,12 +153,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Impedir deleção de regras padrão do sistema
         if (rule.company_id === null) {
-          return res.status(403).json({ message: "Não é possível deletar regras padrão do sistema" });
+          return res.status(403).json({
+            message: "Não é possível deletar regras padrão do sistema",
+          });
         }
 
         // Verificar se a regra pertence à empresa
         if (rule.company_id !== userData.company_id) {
-          return res.status(403).json({ message: "Você não tem permissão para deletar esta regra" });
+          return res.status(403).json({
+            message: "Você não tem permissão para deletar esta regra",
+          });
         }
 
         // Deletar a regra
@@ -212,12 +216,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Impedir modificação de regras padrão do sistema
         if (rule.company_id === null) {
-          return res.status(403).json({ message: "Não é possível modificar regras padrão do sistema" });
+          return res.status(403).json({
+            message: "Não é possível modificar regras padrão do sistema",
+          });
         }
 
         // Verificar se a regra pertence à empresa
         if (rule.company_id !== userData.company_id) {
-          return res.status(403).json({ message: "Você não tem permissão para modificar esta regra" });
+          return res.status(403).json({
+            message: "Você não tem permissão para modificar esta regra",
+          });
         }
 
         const updatedRule = await supabase.updateRule(ruleId, {
@@ -384,15 +392,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Notificar o streamlit sobre a nova configuração
         const streamlitUrl = process.env.STREAMLIT_URL || "http://0.0.0.0:8501";
         try {
-          await fetch(`${streamlitUrl}/sync_status/${userData.company_id}`, {
-            method: 'POST',
+          await fetch(`${streamlitUrl}/start_sync/${userData.company_id}`, {
+            method: "POST",
             headers: {
-              'Content-Type': 'application/json'
+              "Content-Type": "application/json",
             },
-            body: JSON.stringify(config)
           });
         } catch (error) {
-          console.error('Error notifying streamlit:', error);
+          console.error("Error starting sync: ", error);
+          return;
           // Não interrompe o fluxo se a notificação falhar
         }
 
