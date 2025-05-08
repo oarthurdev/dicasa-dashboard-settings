@@ -327,6 +327,19 @@ export const supabase = {
       throw error;
     }
   },
+
+  async deleteAllData(company_id: string): Promise<void> {
+    const { data, error } = await supabaseClient.rpc('truncate_all_data', {
+      p_company_id: company_id
+    });
+
+    if (error) {
+      console.error('Error deleting data:', error);
+      throw error;
+    }
+
+    console.log('Data deleted successfully:', data);
+  },
   
   /**
    * Test connection to Kommo API
