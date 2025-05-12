@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { kommoConfigFormSchema } from "@shared/schema";
+import { useLocation } from "wouter";
 import {
   Form,
   FormControl,
@@ -43,7 +44,8 @@ export default function KommoConfig() {
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
   const navigate = (path: string) => {
-    const { data: config } = queryClient.getQueryData<KommoConfig>(["/api/kommo-config"]) || {};
+    const { data: config } =
+      queryClient.getQueryData<KommoConfig>(["/api/kommo-config"]) || {};
     if (!config?.api_url) {
       toast({
         title: "Configuração necessária",
@@ -82,7 +84,9 @@ export default function KommoConfig() {
     },
   });
 
-  const { data: pipelines = [] } = useQuery<Array<{ id: string; name: string }>>({
+  const { data: pipelines = [] } = useQuery<
+    Array<{ id: string; name: string }>
+  >({
     queryKey: ["/api/kommo/pipelines"],
     queryFn: async () => {
       const res = await api.get("/api/kommo/pipelines", {
