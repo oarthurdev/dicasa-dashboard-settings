@@ -44,6 +44,7 @@ export const kommoConfig = pgTable("kommo_config", {
   next_sync: timestamp("next_sync"),
   sync_start_date: numeric("sync_start_date"),
   sync_end_date: numeric("sync_end_date"),
+  pipeline_id: text("pipeline_id"),
   active: boolean("active").default(true),
 });
 
