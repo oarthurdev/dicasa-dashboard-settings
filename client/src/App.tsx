@@ -25,14 +25,19 @@ function Router() {
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        cache: 'no-store'
       });
       if (!res.ok) throw new Error("Failed to fetch config");
       return res.json();
     },
     enabled: isAuthenticated,
+    staleTime: 0,
+    cacheTime: 0,
   });
 
   useEffect(() => {
+    if (isLoading) return;
+
     // Redirect to login if not authenticated and not on register or login pages
     if (!isAuthenticated && location !== "/login" && location !== "/register") {
       setLocation("/login");
@@ -41,16 +46,24 @@ function Router() {
 
     // Redirect to welcome page if authenticated and on login or register page
     if (isAuthenticated && (location === "/login" || location === "/register")) {
-      setLocation("/welcome");
+      if (!kommoConfig?.api_url) {
+        setLocation("/settings/kommo");
+      } else {
+        setLocation("/welcome");
+      }
       return;
     }
 
     // Check for Kommo config and redirect if needed
-    if (isAuthenticated && !isLoading && !kommoConfig?.api_url && location !== "/settings/kommo") {
+    if (isAuthenticated && !kommoConfig?.api_url && location !== "/settings/kommo") {
       setLocation("/settings/kommo");
       return;
     }
   }, [isAuthenticated, location, setLocation, kommoConfig, isLoading]);
+
+  if (isLoading) {
+    return null;
+  }
 
   return (
     <Switch>

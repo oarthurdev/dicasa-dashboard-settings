@@ -343,9 +343,10 @@ export default function KommoConfig() {
                       <select
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         {...field}
+                        disabled={!config?.api_url || !config?.access_token}
                       >
                         <option value="">Selecione um funil</option>
-                        {pipelines.map((pipeline) => (
+                        {config?.api_url && config?.access_token && pipelines.map((pipeline) => (
                           <option key={pipeline.id} value={pipeline.id}>
                             {pipeline.name}
                           </option>
@@ -353,7 +354,9 @@ export default function KommoConfig() {
                       </select>
                     </FormControl>
                     <FormDescription>
-                      Selecione o funil que será usado para sincronização
+                      {!config?.api_url || !config?.access_token 
+                        ? "Salve a configuração da API primeiro para selecionar um funil"
+                        : "Selecione o funil que será usado para sincronização"}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
