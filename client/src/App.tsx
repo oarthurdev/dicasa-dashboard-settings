@@ -40,14 +40,16 @@ function Router() {
   useEffect(() => {
     if (isLoading) return;
 
-    // Redirect to login if not authenticated and not on register or login pages
-    if (!isAuthenticated && location !== "/login" && location !== "/register") {
-      setLocation("/login");
+    // Primeiro, verifica autenticação
+    if (!isAuthenticated) {
+      if (location !== "/login" && location !== "/register") {
+        setLocation("/login");
+      }
       return;
     }
 
-    // Redirect to welcome page if authenticated and on login or register page
-    if (isAuthenticated && (location === "/login" || location === "/register")) {
+    // Se estiver autenticado, gerencia os redirecionamentos
+    if (location === "/login" || location === "/register") {
       if (!kommoConfig?.api_url) {
         setLocation("/settings/kommo");
       } else {
@@ -56,10 +58,9 @@ function Router() {
       return;
     }
 
-    // Check for Kommo config and redirect if needed
-    if (isAuthenticated && !kommoConfig?.api_url && location !== "/settings/kommo") {
+    // Verifica configuração da Kommo apenas se estiver autenticado
+    if (!kommoConfig?.api_url && location !== "/settings/kommo") {
       setLocation("/settings/kommo");
-      return;
     }
   }, [isAuthenticated, location, setLocation, kommoConfig, isLoading]);
 
