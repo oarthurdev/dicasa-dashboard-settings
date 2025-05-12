@@ -33,6 +33,8 @@ function Router() {
     enabled: isAuthenticated,
     staleTime: 0,
     cacheTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
   });
 
   useEffect(() => {
