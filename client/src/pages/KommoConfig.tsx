@@ -59,8 +59,6 @@ export default function KommoConfig() {
   });
 
   // Form setup
-  const [pipelines, setPipelines] = useState<Array<{ id: string; name: string }>>([]);
-
   const form = useForm<FormValues>({
     resolver: zodResolver(kommoConfigFormSchema),
     defaultValues: {
