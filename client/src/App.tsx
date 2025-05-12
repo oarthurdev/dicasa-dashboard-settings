@@ -1,4 +1,4 @@
-import { Switch, Route, useLocation } from "wouter";
+import { Switch, Route, useLocation as useWouterLocation } from "wouter";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "./lib/auth";
 import { useQuery } from "@tanstack/react-query";
@@ -16,7 +16,7 @@ import GeneralSettings from "@/pages/GeneralSettings"; // Placeholder - needs to
 
 function Router() {
   const { isAuthenticated } = useAuth();
-  const [location, setLocation] = useLocation();
+  const [location, setLocation] = useWouterLocation();
   const { data: kommoConfig, isLoading } = useQuery<KommoConfig>({
     queryKey: ["/api/kommo-config"],
     queryFn: async () => {
