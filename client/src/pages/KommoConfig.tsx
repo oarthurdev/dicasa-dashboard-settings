@@ -41,6 +41,19 @@ export default function KommoConfig() {
   const [showPassword, setShowPassword] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const { toast } = useToast();
+  const [location, setLocation] = useLocation();
+  const navigate = (path: string) => {
+    const { data: config } = queryClient.getQueryData<KommoConfig>(["/api/kommo-config"]) || {};
+    if (!config?.api_url) {
+      toast({
+        title: "Configuração necessária",
+        description: "Configure a integração com a Kommo antes de continuar.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setLocation(path);
+  };
 
   const token = localStorage.getItem("supabase.auth.token");
 

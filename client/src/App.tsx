@@ -16,18 +16,40 @@ import GeneralSettings from "@/pages/GeneralSettings"; // Placeholder - needs to
 function Router() {
   const { isAuthenticated } = useAuth();
   const [location, setLocation] = useLocation();
+  const { data: kommoConfig, isLoading } = useQuery<KommoConfig>({
+    queryKey: ["/api/kommo-config"],
+    queryFn: async () => {
+      const token = localStorage.getItem("supabase.auth.token");
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/kommo-config`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) throw new Error("Failed to fetch config");
+      return res.json();
+    },
+    enabled: isAuthenticated,
+  });
 
   useEffect(() => {
     // Redirect to login if not authenticated and not on register or login pages
     if (!isAuthenticated && location !== "/login" && location !== "/register") {
       setLocation("/login");
+      return;
     }
 
     // Redirect to welcome page if authenticated and on login or register page
     if (isAuthenticated && (location === "/login" || location === "/register")) {
       setLocation("/welcome");
+      return;
     }
-  }, [isAuthenticated, location, setLocation]);
+
+    // Check for Kommo config and redirect if needed
+    if (isAuthenticated && !isLoading && !kommoConfig?.api_url && location !== "/settings/kommo") {
+      setLocation("/settings/kommo");
+      return;
+    }
+  }, [isAuthenticated, location, setLocation, kommoConfig, isLoading]);
 
   return (
     <Switch>
