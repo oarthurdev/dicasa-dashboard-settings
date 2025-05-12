@@ -71,34 +71,18 @@ export default function KommoConfig() {
     },
   });
 
-  const fetchPipelines = async (apiUrl: string, accessToken: string) => {
-    try {
-      const response = await fetch(`${apiUrl}/leads/pipelines`, {
+  const { data: pipelines = [] } = useQuery<Array<{ id: string; name: string }>>({
+    queryKey: ["/api/kommo/pipelines"],
+    queryFn: async () => {
+      const res = await api.get("/api/kommo/pipelines", {
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `Bearer ${token}`,
         },
       });
-      const data = await response.json();
-      if (data._embedded?.pipelines) {
-        setPipelines(data._embedded.pipelines);
-      }
-    } catch (error) {
-      console.error("Error fetching pipelines:", error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar os funis",
-        variant: "destructive",
-      });
-    }
-  };
-
-  useEffect(() => {
-    const apiUrl = form.watch("api_url");
-    const accessToken = form.watch("access_token");
-    if (apiUrl && accessToken) {
-      fetchPipelines(apiUrl, accessToken);
-    }
-  }, [form.watch("api_url"), form.watch("access_token")]);
+      return res.data;
+    },
+    enabled: !!token,
+  });
 
   // Update form when config is loaded
   useEffect(() => {

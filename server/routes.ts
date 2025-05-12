@@ -504,6 +504,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // Monitoring routes
+  app.get("/api/kommo/pipelines", authenticateSupabaseJWT, async (req: Request, res: Response) => {
+    try {
+      const { data: kommoConfig } = await supabaseServer
+        .from("kommo_config")
+        .select("api_url,access_token")
+        .eq("company_id", (req as any).user.company_id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (!kommoConfig?.api_url || !kommoConfig?.access_token) {
+        return res.status(400).json({ message: "Configuração Kommo não encontrada" });
+      }
+
+      const response = await fetch(`${kommoConfig.api_url}/leads/pipelines`, {
+        headers: {
+          Authorization: `Bearer ${kommoConfig.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch pipelines");
+      }
+
+      const data = await response.json();
+      return res.json(data._embedded?.pipelines || []);
+    } catch (error) {
+      console.error("Error fetching pipelines:", error);
+      return res.status(500).json({ message: "Erro ao buscar funis" });
+    }
+  });
+
   app.get(
     "/api/sync-logs",
     authenticateSupabaseJWT,
