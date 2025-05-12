@@ -2,6 +2,7 @@ import { Switch, Route, useLocation as useWouterLocation } from "wouter";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "./lib/auth";
 import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "./lib/queryClient";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
