@@ -40,29 +40,39 @@ function Router() {
   useEffect(() => {
     if (isLoading) return;
 
-    // Primeiro, verifica autenticação
-    if (!isAuthenticated) {
-      if (location !== "/login" && location !== "/register") {
-        setLocation("/login");
+    const handleRouting = async () => {
+      // Primeiro, verifica autenticação
+      if (!isAuthenticated) {
+        if (location !== "/login" && location !== "/register") {
+          setLocation("/login");
+        }
+        return;
       }
-      return;
-    }
 
-    // Se estiver autenticado, gerencia os redirecionamentos
-    if (location === "/login" || location === "/register") {
-      if (!kommoConfig?.api_url) {
+      // Força revalidação da configuração
+      await queryClient.invalidateQueries({ queryKey: ["/api/kommo-config"] });
+      
+      // Obtém configuração atualizada
+      const currentConfig = queryClient.getQueryData<KommoConfig>(["/api/kommo-config"]);
+
+      // Se estiver autenticado, gerencia os redirecionamentos
+      if (location === "/login" || location === "/register") {
+        if (!currentConfig?.api_url) {
+          setLocation("/settings/kommo");
+        } else {
+          setLocation("/welcome");
+        }
+        return;
+      }
+
+      // Verifica configuração da Kommo apenas se estiver autenticado
+      if (!currentConfig?.api_url && location !== "/settings/kommo") {
         setLocation("/settings/kommo");
-      } else {
-        setLocation("/welcome");
       }
-      return;
-    }
+    };
 
-    // Verifica configuração da Kommo apenas se estiver autenticado
-    if (!kommoConfig?.api_url && location !== "/settings/kommo") {
-      setLocation("/settings/kommo");
-    }
-  }, [isAuthenticated, location, setLocation, kommoConfig, isLoading]);
+    handleRouting();
+  }, [isAuthenticated, location, setLocation, isLoading]);
 
   if (isLoading) {
     return null;

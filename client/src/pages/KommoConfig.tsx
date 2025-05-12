@@ -67,10 +67,15 @@ export default function KommoConfig() {
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        cache: 'no-store'
       });
       if (!res.ok) throw new Error("Failed to fetch config");
       return res.json();
     },
+    staleTime: 0,
+    cacheTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
   });
 
   // Form setup
