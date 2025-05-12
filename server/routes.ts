@@ -348,17 +348,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        // Obter o company_id do usuário
-        const { data: userData } = await supabaseServer
-          .from("users")
-          .select("company_id")
-          .eq("id", (req as any).user.id)
-          .single();
-
-        if (!userData?.company_id) {
-          return res.status(403).json({ message: "Company ID não encontrado" });
-        }
-
         const {
           api_url,
           access_token,
@@ -369,52 +358,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
           active,
         } = validation.data;
 
-        // Sempre criar uma nova configuração
-        const { data: config, error } = await supabaseServer
-          .from("kommo_config")
-          .insert([
-            {
-              api_url,
-              access_token,
-              sync_interval,
-              sync_start_date,
-              sync_end_date,
-              pipeline_id,
-              active,
-              company_id: userData.company_id,
-            },
-          ])
-          .select()
+        // Obter company_id do usuário autenticado
+        const { data: userData } = await supabaseServer
+          .from("users")
+          .select("company_id")
+          .eq("id", (req as any).user.id)
           .single();
 
-        if (error) {
-          throw error;
+        const company_id = userData?.company_id;
+
+        if (!company_id) {
+          return res.status(403).json({ message: "Company ID não encontrado" });
         }
 
-        // Notificar o streamlit sobre a nova configuração
-        const streamlitUrl = process.env.STREAMLIT_URL || "http://0.0.0.0:8501";
-        try {
-          await fetch(`${streamlitUrl}/start_sync/${userData.company_id}`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          });
-        } catch (error) {
-          console.error("Error starting sync: ", error);
-          return;
-          // Não interrompe o fluxo se a notificação falhar
+        // Verificar se já existe config para a empresa
+        const { data: existingConfig, error: fetchError } = await supabaseServer
+          .from("kommo_config")
+          .select("*")
+          .eq("company_id", company_id)
+          .single();
+
+        if (fetchError && fetchError.code !== "PGRST116") {
+          // Erro que não é "row not found"
+          throw fetchError;
         }
 
-        return res.status(201).json(config);
+        if (!existingConfig) {
+          // Inserir novo registro
+          const { data: inserted, error: insertError } = await supabaseServer
+            .from("kommo_config")
+            .insert([
+              {
+                api_url,
+                access_token,
+                sync_interval,
+                sync_start_date,
+                sync_end_date,
+                pipeline_id,
+                active,
+                company_id,
+              },
+            ])
+            .select()
+            .single();
+
+          if (insertError) throw insertError;
+
+          // Notifica Streamlit
+          await notifyStreamlit(company_id);
+
+          return res.status(201).json(inserted);
+        } else {
+          // Verifica se há mudanças
+          const changes: any = {};
+          if (existingConfig.api_url !== api_url) changes.api_url = api_url;
+          if (existingConfig.access_token !== access_token)
+            changes.access_token = access_token;
+          if (existingConfig.sync_interval !== sync_interval)
+            changes.sync_interval = sync_interval;
+          if (existingConfig.sync_start_date !== sync_start_date)
+            changes.sync_start_date = sync_start_date;
+          if (existingConfig.sync_end_date !== sync_end_date)
+            changes.sync_end_date = sync_end_date;
+          if (existingConfig.pipeline_id !== pipeline_id)
+            changes.pipeline_id = pipeline_id;
+          if (existingConfig.active !== active) changes.active = active;
+
+          if (Object.keys(changes).length === 0) {
+            return res
+              .status(200)
+              .json({
+                message: "Configuração já atualizada",
+                data: existingConfig,
+              });
+          }
+
+          const { data: updated, error: updateError } = await supabaseServer
+            .from("kommo_config")
+            .update(changes)
+            .eq("company_id", company_id)
+            .select()
+            .single();
+
+          if (updateError) throw updateError;
+
+          // Notifica Streamlit
+          await notifyStreamlit(company_id);
+
+          return res.status(200).json(updated);
+        }
       } catch (error) {
-        console.error("Error creating Kommo config:", error);
+        console.error("Erro ao salvar configurações:", error);
         return res
           .status(500)
-          .json({ message: "Erro ao criar configurações Kommo" });
+          .json({ message: "Erro ao salvar configurações Kommo" });
       }
     },
   );
+
+  // 🔔 Função utilitária de notificação
+  async function notifyStreamlit(company_id: string) {
+    const streamlitUrl = process.env.STREAMLIT_URL || "http://0.0.0.0:8501";
+    try {
+      await fetch(`${streamlitUrl}/start_sync/${company_id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (err) {
+      console.error("Erro ao notificar Streamlit:", err);
+    }
+  }
 
   // Sync management routes
   app.post(
