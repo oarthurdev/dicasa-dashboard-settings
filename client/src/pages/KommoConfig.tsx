@@ -59,14 +59,46 @@ export default function KommoConfig() {
   });
 
   // Form setup
+  const [pipelines, setPipelines] = useState<Array<{ id: string; name: string }>>([]);
+
   const form = useForm<FormValues>({
     resolver: zodResolver(kommoConfigFormSchema),
     defaultValues: {
       api_url: "",
       access_token: "",
       sync_interval: 5,
+      pipeline_id: "",
     },
   });
+
+  const fetchPipelines = async (apiUrl: string, accessToken: string) => {
+    try {
+      const response = await fetch(`${apiUrl}/leads/pipelines`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      const data = await response.json();
+      if (data._embedded?.pipelines) {
+        setPipelines(data._embedded.pipelines);
+      }
+    } catch (error) {
+      console.error("Error fetching pipelines:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os funis",
+        variant: "destructive",
+      });
+    }
+  };
+
+  useEffect(() => {
+    const apiUrl = form.watch("api_url");
+    const accessToken = form.watch("access_token");
+    if (apiUrl && accessToken) {
+      fetchPipelines(apiUrl, accessToken);
+    }
+  }, [form.watch("api_url"), form.watch("access_token")]);
 
   // Update form when config is loaded
   useEffect(() => {
@@ -296,6 +328,33 @@ export default function KommoConfig() {
                     </FormControl>
                     <FormDescription>
                       Data final para sincronização dos dados
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="pipeline_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Funil para sincronização</FormLabel>
+                    <FormControl>
+                      <select
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        {...field}
+                      >
+                        <option value="">Selecione um funil</option>
+                        {pipelines.map((pipeline) => (
+                          <option key={pipeline.id} value={pipeline.id}>
+                            {pipeline.name}
+                          </option>
+                        ))}
+                      </select>
+                    </FormControl>
+                    <FormDescription>
+                      Selecione o funil que será usado para sincronização
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

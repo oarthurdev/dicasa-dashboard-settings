@@ -113,6 +113,7 @@ export const kommoConfigFormSchema = z
     sync_start_date: z.union([z.date(), z.number()]),
     sync_end_date: z.union([z.date(), z.number()]),
     active: z.boolean().default(true),
+    pipeline_id: z.string().optional(),
   })
   .refine(
     (data) => {
