@@ -1,3 +1,4 @@
+
 import { Switch, Route, useLocation as useWouterLocation } from "wouter";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "./lib/auth";
@@ -11,7 +12,6 @@ import Rules from "@/pages/Rules";
 import KommoConfig from "@/pages/KommoConfig";
 import Monitoring from "@/pages/Monitoring";
 import AuthWrapper from "@/components/layout/AuthWrapper";
-import Sidebar from "@/components/layout/Sidebar";
 import { useEffect } from "react";
 import GeneralSettings from "@/pages/GeneralSettings";
 
@@ -23,6 +23,8 @@ function Router() {
     queryKey: ["/api/kommo-config"],
     queryFn: async () => {
       const token = localStorage.getItem("supabase.auth.token");
+      if (!token) throw new Error("No auth token");
+      
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/api/kommo-config`,
         {
@@ -43,9 +45,7 @@ function Router() {
   });
 
   useEffect(() => {
-    if (isLoading) return;
-
-    const enforceAuthAndConfig = async () => {
+    const enforceAuthAndConfig = () => {
       // Se não autenticado, força ir para login
       if (!isAuthenticated) {
         if (location !== "/login" && location !== "/register") {
@@ -54,14 +54,11 @@ function Router() {
         return;
       }
 
-      // Se autenticado, força verificação da config
-      await queryClient.invalidateQueries({ queryKey: ["/api/kommo-config"] });
-      const currentConfig = queryClient.getQueryData<KommoConfig>([
-        "/api/kommo-config",
-      ]);
+      // Se está carregando, não faz nada
+      if (isLoading) return;
 
-      // Se ainda sem config, força ir para /settings/kommo
-      if (!currentConfig?.api_url) {
+      // Se tem erro na config ou não tem config, força ir para /settings/kommo
+      if (kommoConfig && !kommoConfig.api_url) {
         if (location !== "/settings/kommo") {
           setLocation("/settings/kommo");
         }
@@ -75,20 +72,77 @@ function Router() {
     };
 
     enforceAuthAndConfig();
-  }, [isAuthenticated, location, setLocation, isLoading]);
+  }, [isAuthenticated, location, setLocation, isLoading, kommoConfig]);
 
-  if (isLoading) {
-    return null; // Ou um Spinner de carregamento
+  // Se não autenticado, mostra apenas rotas públicas
+  if (!isAuthenticated) {
+    return (
+      <Switch>
+        <Route path="/login" component={Login} />
+        <Route path="/register" component={Register} />
+        <Route component={() => {
+          setLocation("/login");
+          return null;
+        }} />
+      </Switch>
+    );
   }
 
-  // Se não há config válida, restringe todas as rotas exceto /settings/kommo
-  const hasValidConfig = !!kommoConfig?.api_url;
-  const canAccessApp = isAuthenticated && hasValidConfig;
+  // Se autenticado mas sem config, mostra apenas config
+  if (isAuthenticated && (!kommoConfig || !kommoConfig.api_url)) {
+    return (
+      <Switch>
+        <Route
+          path="/settings/kommo"
+          component={() => (
+            <AuthWrapper>
+              <KommoConfig />
+            </AuthWrapper>
+          )}
+        />
+        <Route component={() => {
+          setLocation("/settings/kommo");
+          return null;
+        }} />
+      </Switch>
+    );
+  }
 
+  // Autenticado e com config válida, mostra todas as rotas
   return (
     <Switch>
-      <Route path="/login" component={Login} />
-      <Route path="/register" component={Register} />
+      <Route
+        path="/"
+        component={() => (
+          <AuthWrapper>
+            <Welcome />
+          </AuthWrapper>
+        )}
+      />
+      <Route
+        path="/welcome"
+        component={() => (
+          <AuthWrapper>
+            <Welcome />
+          </AuthWrapper>
+        )}
+      />
+      <Route
+        path="/rules"
+        component={() => (
+          <AuthWrapper>
+            <Rules />
+          </AuthWrapper>
+        )}
+      />
+      <Route
+        path="/settings/general"
+        component={() => (
+          <AuthWrapper>
+            <GeneralSettings />
+          </AuthWrapper>
+        )}
+      />
       <Route
         path="/settings/kommo"
         component={() => (
@@ -97,50 +151,14 @@ function Router() {
           </AuthWrapper>
         )}
       />
-      {canAccessApp && (
-        <>
-          <Route
-            path="/"
-            component={() => (
-              <AuthWrapper>
-                <Welcome />
-              </AuthWrapper>
-            )}
-          />
-          <Route
-            path="/welcome"
-            component={() => (
-              <AuthWrapper>
-                <Welcome />
-              </AuthWrapper>
-            )}
-          />
-          <Route
-            path="/rules"
-            component={() => (
-              <AuthWrapper>
-                <Rules />
-              </AuthWrapper>
-            )}
-          />
-          <Route
-            path="/settings/general"
-            component={() => (
-              <AuthWrapper>
-                <GeneralSettings />
-              </AuthWrapper>
-            )}
-          />
-          <Route
-            path="/monitoring"
-            component={() => (
-              <AuthWrapper>
-                <Monitoring />
-              </AuthWrapper>
-            )}
-          />
-        </>
-      )}
+      <Route
+        path="/monitoring"
+        component={() => (
+          <AuthWrapper>
+            <Monitoring />
+          </AuthWrapper>
+        )}
+      />
       <Route component={NotFound} />
     </Switch>
   );
