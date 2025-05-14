@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { kommoConfigFormSchema } from "@shared/schema";
+import { useLocation } from "wouter";
 import {
   Form,
   FormControl,
@@ -41,6 +42,20 @@ export default function KommoConfig() {
   const [showPassword, setShowPassword] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const { toast } = useToast();
+  const [location, setLocation] = useLocation();
+  const navigate = (path: string) => {
+    const { data: config } =
+      queryClient.getQueryData<KommoConfig>(["/api/kommo-config"]) || {};
+    if (!config?.api_url) {
+      toast({
+        title: "Configuração necessária",
+        description: "Configure a integração com a Kommo antes de continuar.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setLocation(path);
+  };
 
   const token = localStorage.getItem("supabase.auth.token");
 
@@ -52,10 +67,15 @@ export default function KommoConfig() {
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        cache: 'no-store'
       });
       if (!res.ok) throw new Error("Failed to fetch config");
       return res.json();
     },
+    staleTime: 0,
+    cacheTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
   });
 
   // Form setup
@@ -65,7 +85,23 @@ export default function KommoConfig() {
       api_url: "",
       access_token: "",
       sync_interval: 5,
+      pipeline_id: "",
     },
+  });
+
+  const { data: pipelines = [] } = useQuery<
+    Array<{ id: string; name: string }>
+  >({
+    queryKey: ["/api/kommo/pipelines"],
+    queryFn: async () => {
+      const res = await api.get("/api/kommo/pipelines", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return res.data;
+    },
+    enabled: !!token,
   });
 
   // Update form when config is loaded
@@ -296,6 +332,36 @@ export default function KommoConfig() {
                     </FormControl>
                     <FormDescription>
                       Data final para sincronização dos dados
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="pipeline_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Funil para sincronização</FormLabel>
+                    <FormControl>
+                      <select
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        {...field}
+                        disabled={!config?.api_url || !config?.access_token}
+                      >
+                        <option value="">Selecione um funil</option>
+                        {config?.api_url && config?.access_token && pipelines.map((pipeline) => (
+                          <option key={pipeline.id} value={pipeline.id}>
+                            {pipeline.name}
+                          </option>
+                        ))}
+                      </select>
+                    </FormControl>
+                    <FormDescription>
+                      {!config?.api_url || !config?.access_token 
+                        ? "Salve a configuração da API primeiro para selecionar um funil"
+                        : "Selecione o funil que será usado para sincronização"}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

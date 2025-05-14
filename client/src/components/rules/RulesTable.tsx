@@ -63,7 +63,12 @@ export default function RulesTable({ rules, onDelete, onUpdatePoints }: RulesTab
             rules.map((rule) => (
               <tr key={rule.id}>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  {rule.nome}
+                  <div className="flex items-center gap-2">
+                    {rule.nome}
+                    {rule.company_id === null && (
+                      <Badge variant="secondary">Padrão</Badge>
+                    )}
+                  </div>
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center space-x-4">

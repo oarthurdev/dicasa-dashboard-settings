@@ -88,8 +88,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const limit = 7;
         const offset = (page - 1) * limit;
 
-        const rules = await supabase.getRulesPaginated(offset, limit);
-        const totalRules = await supabase.getTotalRules();
+        // Obter o company_id do usuário autenticado
+        const { data: userData } = await supabaseServer
+          .from("users")
+          .select("company_id")
+          .eq("id", (req as any).user.id)
+          .single();
+
+        // Buscar regras padrão e regras personalizadas da empresa
+        const rules = await supabase.getRulesPaginated(
+          offset,
+          limit,
+          userData?.company_id,
+        );
+        const totalRules = await supabase.getTotalRules(userData?.company_id);
         const totalPages = Math.ceil(totalRules / limit);
 
         return res.status(200).json({
@@ -107,39 +119,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-  app.post(
-    "/api/rules",
-    authenticateSupabaseJWT,
-    async (req: Request, res: Response) => {
-      try {
-        const validation = ruleFormSchema.safeParse(req.body);
-        if (!validation.success) {
-          return res.status(400).json({
-            message: "Dados da regra inválidos",
-            errors: validation.error.format(),
-          });
-        }
-
-        const { nome, pontos, descricao } = validation.data;
-        const columnName = convertToSnakeCase(nome);
-
-        // Criar a regra usando o Supabase
-        // O método createRule já adiciona automaticamente a coluna ao broker_points
-        const newRule = await supabase.createRule({
-          nome,
-          pontos,
-          descricao,
-          coluna_nome: columnName,
-        });
-
-        return res.status(201).json([newRule] as Rule[]);
-      } catch (error) {
-        console.error("Error creating rule:", error);
-        return res.status(500).json({ message: "Erro ao criar regra" });
-      }
-    },
-  );
-
   app.delete(
     "/api/rules/:id",
     authenticateSupabaseJWT,
@@ -150,8 +129,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "ID de regra inválido" });
         }
 
-        // Deletar a regra usando o Supabase
-        // O método deleteRule já remove automaticamente a coluna do broker_points
+        // Verificar se a regra pertence à empresa do usuário
+        const { data: userData } = await supabaseServer
+          .from("users")
+          .select("company_id")
+          .eq("id", (req as any).user.id)
+          .single();
+
+        if (!userData?.company_id) {
+          return res.status(403).json({ message: "Empresa não encontrada" });
+        }
+
+        // Verificar se a regra existe e pertence à empresa
+        const { data: rule } = await supabaseServer
+          .from("rules")
+          .select("*")
+          .eq("id", ruleId)
+          .single();
+
+        if (!rule) {
+          return res.status(404).json({ message: "Regra não encontrada" });
+        }
+
+        // Impedir deleção de regras padrão do sistema
+        if (rule.company_id === null) {
+          return res.status(403).json({
+            message: "Não é possível deletar regras padrão do sistema",
+          });
+        }
+
+        // Verificar se a regra pertence à empresa
+        if (rule.company_id !== userData.company_id) {
+          return res.status(403).json({
+            message: "Você não tem permissão para deletar esta regra",
+          });
+        }
+
+        // Deletar a regra
         await supabase.deleteRule(ruleId);
 
         return res.status(200).json({ message: "Regra excluída com sucesso" });
@@ -178,12 +192,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Valor de pontos inválido" });
         }
 
+        // Verificar se a regra pertence à empresa do usuário
+        const { data: userData } = await supabaseServer
+          .from("users")
+          .select("company_id")
+          .eq("id", (req as any).user.id)
+          .single();
+
+        if (!userData?.company_id) {
+          return res.status(403).json({ message: "Empresa não encontrada" });
+        }
+
+        // Verificar se a regra existe e pertence à empresa
+        const { data: rule } = await supabaseServer
+          .from("rules")
+          .select("*")
+          .eq("id", ruleId)
+          .single();
+
+        if (!rule) {
+          return res.status(404).json({ message: "Regra não encontrada" });
+        }
+
+        // Impedir modificação de regras padrão do sistema
+        if (rule.company_id === null) {
+          return res.status(403).json({
+            message: "Não é possível modificar regras padrão do sistema",
+          });
+        }
+
+        // Verificar se a regra pertence à empresa
+        if (rule.company_id !== userData.company_id) {
+          return res.status(403).json({
+            message: "Você não tem permissão para modificar esta regra",
+          });
+        }
+
         const updatedRule = await supabase.updateRule(ruleId, {
           pontos: points,
         });
-        if (!updatedRule) {
-          return res.status(404).json({ message: "Regra não encontrada" });
-        }
 
         return res.status(200).json(updatedRule);
       } catch (error) {
@@ -201,7 +248,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     authenticateSupabaseJWT,
     async (req: Request, res: Response) => {
       try {
-        const config = await supabase.getKommoConfig();
+        // Obter o company_id do usuário autenticado
+        const { data: userData } = await supabaseServer
+          .from("users")
+          .select("company_id")
+          .eq("id", (req as any).user.id)
+          .single();
+
+        if (!userData?.company_id) {
+          return res.status(403).json({ message: "Empresa não encontrada" });
+        }
+
+        const { data: config, error } = await supabaseServer
+          .from("kommo_config")
+          .select("*")
+          .eq("company_id", userData.company_id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
+
+        if (error && error.code !== "PGRST116") {
+          throw error;
+        }
+
         return res.status(200).json(config || {});
       } catch (error) {
         console.error("Error fetching Kommo config:", error);
@@ -285,45 +354,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sync_interval,
           sync_start_date,
           sync_end_date,
+          pipeline_id,
           active,
         } = validation.data;
 
-        // Get current config
-        const existingConfig = await supabase.getKommoConfig();
+        // Obter company_id do usuário autenticado
+        const { data: userData } = await supabaseServer
+          .from("users")
+          .select("company_id")
+          .eq("id", (req as any).user.id)
+          .single();
 
-        let config;
-        if (existingConfig) {
-          // Update existing config
-          config = await supabase.updateKommoConfig({
-            ...existingConfig,
-            api_url,
-            access_token,
-            sync_interval,
-            sync_start_date,
-            sync_end_date,
-            active,
-          });
-        } else {
-          // Create new config
-          config = await supabase.createKommoConfig({
-            api_url,
-            access_token,
-            sync_interval,
-            sync_start_date,
-            sync_end_date,
-            active,
-          });
+        const company_id = userData?.company_id;
+
+        if (!company_id) {
+          return res.status(403).json({ message: "Company ID não encontrado" });
         }
 
-        return res.status(200).json(config);
+        // Verificar se já existe config para a empresa
+        const { data: existingConfig, error: fetchError } = await supabaseServer
+          .from("kommo_config")
+          .select("*")
+          .eq("company_id", company_id)
+          .single();
+
+        if (fetchError && fetchError.code !== "PGRST116") {
+          // Erro que não é "row not found"
+          throw fetchError;
+        }
+
+        if (!existingConfig) {
+          // Inserir novo registro
+          const { data: inserted, error: insertError } = await supabaseServer
+            .from("kommo_config")
+            .insert([
+              {
+                api_url,
+                access_token,
+                sync_interval,
+                sync_start_date,
+                sync_end_date,
+                pipeline_id,
+                active,
+                company_id,
+              },
+            ])
+            .select()
+            .single();
+
+          if (insertError) throw insertError;
+
+          // Notifica Streamlit
+          await notifyStreamlit(company_id);
+
+          return res.status(201).json(inserted);
+        } else {
+          // Verifica se há mudanças
+          const changes: any = {};
+          if (existingConfig.api_url !== api_url) changes.api_url = api_url;
+          if (existingConfig.access_token !== access_token)
+            changes.access_token = access_token;
+          if (existingConfig.sync_interval !== sync_interval)
+            changes.sync_interval = sync_interval;
+          if (existingConfig.sync_start_date !== sync_start_date)
+            changes.sync_start_date = sync_start_date;
+          if (existingConfig.sync_end_date !== sync_end_date)
+            changes.sync_end_date = sync_end_date;
+          if (existingConfig.pipeline_id !== pipeline_id)
+            changes.pipeline_id = pipeline_id;
+          if (existingConfig.active !== active) changes.active = active;
+
+          if (Object.keys(changes).length === 0) {
+            return res
+              .status(200)
+              .json({
+                message: "Configuração já atualizada",
+                data: existingConfig,
+              });
+          }
+
+          const { data: updated, error: updateError } = await supabaseServer
+            .from("kommo_config")
+            .update(changes)
+            .eq("company_id", company_id)
+            .select()
+            .single();
+
+          if (updateError) throw updateError;
+
+          // Notifica Streamlit
+          await notifyStreamlit(company_id);
+
+          return res.status(200).json(updated);
+        }
       } catch (error) {
-        console.error("Error updating Kommo config:", error);
+        console.error("Erro ao salvar configurações:", error);
         return res
           .status(500)
-          .json({ message: "Erro ao atualizar configurações Kommo" });
+          .json({ message: "Erro ao salvar configurações Kommo" });
       }
     },
   );
+
+  // 🔔 Função utilitária de notificação
+  async function notifyStreamlit(company_id: string) {
+    const streamlitUrl = process.env.STREAMLIT_URL || "http://0.0.0.0:8501";
+    try {
+      await fetch(`${streamlitUrl}/start_sync/${company_id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (err) {
+      console.error("Erro ao notificar Streamlit:", err);
+    }
+  }
 
   // Sync management routes
   app.post(
@@ -393,7 +537,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     authenticateSupabaseJWT,
     async (req: Request, res: Response) => {
       try {
-        await supabase.deleteAllData();
+        const { data: userData } = await supabaseServer
+          .from("users")
+          .select("company_id")
+          .eq("id", (req as any).user.id)
+          .single();
+
+        if (!userData?.company_id) {
+          return res.status(403).json({ message: "Empresa não encontrada" });
+        }
+
+        await supabase.deleteAllData(userData.company_id);
         return res
           .status(200)
           .json({ message: "Todos os dados foram excluídos com sucesso" });
@@ -404,15 +558,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Kommo pipelines routes
+  app.get(
+    "/api/kommo/pipelines",
+    authenticateSupabaseJWT,
+    async (req: Request, res: Response) => {
+      try {
+        const { data: userData } = await supabaseServer
+          .from("users")
+          .select("company_id")
+          .eq("id", (req as any).user.id)
+          .single();
+
+        const { data: kommoConfig } = await supabaseServer
+          .from("kommo_config")
+          .select("api_url,access_token")
+          .eq("company_id", userData?.company_id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
+
+        if (!kommoConfig?.api_url || !kommoConfig?.access_token) {
+          return res
+            .status(400)
+            .json({ message: "Configuração Kommo não encontrada" });
+        }
+
+        const response = await fetch(`${kommoConfig.api_url}/leads/pipelines`, {
+          headers: {
+            Authorization: `Bearer ${kommoConfig.access_token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch pipelines");
+        }
+
+        const data = await response.json();
+        return res.json(data._embedded?.pipelines || []);
+      } catch (error) {
+        console.error("Error fetching pipelines:", error);
+        return res.status(500).json({ message: "Erro ao buscar funis" });
+      }
+    },
+  );
+
   // Monitoring routes
   app.get(
     "/api/sync-logs",
     authenticateSupabaseJWT,
     async (req: Request, res: Response) => {
       try {
+        const { data: userData } = await supabaseServer
+          .from("users")
+          .select("company_id")
+          .eq("id", (req as any).user.id)
+          .single();
+
+        if (!userData?.company_id) {
+          return res.status(403).json({ message: "Empresa não encontrada" });
+        }
+
         const limit = parseInt(req.query.limit as string) || 10;
-        const logs = await supabase.getSyncLogs(limit);
-        return res.status(200).json(logs);
+        const { data: logs } = await supabaseServer
+          .from("sync_logs")
+          .select("*")
+          .eq("company_id", userData.company_id)
+          .order("created_at", { ascending: false })
+          .limit(limit);
+
+        return res.status(200).json(logs || []);
       } catch (error) {
         console.error("Error fetching sync logs:", error);
         return res
@@ -427,8 +642,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     authenticateSupabaseJWT,
     async (req: Request, res: Response) => {
       try {
-        const config = await supabase.getKommoConfig();
-        const latestLog = await supabase.getLatestSyncLog();
+        const { data: userData } = await supabaseServer
+          .from("users")
+          .select("company_id")
+          .eq("id", (req as any).user.id)
+          .single();
+
+        if (!userData?.company_id) {
+          return res.status(403).json({ message: "Empresa não encontrada" });
+        }
+
+        const { data: config } = await supabaseServer
+          .from("kommo_config")
+          .select("*")
+          .eq("company_id", userData.company_id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
+
+        const { data: latestLog } = await supabaseServer
+          .from("sync_logs")
+          .select("*")
+          .eq("company_id", userData.company_id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
 
         return res.status(200).json({
           lastSync: config?.last_sync || null,
@@ -444,6 +682,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     },
   );
+
+  // Broker routes
+  app.get("/api/brokers", authenticateSupabaseJWT, async (req, res) => {
+    try {
+      const { data: userData } = await supabaseServer
+        .from("users")
+        .select("company_id")
+        .eq("id", (req as any).user.id)
+        .single();
+
+      if (!userData?.company_id) {
+        return res.status(403).json({ message: "Empresa não encontrada" });
+      }
+
+      const { data: brokers, error } = await supabaseServer
+        .from("brokers")
+        .select("*")
+        .eq("company_id", userData.company_id) // Added company_id filter
+        .eq("cargo", "Corretor");
+
+      if (error) throw error;
+      res.json(brokers);
+    } catch (error) {
+      console.error("Error fetching brokers:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  app.patch("/api/brokers/:id", authenticateSupabaseJWT, async (req, res) => {
+    const { id } = req.params;
+    const { active } = req.body;
+
+    try {
+      const { data: userData } = await supabaseServer
+        .from("users")
+        .select("company_id")
+        .eq("id", (req as any).user.id)
+        .single();
+
+      if (!userData?.company_id) {
+        return res.status(403).json({ message: "Empresa não encontrada" });
+      }
+
+      const { error } = await supabaseServer
+        .from("brokers")
+        .update({ active })
+        .eq("id", id)
+        .eq("company_id", userData.company_id); // Added company_id filter
+
+      if (error) throw error;
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating broker:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
