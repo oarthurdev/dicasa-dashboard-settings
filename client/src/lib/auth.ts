@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "./supabase";
 import { Session, User } from "@supabase/supabase-js";
@@ -41,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setIsLoading(false);
 
-      const { data: { subscription } } = await supabase.auth.onAuthStateChange((_event, session) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
         if (session?.access_token) {
           localStorage.setItem("supabase.auth.token", session.access_token);
           setUser(session.user);
