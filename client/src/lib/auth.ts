@@ -24,7 +24,7 @@ const AuthContext = createContext<AuthContextType>(defaultAuthContext);
 
 export { AuthContext };
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }): JSX.Element {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
