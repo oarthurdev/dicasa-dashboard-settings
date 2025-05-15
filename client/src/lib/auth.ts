@@ -8,16 +8,8 @@ import React, {
 import { supabase } from "./supabase";
 import { Session, User as SupabaseUser } from "@supabase/supabase-js";
 
-// Types
-export type User = {
-  id: string;
-  email: string;
-  company_id?: number;
-};
-
 type AuthContextType = {
   isAuthenticated: boolean;
-  user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   isLoading: boolean;
@@ -27,10 +19,7 @@ type AuthContextType = {
 // Create a default context
 const defaultAuthContext: AuthContextType = {
   isAuthenticated: false,
-  user: null,
   login: async () => false,
-  register: async () => false,
-  registerWithCompany: async () => false,
   logout: async () => {},
   isLoading: false,
   error: null,
@@ -38,31 +27,6 @@ const defaultAuthContext: AuthContextType = {
 
 // Create the context
 const AuthContext = createContext<AuthContextType>(defaultAuthContext);
-
-// Helper to convert Supabase user to our app User type
-const formatUser = async (session: Session | null): Promise<User | null> => {
-  if (!session?.user) return null;
-
-  const user = session.user;
-  
-  // Buscar informações adicionais do usuário no Supabase
-  const { data: userData, error } = await supabase
-    .from('users')
-    .select('company_id')
-    .eq('id', user.id)
-    .single();
-
-  if (error || !userData?.company_id) {
-    console.error('Error fetching user data:', error);
-    return null;
-  }
-
-  return {
-    id: user.id,
-    email: user.email || "",
-    company_id: userData.company_id
-  };
-};
 
 // Auth Provider Component
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -87,13 +51,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // Set the user if we have a session
-      setUser(formatUser(session));
+      setUser(session);
       setIsLoading(false);
 
       // Listen for auth changes
       const {
         data: { subscription },
-      } = await supabase.auth.onAuthStateChange((_event, session) => {
+      } = supabase.auth.onAuthStateChange((_event, session) => {
         // Atualizar o token no localStorage quando a sessão mudar
         if (session?.access_token) {
           localStorage.setItem("supabase.auth.token", session.access_token);
@@ -101,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           localStorage.removeItem("supabase.auth.token");
         }
 
-        setUser(formatUser(session));
+        setUser(session);
         setIsLoading(false);
       });
 
@@ -134,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("supabase.auth.token", data.session.access_token);
       }
 
-      setUser(formatUser(data.session));
+      setUser(data.session);
       setIsLoading(false);
       return true;
     } catch (error: any) {
@@ -146,79 +110,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Register with company function
-  const registerWithCompany = async (
-    email: string,
-    password: string,
-    companyName: string,
-  ): Promise<boolean> => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Create auth user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-
-      if (authError) {
-        throw authError;
-      }
-
-      if (!authData.user) {
-        throw new Error("Failed to create user");
-      }
-
-      // Create company
-      const { data: companyData, error: companyError } = await supabase
-        .from("companies")
-        .insert([{ name: companyName }])
-        .select()
-        .single();
-
-      if (companyError || !companyData) {
-        throw companyError || new Error("Failed to create company");
-      }
-
-      // Create user record
-      const { error: userError } = await supabase.from("users").insert([
-        {
-          id: authData.user.id,
-          company_id: companyData.id,
-          role: "admin",
-        },
-      ]);
-
-      if (userError) {
-        throw userError;
-      }
-
-      if (authData.session?.access_token) {
-        localStorage.setItem(
-          "supabase.auth.token",
-          authData.session.access_token,
-        );
-      }
-
-      setUser(formatUser(authData.session));
-      setIsLoading(false);
-      return true;
-    } catch (error: any) {
-      setError(error.message || "Falha no registro. Tente novamente.");
-      setIsLoading(false);
-      return false;
-    }
-  };
-
-  // Register function (keeping for backward compatibility)
-  const register = async (
-    email: string,
-    password: string,
-  ): Promise<boolean> => {
-    return registerWithCompany(email, password, email.split("@")[0]);
-  };
-
   // Logout function
   const logout = async () => {
     setIsLoading(true);
@@ -226,7 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await supabase.auth.signOut();
       // Remover o token do localStorage
-      localStorage.removeItem("supabase.auth.token");
+      localStorage.clear();
       setUser(null);
     } catch (error: any) {
       setError(error.message || "Erro ao fazer logout.");
@@ -240,10 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     {
       value: {
         isAuthenticated: !!user,
-        user,
         login,
-        register,
-        registerWithCompany,
         logout,
         isLoading,
         error,

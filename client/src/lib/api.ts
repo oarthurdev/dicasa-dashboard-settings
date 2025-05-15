@@ -6,18 +6,16 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
-    config.headers = {
-      ...config.headers,
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      "X-Company-ID": localStorage.getItem("selected_company") || "",
-    };
+    config.headers.set("Content-Type", "application/json");
+    config.headers.set(
+      "X-Company-ID",
+      localStorage.getItem("selected_company") || "",
+    );
     return config;
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;

@@ -89,7 +89,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const offset = (page - 1) * limit;
 
         // Obter o company_id do usuário autenticado
-        const companyId = req.headers['x-company-id'];
+        const companyId = req.headers["x-company-id"];
         if (!companyId) {
           return res.status(400).json({ message: "Company ID not provided" });
         }
@@ -129,7 +129,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Verificar se a regra pertence à empresa do usuário
-        const companyId = req.headers['x-company-id'];
+        const companyId = req.headers["x-company-id"];
         if (!companyId) {
           return res.status(400).json({ message: "Company ID not provided" });
         }
@@ -187,7 +187,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Verificar se a regra pertence à empresa do usuário
-        const companyId = req.headers['x-company-id'];
+        const companyId = req.headers["x-company-id"];
         if (!companyId) {
           return res.status(400).json({ message: "Company ID not provided" });
         }
@@ -238,7 +238,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req: Request, res: Response) => {
       try {
         // Obter o company_id do usuário autenticado
-        const companyId = req.headers['x-company-id'];
+        const companyId = req.headers["x-company-id"];
         if (!companyId) {
           return res.status(400).json({ message: "Company ID not provided" });
         }
@@ -343,7 +343,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } = validation.data;
 
         // Obter company_id do usuário autenticado
-        const companyId = req.headers['x-company-id'];
+        const companyId = req.headers["x-company-id"];
         if (!companyId) {
           return res.status(400).json({ message: "Company ID not provided" });
         }
@@ -404,12 +404,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (existingConfig.active !== active) changes.active = active;
 
           if (Object.keys(changes).length === 0) {
-            return res
-              .status(200)
-              .json({
-                message: "Configuração já atualizada",
-                data: existingConfig,
-              });
+            return res.status(200).json({
+              message: "Configuração já atualizada",
+              data: existingConfig,
+            });
           }
 
           const { data: updated, error: updateError } = await supabaseServer
@@ -516,7 +514,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     authenticateSupabaseJWT,
     async (req: Request, res: Response) => {
       try {
-        const companyId = req.headers['x-company-id'];
+        const companyId = req.headers["x-company-id"];
         if (!companyId) {
           return res.status(400).json({ message: "Company ID not provided" });
         }
@@ -538,7 +536,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     authenticateSupabaseJWT,
     async (req: Request, res: Response) => {
       try {
-        const companyId = req.headers['x-company-id'];
+        const companyId = req.headers["x-company-id"];
         if (!companyId) {
           return res.status(400).json({ message: "Company ID not provided" });
         }
@@ -582,7 +580,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     authenticateSupabaseJWT,
     async (req: Request, res: Response) => {
       try {
-        const companyId = req.headers['x-company-id'];
+        const companyId = req.headers["x-company-id"];
         if (!companyId) {
           return res.status(400).json({ message: "Company ID not provided" });
         }
@@ -610,7 +608,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     authenticateSupabaseJWT,
     async (req: Request, res: Response) => {
       try {
-        const companyId = req.headers['x-company-id'];
+        const companyId = req.headers["x-company-id"];
         if (!companyId) {
           return res.status(400).json({ message: "Company ID not provided" });
         }
@@ -648,7 +646,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Broker routes
   app.get("/api/brokers", authenticateSupabaseJWT, async (req, res) => {
     try {
-      const companyId = req.headers['x-company-id'];
+      const companyId = req.headers["x-company-id"];
       if (!companyId) {
         return res.status(400).json({ message: "Company ID not provided" });
       }
@@ -672,7 +670,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const { active } = req.body;
 
     try {
-      const companyId = req.headers['x-company-id'];
+      const companyId = req.headers["x-company-id"];
       if (!companyId) {
         return res.status(400).json({ message: "Company ID not provided" });
       }

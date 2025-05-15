@@ -66,8 +66,9 @@ export default function KommoConfig() {
       const res = await fetch(`${BASE_URL}/api/kommo-config`, {
         headers: {
           Authorization: `Bearer ${token}`,
+          "X-Company-ID": localStorage.getItem("selected_company") || "",
         },
-        cache: 'no-store'
+        cache: "no-store",
       });
       if (!res.ok) throw new Error("Failed to fetch config");
       return res.json();
@@ -75,7 +76,7 @@ export default function KommoConfig() {
     staleTime: 0,
     cacheTime: 0,
     refetchOnMount: true,
-    refetchOnWindowFocus: true
+    refetchOnWindowFocus: true,
   });
 
   // Form setup
@@ -126,6 +127,7 @@ export default function KommoConfig() {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
+          "X-Company-ID": localStorage.getItem("selected_company") || "",
         },
         body: JSON.stringify(data),
       });
@@ -167,6 +169,7 @@ export default function KommoConfig() {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
+          "X-Company-ID": localStorage.getItem("selected_company") || "",
         },
         body: JSON.stringify(formData),
       });
@@ -351,15 +354,17 @@ export default function KommoConfig() {
                         disabled={!config?.api_url || !config?.access_token}
                       >
                         <option value="">Selecione um funil</option>
-                        {config?.api_url && config?.access_token && pipelines.map((pipeline) => (
-                          <option key={pipeline.id} value={pipeline.id}>
-                            {pipeline.name}
-                          </option>
-                        ))}
+                        {config?.api_url &&
+                          config?.access_token &&
+                          pipelines.map((pipeline) => (
+                            <option key={pipeline.id} value={pipeline.id}>
+                              {pipeline.name}
+                            </option>
+                          ))}
                       </select>
                     </FormControl>
                     <FormDescription>
-                      {!config?.api_url || !config?.access_token 
+                      {!config?.api_url || !config?.access_token
                         ? "Salve a configuração da API primeiro para selecionar um funil"
                         : "Selecione o funil que será usado para sincronização"}
                     </FormDescription>
