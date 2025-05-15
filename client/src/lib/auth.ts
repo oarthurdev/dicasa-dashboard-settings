@@ -20,7 +20,9 @@ const defaultAuthContext: AuthContextType = {
   error: null,
 };
 
-export const AuthContext = createContext<AuthContextType>(defaultAuthContext);
+const AuthContext = createContext<AuthContextType>(defaultAuthContext);
+
+export { AuthContext };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
