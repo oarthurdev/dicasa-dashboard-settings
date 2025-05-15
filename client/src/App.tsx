@@ -25,10 +25,6 @@ function Router() {
         }
         return;
       }
-
-      if (location === "/login" || location === "/register") {
-        setLocation("/welcome");
-      }
     };
 
     enforceAuth();
@@ -39,33 +35,33 @@ function Router() {
       <Switch>
         <Route path="/login" component={Login} />
         <Route path="/register" component={Register} />
-        <Route component={() => {
-          setLocation("/login");
-          return null;
-        }} />
+        <Route
+          component={() => {
+            setLocation("/login");
+            return null;
+          }}
+        />
       </Switch>
     );
   }
 
-  return (
-    localStorage.getItem("selected_company") ? (
-      <AuthWrapper>
-        <Switch>
-          <Route path="/" component={Welcome} />
-          <Route path="/welcome" component={Welcome} />
-          <Route path="/rules" component={Rules} />
-          <Route path="/settings/general" component={GeneralSettings} />
-          <Route path="/settings/kommo" component={KommoConfig} />
-          <Route path="/monitoring" component={Monitoring} />
-          <Route component={NotFound} />
-        </Switch>
-      </AuthWrapper>
-    ) : (
+  return localStorage.getItem("selected_company") ? (
+    <AuthWrapper>
       <Switch>
-        <Route path="/" component={CompanySelect} />
-        <Route component={CompanySelect} />
+        <Route path="/" component={Welcome} />
+        <Route path="/welcome" component={Welcome} />
+        <Route path="/rules" component={Rules} />
+        <Route path="/settings/general" component={GeneralSettings} />
+        <Route path="/settings/kommo" component={KommoConfig} />
+        <Route path="/monitoring" component={Monitoring} />
+        <Route component={NotFound} />
       </Switch>
-    )
+    </AuthWrapper>
+  ) : (
+    <Switch>
+      <Route path="/" component={CompanySelect} />
+      <Route component={CompanySelect} />
+    </Switch>
   );
 }
 
