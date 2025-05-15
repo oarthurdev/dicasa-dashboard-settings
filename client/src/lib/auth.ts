@@ -1,6 +1,7 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "./supabase";
-import { Session, User } from "@supabase/supabase-js";
+import { User } from "@supabase/supabase-js";
 
 type AuthContextType = {
   isAuthenticated: boolean;
@@ -22,28 +23,16 @@ const defaultAuthContext: AuthContextType = {
 
 const AuthContext = createContext<AuthContextType>(defaultAuthContext);
 
-export { AuthContext };
-
 export function AuthProvider({ children }: { children: ReactNode }): JSX.Element {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (session?.access_token) {
-        localStorage.setItem("supabase.auth.token", session.access_token);
-        setUser(session.user);
-      } else {
-        localStorage.removeItem("supabase.auth.token");
-        setUser(null);
-      }
-
-      setIsLoading(false);
-
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const initAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
         if (session?.access_token) {
           localStorage.setItem("supabase.auth.token", session.access_token);
           setUser(session.user);
@@ -51,16 +40,30 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
           localStorage.removeItem("supabase.auth.token");
           setUser(null);
         }
-        setIsLoading(false); // Atualizar estado após a mudança de autenticação
-      });
-
-      // Limpeza: cancelar a assinatura quando o componente for desmontado
-      return () => {
-        subscription?.unsubscribe();
-      };
+      } catch (err) {
+        console.error("Error initializing auth:", err);
+        setError("Falha ao inicializar autenticação");
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    getUser();
+    initAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.access_token) {
+        localStorage.setItem("supabase.auth.token", session.access_token);
+        setUser(session.user);
+      } else {
+        localStorage.removeItem("supabase.auth.token");
+        setUser(null);
+      }
+      setIsLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
@@ -77,38 +80,53 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
 
       if (data.session?.access_token) {
         localStorage.setItem("supabase.auth.token", data.session.access_token);
+        setUser(data.user);
+        return true;
       }
-
-      setUser(data.user);
-      setIsLoading(false);
-      return true;
-    } catch (error: any) {
-      setError(error.message || "Falha na autenticação. Verifique suas credenciais.");
-      setIsLoading(false);
       return false;
-    }
-  };
-
-  const logout = async () => {
-    setIsLoading(true);
-    try {
-      await supabase.auth.signOut();
-      localStorage.removeItem("supabase.auth.token");
-      setUser(null);
-    } catch (error: any) {
-      setError(error.message || "Erro ao fazer logout.");
+    } catch (err: any) {
+      setError(err.message || "Falha na autenticação. Verifique suas credenciais.");
+      return false;
     } finally {
       setIsLoading(false);
     }
   };
 
+  const logout = async (): Promise<void> => {
+    setIsLoading(true);
+    try {
+      await supabase.auth.signOut();
+      localStorage.removeItem("supabase.auth.token");
+      setUser(null);
+    } catch (err: any) {
+      setError(err.message || "Erro ao fazer logout.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const value = {
+    isAuthenticated: !!user,
+    user,
+    login,
+    logout,
+    isLoading,
+    error,
+  };
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated: !!user, user, login, logout, isLoading, error }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 }
 
 export function useAuth() {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth deve ser usado dentro de um AuthProvider");
+  }
+  return context;
 }
+
+export { AuthContext };
