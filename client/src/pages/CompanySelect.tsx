@@ -1,6 +1,5 @@
-
 import { useEffect, useState } from "react";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -15,7 +14,7 @@ type Company = {
 export default function CompanySelect() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [selectedCompany, setSelectedCompany] = useState<string>("");
-  const navigate = useNavigate();
+  const [_, navigate] = useLocation();
 
   useEffect(() => {
     loadCompanies();
