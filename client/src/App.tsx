@@ -1,4 +1,3 @@
-
 import { Switch, Route, useLocation as useWouterLocation } from "wouter";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "./lib/auth";
@@ -14,6 +13,7 @@ import Monitoring from "@/pages/Monitoring";
 import AuthWrapper from "@/components/layout/AuthWrapper";
 import { useEffect } from "react";
 import GeneralSettings from "@/pages/GeneralSettings";
+import CompanySelect from "@/pages/CompanySelect"; // Assuming CompanySelect is in pages
 
 function Router() {
   const { isAuthenticated } = useAuth();
@@ -24,7 +24,7 @@ function Router() {
     queryFn: async () => {
       const token = localStorage.getItem("supabase.auth.token");
       if (!token) throw new Error("No auth token");
-      
+
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/api/kommo-config`,
         {
@@ -110,57 +110,60 @@ function Router() {
 
   // Autenticado e com config válida, mostra todas as rotas
   return (
-    <Switch>
-      <Route
-        path="/"
-        component={() => (
-          <AuthWrapper>
-            <Welcome />
-          </AuthWrapper>
-        )}
-      />
-      <Route
-        path="/welcome"
-        component={() => (
-          <AuthWrapper>
-            <Welcome />
-          </AuthWrapper>
-        )}
-      />
-      <Route
-        path="/rules"
-        component={() => (
-          <AuthWrapper>
-            <Rules />
-          </AuthWrapper>
-        )}
-      />
-      <Route
-        path="/settings/general"
-        component={() => (
-          <AuthWrapper>
-            <GeneralSettings />
-          </AuthWrapper>
-        )}
-      />
-      <Route
-        path="/settings/kommo"
-        component={() => (
-          <AuthWrapper>
-            <KommoConfig />
-          </AuthWrapper>
-        )}
-      />
-      <Route
-        path="/monitoring"
-        component={() => (
-          <AuthWrapper>
-            <Monitoring />
-          </AuthWrapper>
-        )}
-      />
-      <Route component={NotFound} />
-    </Switch>
+    
+    localStorage.getItem("selected_company") ? (
+              <AuthWrapper>
+                <Switch>
+                  <Route path="/" component={Welcome} />
+                  <Route
+                    path="/welcome"
+                    component={() => (
+                      <AuthWrapper>
+                        <Welcome />
+                      </AuthWrapper>
+                    )}
+                  />
+                  <Route
+                    path="/rules"
+                    component={() => (
+                      <AuthWrapper>
+                        <Rules />
+                      </AuthWrapper>
+                    )}
+                  />
+                  <Route
+                    path="/settings/general"
+                    component={() => (
+                      <AuthWrapper>
+                        <GeneralSettings />
+                      </AuthWrapper>
+                    )}
+                  />
+                  <Route
+                    path="/settings/kommo"
+                    component={() => (
+                      <AuthWrapper>
+                        <KommoConfig />
+                      </AuthWrapper>
+                    )}
+                  />
+                  <Route
+                    path="/monitoring"
+                    component={() => (
+                      <AuthWrapper>
+                        <Monitoring />
+                      </AuthWrapper>
+                    )}
+                  />
+                  <Route component={NotFound} />
+                </Switch>
+              </AuthWrapper>
+            ) : (
+              <Switch>
+                <Route path="/" component={CompanySelect} />
+                <Route component={CompanySelect} />
+              </Switch>
+            )
   );
 }
 

@@ -19,12 +19,6 @@ type AuthContextType = {
   isAuthenticated: boolean;
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
-  register: (email: string, password: string) => Promise<boolean>;
-  registerWithCompany: (
-    email: string,
-    password: string,
-    companyName: string,
-  ) => Promise<boolean>;
   logout: () => Promise<void>;
   isLoading: boolean;
   error: string | null;
