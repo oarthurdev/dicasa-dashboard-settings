@@ -23,7 +23,7 @@ const defaultAuthContext: AuthContextType = {
 
 const AuthContext = createContext<AuthContextType>(defaultAuthContext);
 
-export function AuthProvider({ children }: { children: ReactNode }): JSX.Element {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -105,17 +105,17 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     }
   };
 
-  const value = {
-    isAuthenticated: !!user,
-    user,
-    login,
-    logout,
-    isLoading,
-    error,
-  };
-
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider 
+      value={{
+        isAuthenticated: !!user,
+        user,
+        login,
+        logout,
+        isLoading,
+        error,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
