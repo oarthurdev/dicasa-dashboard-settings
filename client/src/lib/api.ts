@@ -10,7 +10,7 @@ api.interceptors.request.use(
     config.headers = {
       ...config.headers,
       "Content-Type": "application/json",
-      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY}`,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       "X-Company-ID": localStorage.getItem("selected_company") || "",
     };
     return config;

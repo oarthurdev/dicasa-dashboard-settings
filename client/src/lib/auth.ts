@@ -1,7 +1,19 @@
-
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 import { supabase } from "./supabase";
-import { User } from "@supabase/supabase-js";
+import { Session, User as SupabaseUser } from "@supabase/supabase-js";
+
+// Types
+export type User = {
+  id: string;
+  email: string;
+  company_id?: number;
+};
 
 type AuthContextType = {
   isAuthenticated: boolean;
@@ -12,117 +24,236 @@ type AuthContextType = {
   error: string | null;
 };
 
+// Create a default context
 const defaultAuthContext: AuthContextType = {
   isAuthenticated: false,
   user: null,
   login: async () => false,
+  register: async () => false,
+  registerWithCompany: async () => false,
   logout: async () => {},
   isLoading: false,
   error: null,
 };
 
-export const AuthContext = createContext<AuthContextType>(defaultAuthContext);
+// Create the context
+const AuthContext = createContext<AuthContextType>(defaultAuthContext);
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
+// Helper to convert Supabase user to our app User type
+const formatUser = async (session: Session | null): Promise<User | null> => {
+  if (!session?.user) return null;
+
+  const user = session.user;
+  
+  // Buscar informações adicionais do usuário no Supabase
+  const { data: userData, error } = await supabase
+    .from('users')
+    .select('company_id')
+    .eq('id', user.id)
+    .single();
+
+  if (error || !userData?.company_id) {
+    console.error('Error fetching user data:', error);
+    return null;
   }
-  return context;
-}
 
+  return {
+    id: user.id,
+    email: user.email || "",
+    company_id: userData.company_id
+  };
+};
+
+// Auth Provider Component
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Check auth state on initial load
   useEffect(() => {
-    const initAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.access_token) {
-          localStorage.setItem("supabase.auth.token", session.access_token);
-          setUser(session.user);
-        } else {
-          localStorage.removeItem("supabase.auth.token");
-          setUser(null);
-        }
-      } catch (err) {
-        console.error("Error initializing auth:", err);
-        setError("Failed to initialize authentication");
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    const getUser = async () => {
+      // Get session data
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-    initAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      // Armazenar o token no localStorage se existir uma sessão
       if (session?.access_token) {
         localStorage.setItem("supabase.auth.token", session.access_token);
-        setUser(session.user);
       } else {
+        // Remover token se não existir sessão
         localStorage.removeItem("supabase.auth.token");
-        setUser(null);
       }
-      setIsLoading(false);
-    });
 
-    return () => {
-      subscription.unsubscribe();
+      // Set the user if we have a session
+      setUser(formatUser(session));
+      setIsLoading(false);
+
+      // Listen for auth changes
+      const {
+        data: { subscription },
+      } = await supabase.auth.onAuthStateChange((_event, session) => {
+        // Atualizar o token no localStorage quando a sessão mudar
+        if (session?.access_token) {
+          localStorage.setItem("supabase.auth.token", session.access_token);
+        } else {
+          localStorage.removeItem("supabase.auth.token");
+        }
+
+        setUser(formatUser(session));
+        setIsLoading(false);
+      });
+
+      // Cleanup the subscription
+      return () => {
+        subscription?.unsubscribe();
+      };
     };
+
+    getUser();
   }, []);
 
+  // Login function
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
+      // Armazenar o token no localStorage para uso nas requisições
       if (data.session?.access_token) {
         localStorage.setItem("supabase.auth.token", data.session.access_token);
-        setUser(data.user);
-        return true;
       }
-      return false;
-    } catch (err: any) {
-      setError(err.message || "Authentication failed. Check your credentials.");
-      return false;
-    } finally {
+
+      setUser(formatUser(data.session));
       setIsLoading(false);
+      return true;
+    } catch (error: any) {
+      setError(
+        error.message || "Falha na autenticação. Verifique suas credenciais.",
+      );
+      setIsLoading(false);
+      return false;
     }
   };
 
-  const logout = async (): Promise<void> => {
+  // Register with company function
+  const registerWithCompany = async (
+    email: string,
+    password: string,
+    companyName: string,
+  ): Promise<boolean> => {
     setIsLoading(true);
+    setError(null);
+
+    try {
+      // Create auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (authError) {
+        throw authError;
+      }
+
+      if (!authData.user) {
+        throw new Error("Failed to create user");
+      }
+
+      // Create company
+      const { data: companyData, error: companyError } = await supabase
+        .from("companies")
+        .insert([{ name: companyName }])
+        .select()
+        .single();
+
+      if (companyError || !companyData) {
+        throw companyError || new Error("Failed to create company");
+      }
+
+      // Create user record
+      const { error: userError } = await supabase.from("users").insert([
+        {
+          id: authData.user.id,
+          company_id: companyData.id,
+          role: "admin",
+        },
+      ]);
+
+      if (userError) {
+        throw userError;
+      }
+
+      if (authData.session?.access_token) {
+        localStorage.setItem(
+          "supabase.auth.token",
+          authData.session.access_token,
+        );
+      }
+
+      setUser(formatUser(authData.session));
+      setIsLoading(false);
+      return true;
+    } catch (error: any) {
+      setError(error.message || "Falha no registro. Tente novamente.");
+      setIsLoading(false);
+      return false;
+    }
+  };
+
+  // Register function (keeping for backward compatibility)
+  const register = async (
+    email: string,
+    password: string,
+  ): Promise<boolean> => {
+    return registerWithCompany(email, password, email.split("@")[0]);
+  };
+
+  // Logout function
+  const logout = async () => {
+    setIsLoading(true);
+
     try {
       await supabase.auth.signOut();
+      // Remover o token do localStorage
       localStorage.removeItem("supabase.auth.token");
       setUser(null);
-    } catch (err: any) {
-      setError(err.message || "Error during logout.");
+    } catch (error: any) {
+      setError(error.message || "Erro ao fazer logout.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  return (
-    <AuthContext.Provider 
-      value={{
+  return React.createElement(
+    AuthContext.Provider,
+    {
+      value: {
         isAuthenticated: !!user,
         user,
         login,
+        register,
+        registerWithCompany,
         logout,
         isLoading,
         error,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+      },
+    },
+    children,
   );
+}
+
+// Auth Hook
+export function useAuth() {
+  return useContext(AuthContext);
 }
