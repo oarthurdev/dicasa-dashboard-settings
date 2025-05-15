@@ -35,14 +35,17 @@ function Router() {
       <Switch>
         <Route path="/login" component={Login} />
         <Route path="/register" component={Register} />
-        <Route
-          component={() => {
-            setLocation("/login");
-            return null;
-          }}
-        />
+        <Route component={() => {
+          setLocation("/login");
+          return null;
+        }} />
       </Switch>
     );
+  }
+
+  if (location === "/login" || location === "/register") {
+    setLocation("/welcome");
+    return null;
   }
 
   return localStorage.getItem("selected_company") ? (
