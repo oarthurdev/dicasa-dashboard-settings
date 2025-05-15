@@ -1,20 +1,15 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "./supabase";
 import { Session, User } from "@supabase/supabase-js";
 
-export namespace AuthContext {
-  export type ContextType = {
-    isAuthenticated: boolean;
-    user: User | null;
-    login: (email: string, password: string) => Promise<boolean>;
-    logout: () => Promise<void>;
-    isLoading: boolean;
-    error: string | null;
-  };
-}
-
-type AuthContextType = AuthContext.ContextType;
+type AuthContextType = {
+  isAuthenticated: boolean;
+  user: User | null;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+  isLoading: boolean;
+  error: string | null;
+};
 
 const defaultAuthContext: AuthContextType = {
   isAuthenticated: false,
@@ -26,8 +21,6 @@ const defaultAuthContext: AuthContextType = {
 };
 
 const AuthContext = createContext<AuthContextType>(defaultAuthContext);
-
-const AuthContextProvider = AuthContext.Provider;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -48,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setIsLoading(false);
 
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const { data: { subscription } } = await supabase.auth.onAuthStateChange((_event, session) => {
         if (session?.access_token) {
           localStorage.setItem("supabase.auth.token", session.access_token);
           setUser(session.user);
@@ -107,16 +100,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContextProvider value={{
-      isAuthenticated: !!user,
-      user,
-      login,
-      logout,
-      isLoading,
-      error,
-    }}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated: !!user,
+        user,
+        login,
+        logout,
+        isLoading,
+        error,
+      }}
+    >
       {children}
-    </AuthContextProvider>
+    </AuthContext.Provider>
   );
 }
 
