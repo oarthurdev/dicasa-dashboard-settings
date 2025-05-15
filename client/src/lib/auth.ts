@@ -27,6 +27,8 @@ const defaultAuthContext: AuthContextType = {
 
 const AuthContext = createContext<AuthContextType>(defaultAuthContext);
 
+const AuthContextProvider = AuthContext.Provider;
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -105,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{
+    <AuthContextProvider value={{
       isAuthenticated: !!user,
       user,
       login,
@@ -114,7 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       error,
     }}>
       {children}
-    </AuthContext.Provider>
+    </AuthContextProvider>
   );
 }
 
