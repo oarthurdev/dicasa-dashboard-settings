@@ -45,7 +45,7 @@ function Router() {
   });
 
   useEffect(() => {
-    const enforceAuthAndConfig = () => {
+    const enforceAuth = () => {
       // Se não autenticado, força ir para login
       if (!isAuthenticated) {
         if (location !== "/login" && location !== "/register") {
@@ -57,22 +57,14 @@ function Router() {
       // Se está carregando, não faz nada
       if (isLoading) return;
 
-      // Se tem erro na config ou não tem config, força ir para /settings/kommo
-      if (kommoConfig && !kommoConfig.api_url) {
-        if (location !== "/settings/kommo") {
-          setLocation("/settings/kommo");
-        }
-        return;
-      }
-
-      // Se já tem config válida e está no login ou register, redireciona para welcome
+      // Se está no login ou register e está autenticado, redireciona para welcome
       if (location === "/login" || location === "/register") {
         setLocation("/welcome");
       }
     };
 
-    enforceAuthAndConfig();
-  }, [isAuthenticated, location, setLocation, isLoading, kommoConfig]);
+    enforceAuth();
+  }, [isAuthenticated, location, setLocation, isLoading]);
 
   // Se não autenticado, mostra apenas rotas públicas
   if (!isAuthenticated) {
