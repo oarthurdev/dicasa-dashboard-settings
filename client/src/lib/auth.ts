@@ -21,7 +21,15 @@ const defaultAuthContext: AuthContextType = {
   error: null,
 };
 
-const AuthContext = createContext<AuthContextType>(defaultAuthContext);
+export const AuthContext = createContext<AuthContextType>(defaultAuthContext);
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -32,7 +40,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const initAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        
         if (session?.access_token) {
           localStorage.setItem("supabase.auth.token", session.access_token);
           setUser(session.user);
@@ -42,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } catch (err) {
         console.error("Error initializing auth:", err);
-        setError("Falha ao inicializar autenticação");
+        setError("Failed to initialize authentication");
       } finally {
         setIsLoading(false);
       }
@@ -50,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     initAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
       if (session?.access_token) {
         localStorage.setItem("supabase.auth.token", session.access_token);
         setUser(session.user);
@@ -69,7 +76,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
-
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -85,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       return false;
     } catch (err: any) {
-      setError(err.message || "Falha na autenticação. Verifique suas credenciais.");
+      setError(err.message || "Authentication failed. Check your credentials.");
       return false;
     } finally {
       setIsLoading(false);
@@ -99,7 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem("supabase.auth.token");
       setUser(null);
     } catch (err: any) {
-      setError(err.message || "Erro ao fazer logout.");
+      setError(err.message || "Error during logout.");
     } finally {
       setIsLoading(false);
     }
@@ -120,13 +126,3 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     </AuthContext.Provider>
   );
 }
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth deve ser usado dentro de um AuthProvider");
-  }
-  return context;
-}
-
-export { AuthContext };
