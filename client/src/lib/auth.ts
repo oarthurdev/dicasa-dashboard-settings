@@ -3,14 +3,18 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { supabase } from "./supabase";
 import { Session, User } from "@supabase/supabase-js";
 
-type AuthContextType = {
-  isAuthenticated: boolean;
-  user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => Promise<void>;
-  isLoading: boolean;
-  error: string | null;
-};
+export namespace AuthContext {
+  export type ContextType = {
+    isAuthenticated: boolean;
+    user: User | null;
+    login: (email: string, password: string) => Promise<boolean>;
+    logout: () => Promise<void>;
+    isLoading: boolean;
+    error: string | null;
+  };
+}
+
+type AuthContextType = AuthContext.ContextType;
 
 const defaultAuthContext: AuthContextType = {
   isAuthenticated: false,
