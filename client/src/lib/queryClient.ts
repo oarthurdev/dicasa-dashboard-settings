@@ -1,6 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
-const API_URL = import.meta.env.VITE_ADMIN_API_URL || "http://localhost:3000";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -14,7 +13,7 @@ export async function apiRequest<T = any>(
   method: string = 'GET',
   data?: unknown | undefined,
 ): Promise<T> {
-  const res = await fetch(API_URL + url, {
+  const res = await fetch(url, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
@@ -50,7 +49,6 @@ export const queryClient = new QueryClient({
       refetchInterval: false,
       refetchOnWindowFocus: true,
       staleTime: 0,
-      cacheTime: 0,
       retry: false,
     },
     mutations: {

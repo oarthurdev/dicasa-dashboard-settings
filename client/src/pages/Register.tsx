@@ -48,7 +48,7 @@ export default function Register() {
       setSuccess(true);
       // Redireciona para a página inicial após 2 segundos
       setTimeout(() => {
-        setLocation("/");
+        setLocation("/admin/");
       }, 2000);
     } else {
       setRegisterError("Falha no registro. Verifique se seu email é válido.");
@@ -172,7 +172,7 @@ export default function Register() {
                 </Button>
 
                 <div className="text-center text-sm mt-4">
-                  <Link href="/login" className="text-primary hover:underline">
+                  <Link href="/admin/login" className="text-primary hover:underline">
                     Já tem uma conta? Faça login
                   </Link>
                 </div>

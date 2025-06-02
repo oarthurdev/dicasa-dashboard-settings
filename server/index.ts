@@ -9,9 +9,33 @@ import cors from "cors";
 
 const app = express();
 
+const allowedDomains = ["imobiliario.tec.br"];
+
+// CORS
+// Middleware de CORS com origem dinâmica
 app.use(
   cors({
-    origin: process.env.DOMAIN_ADMIN_URL,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, false);
+
+      try {
+        const url = new URL(origin);
+        const domain = url.host;
+
+        const isAllowed = allowedDomains.some(
+          (baseDomain) =>
+            domain === baseDomain || domain.endsWith("." + baseDomain),
+        );
+
+        if (isAllowed) {
+          return callback(null, true);
+        } else {
+          return callback(new Error("Not allowed by CORS"));
+        }
+      } catch (err) {
+        return callback(new Error("Invalid origin"));
+      }
+    },
     credentials: true,
   }),
 );

@@ -109,7 +109,7 @@ export default function Login() {
           </Form>
 
           <div className="mt-6 text-center text-sm">
-            <Link href="/register" className="text-primary hover:underline">
+            <Link href="/admin/register" className="text-primary hover:underline">
               Não tem uma conta? Cadastre-se
             </Link>
           </div>

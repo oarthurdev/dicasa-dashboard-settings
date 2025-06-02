@@ -12,6 +12,12 @@ import AuthWrapper from "@/components/layout/AuthWrapper";
 import { useEffect } from "react";
 import GeneralSettings from "@/pages/GeneralSettings";
 
+const BASE_PATH = "/admin";
+
+function withBase(path: string) {
+  return `${BASE_PATH}${path}`;
+}
+
 function Router() {
   const { isAuthenticated } = useAuth();
   const [location, setLocation] = useWouterLocation();
@@ -19,14 +25,14 @@ function Router() {
   useEffect(() => {
     const enforceAuth = () => {
       if (!isAuthenticated) {
-        if (location !== "/login" && location !== "/register") {
-          setLocation("/login");
+        if (location !== withBase("/login") && location !== withBase("/register")) {
+          setLocation(withBase("/login"));
         }
         return;
       }
 
-      if (location === "/login" || location === "/register") {
-        setLocation("/welcome");
+      if (location === withBase("/login") || location === withBase("/register")) {
+        setLocation(withBase("/welcome"));
       }
     };
 
@@ -36,10 +42,10 @@ function Router() {
   if (!isAuthenticated) {
     return (
       <Switch>
-        <Route path="/login" component={Login} />
-        <Route path="/register" component={Register} />
+        <Route path={withBase("/login")} component={Login} />
+        <Route path={withBase("/register")} component={Register} />
         <Route component={() => {
-          setLocation("/login");
+          setLocation(withBase("/login"));
           return null;
         }} />
       </Switch>
@@ -49,12 +55,12 @@ function Router() {
   return (
     <AuthWrapper>
       <Switch>
-        <Route path="/" component={Welcome} />
-        <Route path="/welcome" component={Welcome} />
-        <Route path="/rules" component={Rules} />
-        <Route path="/settings/general" component={GeneralSettings} />
-        <Route path="/settings/kommo" component={KommoConfig} />
-        <Route path="/monitoring" component={Monitoring} />
+        <Route path={withBase("/")} component={Welcome} />
+        <Route path={withBase("/welcome")} component={Welcome} />
+        <Route path={withBase("/rules")} component={Rules} />
+        <Route path={withBase("/settings/general")} component={GeneralSettings} />
+        <Route path={withBase("/settings/kommo")} component={KommoConfig} />
+        <Route path={withBase("/monitoring")} component={Monitoring} />
         <Route component={NotFound} />
       </Switch>
     </AuthWrapper>

@@ -36,8 +36,7 @@ export default defineConfig(({ mode }) => {
       ),
       "import.meta.env.VITE_SUPABASE_KEY": JSON.stringify(
         env.VITE_SUPABASE_KEY,
-      ),
-      "import.meta.env.VITE_ADMIN_API_URL": JSON.stringify(env.VITE_ADMIN_API_URL),
+      )
     },
   };
 });
