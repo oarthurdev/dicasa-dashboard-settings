@@ -43,6 +43,46 @@ const authenticateSupabaseJWT = async (
   }
 };
 
+// Middleware para identificar a empresa pelo subdomínio
+export async function companyContext(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  const host = req.headers.host || "";
+  const subdomain = host.split(".")[0]; // 'dicasaindaial' de 'dicasaindaial.imobiliario.tec.br'
+
+  console.log("Host header:", req.headers.host);
+  console.log(
+    "URL completa:",
+    req.protocol + "://" + req.headers.host + req.originalUrl,
+  );
+
+  console.log("Subdomain: ", subdomain);
+
+  try {
+    const { data, error } = await supabase
+      .from("companies")
+      .select("id")
+      .eq("subdomain", subdomain)
+      .single();
+
+    console.log("Empresa encontrada: ", data);
+
+    if (error || !data) {
+      return res.status(404).json({ message: "Empresa não encontrada" });
+    }
+
+    // Armazena o ID da empresa na requisição
+    (req as any).companyId = data.id;
+
+    next();
+  } catch (err) {
+    next(err);
+  }
+}
+
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.post("/api/auth/login", async (req: Request, res: Response) => {
@@ -53,6 +93,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { email, password } = validation.data;
+      const host = req.headers.host || "";
+      const subdomain = host.split(".")[0];
+
+      const { data: company, error: companyError } = await supabase
+        .from("companies")
+        .select("id")
+        .eq("subdomain", subdomain)
+        .single();
+
+      if (companyError || !company) {
+        return res.status(404).json({ message: "Empresa não encontrada" });
+      }
+
+      const companyId = company.id;
 
       // Usar o Supabase para autenticação
       const { data, error } = await supabaseServer.auth.signInWithPassword({
@@ -62,6 +116,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (error || !data.user) {
         return res.status(401).json({ message: "Credenciais inválidas" });
+      }
+
+      // Verificar se o usuário pertence à empresa correta
+      const { data: userCompany, error: userCompanyError } = await supabaseServer
+        .from("profiles")
+        .select("*")
+        .eq("id", data.user.id)
+        .single();
+
+      if (userCompanyError || !userCompany) {
+        return res
+          .status(403)
+          .json({ message: "Usuário não associado a um perfil" });
+      }
+
+      if (userCompany.company_id !== companyId) {
+        return res
+          .status(403)
+          .json({ message: "Usuário não pertence a esta empresa" });
       }
 
       // Retorna o token de acesso e os dados do usuário
@@ -82,6 +155,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get(
     "/api/rules",
     authenticateSupabaseJWT,
+    companyContext,
     async (req: Request, res: Response) => {
       try {
         const page = parseInt(req.query.page as string) || 1;
@@ -89,7 +163,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const offset = (page - 1) * limit;
 
         // Obter o company_id do usuário autenticado
-        const companyId = req.headers["x-company-id"];
+        const companyId = (req as any).companyId;
         if (!companyId) {
           return res.status(400).json({ message: "Company ID not provided" });
         }
@@ -121,6 +195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete(
     "/api/rules/:id",
     authenticateSupabaseJWT,
+    companyContext,
     async (req: Request, res: Response) => {
       try {
         const ruleId = parseInt(req.params.id);
@@ -129,10 +204,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Verificar se a regra pertence à empresa do usuário
-        const companyId = req.headers["x-company-id"];
-        if (!companyId) {
-          return res.status(400).json({ message: "Company ID not provided" });
-        }
+        const companyId = (req as any).companyId;
 
         // Verificar se a regra existe e pertence à empresa
         const { data: rule } = await supabaseServer
@@ -173,6 +245,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch(
     "/api/rules/:id/points",
     authenticateSupabaseJWT,
+    companyContext,
     async (req: Request, res: Response) => {
       try {
         const ruleId = parseInt(req.params.id);
@@ -187,10 +260,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Verificar se a regra pertence à empresa do usuário
-        const companyId = req.headers["x-company-id"];
-        if (!companyId) {
-          return res.status(400).json({ message: "Company ID not provided" });
-        }
+        const companyId = (req as any).companyId;
 
         // Verificar se a regra existe e pertence à empresa
         const { data: rule } = await supabaseServer
@@ -235,13 +305,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get(
     "/api/kommo-config",
     authenticateSupabaseJWT,
+    companyContext,
     async (req: Request, res: Response) => {
       try {
         // Obter o company_id do usuário autenticado
-        const companyId = req.headers["x-company-id"];
-        if (!companyId) {
-          return res.status(400).json({ message: "Company ID not provided" });
-        }
+        const companyId = (req as any).companyId;
 
         const { data: config, error } = await supabaseServer
           .from("kommo_config")
@@ -268,6 +336,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post(
     "/api/kommo-config/test",
     authenticateSupabaseJWT,
+    companyContext,
     async (req: Request, res: Response) => {
       try {
         const { api_url, access_token } = req.body;
@@ -311,6 +380,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post(
     "/api/kommo-config",
     authenticateSupabaseJWT,
+    companyContext,
     async (req: Request, res: Response) => {
       try {
         const parsedBody = {
@@ -343,10 +413,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } = validation.data;
 
         // Obter company_id do usuário autenticado
-        const companyId = req.headers["x-company-id"];
-        if (!companyId) {
-          return res.status(400).json({ message: "Company ID not provided" });
-        }
+        const companyId = (req as any).companyId;
 
         const company_id = companyId as string;
 
@@ -450,6 +517,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post(
     "/api/sync/force",
     authenticateSupabaseJWT,
+    companyContext,
     async (req: Request, res: Response) => {
       try {
         const streamlitUrl = process.env.STREAMLIT_URL || "http://0.0.0.0:8501";
@@ -512,12 +580,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post(
     "/api/data/delete-all",
     authenticateSupabaseJWT,
+    companyContext,
     async (req: Request, res: Response) => {
       try {
-        const companyId = req.headers["x-company-id"];
-        if (!companyId) {
-          return res.status(400).json({ message: "Company ID not provided" });
-        }
+        const companyId = (req as any).companyId;
 
         await supabase.deleteAllData(companyId as string);
         return res
@@ -534,12 +600,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get(
     "/api/kommo/pipelines",
     authenticateSupabaseJWT,
+    companyContext,
     async (req: Request, res: Response) => {
       try {
-        const companyId = req.headers["x-company-id"];
-        if (!companyId) {
-          return res.status(400).json({ message: "Company ID not provided" });
-        }
+        const companyId = (req as any).companyId;
 
         const { data: kommoConfig } = await supabaseServer
           .from("kommo_config")
@@ -578,12 +642,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get(
     "/api/sync-logs",
     authenticateSupabaseJWT,
+    companyContext,
     async (req: Request, res: Response) => {
       try {
-        const companyId = req.headers["x-company-id"];
-        if (!companyId) {
-          return res.status(400).json({ message: "Company ID not provided" });
-        }
+        const companyId = (req as any).companyId;
 
         const limit = parseInt(req.query.limit as string) || 10;
         const { data: logs } = await supabaseServer
@@ -606,12 +668,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get(
     "/api/sync-status",
     authenticateSupabaseJWT,
+    companyContext,
     async (req: Request, res: Response) => {
       try {
-        const companyId = req.headers["x-company-id"];
-        if (!companyId) {
-          return res.status(400).json({ message: "Company ID not provided" });
-        }
+        const companyId = (req as any).companyId;
 
         const { data: config } = await supabaseServer
           .from("kommo_config")
@@ -644,12 +704,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // Broker routes
-  app.get("/api/brokers", authenticateSupabaseJWT, async (req, res) => {
+  app.get("/api/brokers", authenticateSupabaseJWT, companyContext, async (req, res) => {
     try {
-      const companyId = req.headers["x-company-id"];
-      if (!companyId) {
-        return res.status(400).json({ message: "Company ID not provided" });
-      }
+      const companyId = (req as any).companyId;
 
       const { data: brokers, error } = await supabaseServer
         .from("brokers")
@@ -665,15 +722,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/brokers/:id", authenticateSupabaseJWT, async (req, res) => {
+  app.patch("/api/brokers/:id", authenticateSupabaseJWT, companyContext, async (req, res) => {
     const { id } = req.params;
     const { active } = req.body;
 
     try {
-      const companyId = req.headers["x-company-id"];
-      if (!companyId) {
-        return res.status(400).json({ message: "Company ID not provided" });
-      }
+      const companyId = (req as any).companyId;
 
       const { error } = await supabaseServer
         .from("brokers")

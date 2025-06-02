@@ -1,21 +1,17 @@
 import axios from "axios";
 
+// Create axios instance with interceptors
 const api = axios.create({
-  baseURL: import.meta.env.VITE_ADMIN_API_URL,
+  baseURL: '/api',
 });
 
-api.interceptors.request.use(
-  (config) => {
-    config.headers.set("Content-Type", "application/json");
-    config.headers.set(
-      "X-Company-ID",
-      localStorage.getItem("selected_company") || "",
-    );
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  },
-);
+// Request interceptor to add auth token
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('auth_token');
 
-export default api;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});

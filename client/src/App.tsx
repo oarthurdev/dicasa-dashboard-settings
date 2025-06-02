@@ -11,7 +11,6 @@ import Monitoring from "@/pages/Monitoring";
 import AuthWrapper from "@/components/layout/AuthWrapper";
 import { useEffect } from "react";
 import GeneralSettings from "@/pages/GeneralSettings";
-import CompanySelect from "@/pages/CompanySelect";
 
 function Router() {
   const { isAuthenticated } = useAuth();
@@ -48,24 +47,17 @@ function Router() {
   }
 
   return (
-    localStorage.getItem("selected_company") ? (
-      <AuthWrapper>
-        <Switch>
-          <Route path="/" component={Welcome} />
-          <Route path="/welcome" component={Welcome} />
-          <Route path="/rules" component={Rules} />
-          <Route path="/settings/general" component={GeneralSettings} />
-          <Route path="/settings/kommo" component={KommoConfig} />
-          <Route path="/monitoring" component={Monitoring} />
-          <Route component={NotFound} />
-        </Switch>
-      </AuthWrapper>
-    ) : (
+    <AuthWrapper>
       <Switch>
-        <Route path="/" component={CompanySelect} />
-        <Route component={CompanySelect} />
+        <Route path="/" component={Welcome} />
+        <Route path="/welcome" component={Welcome} />
+        <Route path="/rules" component={Rules} />
+        <Route path="/settings/general" component={GeneralSettings} />
+        <Route path="/settings/kommo" component={KommoConfig} />
+        <Route path="/monitoring" component={Monitoring} />
+        <Route component={NotFound} />
       </Switch>
-    )
+    </AuthWrapper>
   );
 }
 

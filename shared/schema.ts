@@ -10,10 +10,11 @@ import {
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const companies = pgTable("companies", {
+var companies = pgTable("companies", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  created_at: timestamp("created_at").defaultNow(),
+  subdomain: text("subdomain").notNull().unique(),
+  created_at: timestamp("created_at").defaultNow()
 });
 
 export const users = pgTable("users", {
