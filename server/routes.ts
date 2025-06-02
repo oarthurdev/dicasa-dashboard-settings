@@ -9,7 +9,7 @@ import {
 } from "@shared/schema.ts";
 import { z } from "zod";
 import { supabase, supabaseClient as supabaseServer } from "./supabase.ts";
-
+import { companyContext } from "./middlewares/companyContext.ts";
 // Middleware de autenticação usando Supabase
 const authenticateSupabaseJWT = async (
   req: Request,
@@ -43,113 +43,66 @@ const authenticateSupabaseJWT = async (
   }
 };
 
-// Middleware para identificar a empresa pelo subdomínio
-export async function companyContext(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
-  const host = req.headers.host || "";
-  const subdomain = host.split(".")[0]; // 'dicasaindaial' de 'dicasaindaial.imobiliario.tec.br'
-
-  console.log("Host header:", req.headers.host);
-  console.log(
-    "URL completa:",
-    req.protocol + "://" + req.headers.host + req.originalUrl,
-  );
-
-  console.log("Subdomain: ", subdomain);
-
-  try {
-    const { data, error } = await supabase
-      .from("companies")
-      .select("id")
-      .eq("subdomain", subdomain)
-      .single();
-
-    console.log("Empresa encontrada: ", data);
-
-    if (error || !data) {
-      return res.status(404).json({ message: "Empresa não encontrada" });
-    }
-
-    // Armazena o ID da empresa na requisição
-    (req as any).companyId = data.id;
-
-    next();
-  } catch (err) {
-    next(err);
-  }
-}
-
-
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
-  app.post("/api/auth/login", async (req: Request, res: Response) => {
-    try {
-      const validation = loginFormSchema.safeParse(req.body);
-      if (!validation.success) {
-        return res.status(400).json({ message: "Dados de login inválidos" });
+  app.post(
+    "/api/auth/login",
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const validation = loginFormSchema.safeParse(req.body);
+        if (!validation.success) {
+          return res.status(400).json({ message: "Dados de login inválidos" });
+        }
+
+        const { email, password } = validation.data;
+
+        const companyId = (req as any).companyId;
+
+        // Usar o Supabase para autenticação
+        const { data, error } = await supabaseServer.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error || !data.user) {
+          return res.status(401).json({ message: "Credenciais inválidas" });
+        }
+
+        // Verificar se o usuário pertence à empresa correta
+        const { data: userCompany, error: userCompanyError } =
+          await supabaseServer
+            .from("profiles")
+            .select("*")
+            .eq("id", data.user.id)
+            .single();
+
+        if (userCompanyError || !userCompany) {
+          return res
+            .status(403)
+            .json({ message: "Usuário não associado a um perfil" });
+        }
+
+        if (userCompany.company_id !== companyId) {
+          return res
+            .status(403)
+            .json({ message: "Usuário não pertence a esta empresa" });
+        }
+
+        // Retorna o token de acesso e os dados do usuário
+        return res.status(200).json({
+          token: data.session.access_token,
+          user: {
+            id: data.user.id,
+            email: data.user.email,
+          },
+        });
+      } catch (error) {
+        console.error("Login error:", error);
+        return res.status(500).json({ message: "Erro interno do servidor" });
       }
-
-      const { email, password } = validation.data;
-      const host = req.headers.host || "";
-      const subdomain = host.split(".")[0];
-
-      const { data: company, error: companyError } = await supabase
-        .from("companies")
-        .select("id")
-        .eq("subdomain", subdomain)
-        .single();
-
-      if (companyError || !company) {
-        return res.status(404).json({ message: "Empresa não encontrada" });
-      }
-
-      const companyId = company.id;
-
-      // Usar o Supabase para autenticação
-      const { data, error } = await supabaseServer.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error || !data.user) {
-        return res.status(401).json({ message: "Credenciais inválidas" });
-      }
-
-      // Verificar se o usuário pertence à empresa correta
-      const { data: userCompany, error: userCompanyError } = await supabaseServer
-        .from("profiles")
-        .select("*")
-        .eq("id", data.user.id)
-        .single();
-
-      if (userCompanyError || !userCompany) {
-        return res
-          .status(403)
-          .json({ message: "Usuário não associado a um perfil" });
-      }
-
-      if (userCompany.company_id !== companyId) {
-        return res
-          .status(403)
-          .json({ message: "Usuário não pertence a esta empresa" });
-      }
-
-      // Retorna o token de acesso e os dados do usuário
-      return res.status(200).json({
-        token: data.session.access_token,
-        user: {
-          id: data.user.id,
-          email: data.user.email,
-        },
-      });
-    } catch (error) {
-      console.error("Login error:", error);
-      return res.status(500).json({ message: "Erro interno do servidor" });
-    }
-  });
+    },
+  );
 
   // Rules routes
   app.get(
@@ -704,44 +657,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // Broker routes
-  app.get("/api/brokers", authenticateSupabaseJWT, companyContext, async (req, res) => {
-    try {
-      const companyId = (req as any).companyId;
+  app.get(
+    "/api/brokers",
+    authenticateSupabaseJWT,
+    companyContext,
+    async (req, res) => {
+      try {
+        const companyId = (req as any).companyId;
 
-      const { data: brokers, error } = await supabaseServer
-        .from("brokers")
-        .select("*")
-        .eq("company_id", companyId as string) // Added company_id filter
-        .eq("cargo", "Corretor");
+        const { data: brokers, error } = await supabaseServer
+          .from("brokers")
+          .select("*")
+          .eq("company_id", companyId as string) // Added company_id filter
+          .eq("cargo", "Corretor");
 
-      if (error) throw error;
-      res.json(brokers);
-    } catch (error) {
-      console.error("Error fetching brokers:", error);
-      res.status(500).json({ error: "Internal server error" });
-    }
-  });
+        if (error) throw error;
+        res.json(brokers);
+      } catch (error) {
+        console.error("Error fetching brokers:", error);
+        res.status(500).json({ error: "Internal server error" });
+      }
+    },
+  );
 
-  app.patch("/api/brokers/:id", authenticateSupabaseJWT, companyContext, async (req, res) => {
-    const { id } = req.params;
-    const { active } = req.body;
+  app.patch(
+    "/api/brokers/:id",
+    authenticateSupabaseJWT,
+    companyContext,
+    async (req, res) => {
+      const { id } = req.params;
+      const { active } = req.body;
 
-    try {
-      const companyId = (req as any).companyId;
+      try {
+        const companyId = (req as any).companyId;
 
-      const { error } = await supabaseServer
-        .from("brokers")
-        .update({ active })
-        .eq("id", id)
-        .eq("company_id", companyId as string); // Added company_id filter
+        const { error } = await supabaseServer
+          .from("brokers")
+          .update({ active })
+          .eq("id", id)
+          .eq("company_id", companyId as string); // Added company_id filter
 
-      if (error) throw error;
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error updating broker:", error);
-      res.status(500).json({ error: "Internal server error" });
-    }
-  });
+        if (error) throw error;
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Error updating broker:", error);
+        res.status(500).json({ error: "Internal server error" });
+      }
+    },
+  );
 
   const httpServer = createServer(app);
   return httpServer;

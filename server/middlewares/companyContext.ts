@@ -1,6 +1,5 @@
-
 import { type Request, type Response, type NextFunction } from "express";
-import { supabaseClient } from "./supabase.ts";
+import { supabaseClient } from "../supabase.ts";
 
 export async function companyContext(
   req: Request,
