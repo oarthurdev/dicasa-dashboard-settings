@@ -24,6 +24,17 @@ export const users = pgTable("users", {
   created_at: timestamp("created_at").defaultNow(),
 });
 
+export const profiles = pgTable("profiles", {
+  id: text("id").primaryKey(),
+  company_id: integer("company_id").references(() => companies.id),
+  email: text("email"),
+  full_name: text("full_name"),
+  role: text("role").notNull().default("user"),
+  active: boolean("active").default(true),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
 export const rules = pgTable("rules", {
   id: serial("id").primaryKey(),
   nome: text("nome").notNull(),
