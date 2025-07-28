@@ -1,7 +1,7 @@
 import {
   pgTable,
   text,
-  serial,
+  uuid,
   integer,
   boolean,
   timestamp,
@@ -10,33 +10,15 @@ import {
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-var companies = pgTable("companies", {
-  id: serial("id").primaryKey(),
+export const companies = pgTable("companies", {
+  id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
   subdomain: text("subdomain").notNull().unique(),
-  created_at: timestamp("created_at").defaultNow()
-});
-
-export const users = pgTable("users", {
-  id: text("id").primaryKey(),
-  company_id: integer("company_id").references(() => companies.id),
-  role: text("role").notNull().default("admin"),
   created_at: timestamp("created_at").defaultNow(),
-});
-
-export const profiles = pgTable("profiles", {
-  id: text("id").primaryKey(),
-  company_id: integer("company_id").references(() => companies.id),
-  email: text("email"),
-  full_name: text("full_name"),
-  role: text("role").notNull().default("user"),
-  active: boolean("active").default(true),
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow(),
 });
 
 export const rules = pgTable("rules", {
-  id: serial("id").primaryKey(),
+  id: integer("id").primaryKey(),
   nome: text("nome").notNull(),
   coluna_nome: text("coluna_nome").notNull().unique(),
   pontos: integer("pontos").notNull(),
@@ -46,8 +28,8 @@ export const rules = pgTable("rules", {
 });
 
 export const kommoConfig = pgTable("kommo_config", {
-  id: serial("id").primaryKey(),
-  company_id: integer("company_id").references(() => companies.id),
+  id: integer("id").primaryKey(),
+  company_id: uuid("company_id").references(() => companies.id),
   api_url: text("api_url").notNull(),
   access_token: text("access_token").notNull(),
   custom_endpoint: text("custom_endpoint"),
@@ -61,8 +43,8 @@ export const kommoConfig = pgTable("kommo_config", {
 });
 
 export const syncLogs = pgTable("sync_logs", {
-  id: serial("id").primaryKey(),
-  company_id: integer("company_id").references(() => companies.id),
+  id: integer("id").primaryKey(),
+  company_id: uuid("company_id").references(() => companies.id),
   timestamp: timestamp("timestamp").defaultNow(),
   type: text("type").notNull(), // INFO, DEBUG, ERROR
   message: text("message").notNull(),
@@ -70,9 +52,13 @@ export const syncLogs = pgTable("sync_logs", {
 
 // Table for company-specific rule configurations
 export const companyRules = pgTable("company_rules", {
-  id: serial("id").primaryKey(),
-  company_id: integer("company_id").references(() => companies.id).notNull(),
-  rule_id: integer("rule_id").references(() => rules.id).notNull(),
+  id: integer("id").primaryKey(),
+  company_id: uuid("company_id")
+    .references(() => companies.id)
+    .notNull(),
+  rule_id: integer("rule_id")
+    .references(() => rules.id)
+    .notNull(),
   pontos: integer("pontos").notNull(),
   active: boolean("active").default(true),
   created_at: timestamp("created_at").defaultNow(),
@@ -81,8 +67,10 @@ export const companyRules = pgTable("company_rules", {
 
 // Table for company-specific custom rules
 export const customRules = pgTable("custom_rules", {
-  id: serial("id").primaryKey(),
-  company_id: integer("company_id").references(() => companies.id).notNull(),
+  id: integer("id").primaryKey(),
+  company_id: uuid("company_id")
+    .references(() => companies.id)
+    .notNull(),
   nome: text("nome").notNull(),
   coluna_nome: text("coluna_nome").notNull(),
   pontos: integer("pontos").notNull(),
@@ -90,12 +78,6 @@ export const customRules = pgTable("custom_rules", {
   active: boolean("active").default(true),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
-});
-
-// Schemas for validation
-export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
-  created_at: true,
 });
 
 export const insertRuleSchema = createInsertSchema(rules).pick({
@@ -127,10 +109,6 @@ export const insertCustomRuleSchema = createInsertSchema(customRules).omit({
   created_at: true,
   updated_at: true,
 });
-
-// Types
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
 
 export type InsertRule = z.infer<typeof insertRuleSchema>;
 export type Rule = typeof rules.$inferSelect;
