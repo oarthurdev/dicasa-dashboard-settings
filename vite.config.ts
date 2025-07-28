@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => {
       outDir: "../dist",
       emptyOutDir: true,
     },
-    base: "/",
+    base: "/admin/",
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "client", "src"),
@@ -36,8 +36,7 @@ export default defineConfig(({ mode }) => {
       ),
       "import.meta.env.VITE_SUPABASE_KEY": JSON.stringify(
         env.VITE_SUPABASE_KEY,
-      ),
-      "import.meta.env.VITE_ADMIN_API_URL": JSON.stringify(env.VITE_ADMIN_API_URL),
+      )
     },
   };
 });

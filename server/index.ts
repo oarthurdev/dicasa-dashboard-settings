@@ -74,20 +74,27 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Registra suas rotas de API
   const server = await registerRoutes(app);
 
+  // Middleware global de erro
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
-
     res.status(status).json({ message });
     throw err;
   });
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5001;
+  // Detecta ambiente de produção ou desenvolvimento
+  const isProduction = process.env.NODE_ENV === "production";
+
+  if (isProduction) {
+    serveStatic(app); // Serve o build da aplicação
+  } else {
+    await setupVite(app, server); // Configuração do Vite em dev
+  }
+
+  const port = 6000;
   server.listen(
     {
       port,
@@ -95,7 +102,9 @@ app.use((req, res, next) => {
       reusePort: true,
     },
     () => {
-      log(`serving on port ${port}`);
+      log(
+        `🚀 Servindo em http://localhost:${port} (${isProduction ? "PROD" : "DEV"})`,
+      );
     },
   );
 })();

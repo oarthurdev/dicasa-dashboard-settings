@@ -5,13 +5,12 @@ import { type Server } from "http";
 import viteConfig from "../vite.config.js";
 import { nanoid } from "nanoid";
 
-const viteLogger = createLogger();
-
 import { fileURLToPath } from "url";
 import path from "path";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const viteLogger = createLogger();
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -24,11 +23,12 @@ export function log(message: string, source = "express") {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
+// Função para configurar o Vite no modo dev
 export async function setupVite(app: Express, server: Server) {
   const serverOptions = {
     middlewareMode: false,
     hmr: { server },
-    allowedHosts: []
+    allowedHosts: [],
   };
 
   const vite = await createViteServer({
@@ -46,20 +46,22 @@ export async function setupVite(app: Express, server: Server) {
   });
 
   app.use(vite.middlewares);
-  app.use("*", async (req, res, next) => {
-    const url = req.originalUrl;
 
-    const distDir = path.resolve(__dirname, '..', 'dist');
+  // Captura requests com base dinâmica (UUID)
+  app.use("/admin", async (req, res, next) => {
+    const url = req.originalUrl;
+    const distDir = path.resolve(__dirname, "..", "dist");
 
     try {
-      const clientTemplate = path.resolve(distDir, 'index.html');
-
-      // always reload the index.html file from disk incase it changes
+      const clientTemplate = path.resolve(distDir, "index.html");
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
+
+      // Corrige o caminho para o script principal, adicionando um hash para forçar reload em dev
       template = template.replace(
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid()}"`,
       );
+
       const page = await vite.transformIndexHtml(url, template);
       res.status(200).set({ "Content-Type": "text/html" }).end(page);
     } catch (e) {
@@ -69,15 +71,16 @@ export async function setupVite(app: Express, server: Server) {
   });
 }
 
+// Função para servir arquivos estáticos em produção
 export function serveStatic(app: Express) {
-   const distDir = path.resolve(__dirname, '..', 'dist');  // Caminho correto para a pasta 'dist'
+  const distDir = path.resolve(__dirname, "..", "dist");
 
-   app.use(express.static(distDir));  // Serve os arquivos estáticos
+  // Serve os arquivos estáticos em /ranking
+  app.use("/admin", express.static(distDir));
 
-   // Roteia todas as outras requisições para o arquivo 'index.html' de produção
-   app.get('*', (req, res) => {
-     res.sendFile(path.resolve(distDir, 'public/index.html'));
-   });
+  // Serve index.html em qualquer rota que comece com /ranking
+  app.get("/admin*", (req, res) => {
+    res.sendFile(path.resolve(distDir, "index.html"));
+  });
 }
-
 

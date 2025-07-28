@@ -696,7 +696,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   async function notifyStreamlit(company_id: string) {
     const streamlitUrl = process.env.STREAMLIT_URL || "http://0.0.0.0:8501";
     try {
-      await fetch(`${streamlitUrl}/start_sync/${company_id}`, {
+      await fetch(`${streamlitUrl}/restart/${company_id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
@@ -727,7 +727,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         try {
           const { stdout, stderr } = await execAsync(
-            `curl -s -X POST ${streamlitUrl}/sync -H "Content-Type: application/json" -d '{"force": true}'`,
+            `curl -s -X POST ${streamlitUrl}/start -H "Content-Type: application/json" -d '{"force": true}'`,
           );
 
           // Verifica se a resposta é válida
