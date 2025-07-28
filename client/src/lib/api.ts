@@ -2,12 +2,12 @@ import axios from "axios";
 
 // Create axios instance with interceptors
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_ADMIN_API_URL,
 });
 
 // Request interceptor to add auth token
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('auth_token');
+  const token = localStorage.getItem("auth_token");
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;

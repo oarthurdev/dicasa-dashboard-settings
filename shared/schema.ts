@@ -62,15 +62,40 @@ export const kommoConfig = pgTable("kommo_config", {
 
 export const syncLogs = pgTable("sync_logs", {
   id: serial("id").primaryKey(),
+  company_id: integer("company_id").references(() => companies.id),
   timestamp: timestamp("timestamp").defaultNow(),
   type: text("type").notNull(), // INFO, DEBUG, ERROR
   message: text("message").notNull(),
 });
 
+// Table for company-specific rule configurations
+export const companyRules = pgTable("company_rules", {
+  id: serial("id").primaryKey(),
+  company_id: integer("company_id").references(() => companies.id).notNull(),
+  rule_id: integer("rule_id").references(() => rules.id).notNull(),
+  pontos: integer("pontos").notNull(),
+  active: boolean("active").default(true),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Table for company-specific custom rules
+export const customRules = pgTable("custom_rules", {
+  id: serial("id").primaryKey(),
+  company_id: integer("company_id").references(() => companies.id).notNull(),
+  nome: text("nome").notNull(),
+  coluna_nome: text("coluna_nome").notNull(),
+  pontos: integer("pontos").notNull(),
+  descricao: text("descricao"),
+  active: boolean("active").default(true),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
 // Schemas for validation
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  created_at: true,
 });
 
 export const insertRuleSchema = createInsertSchema(rules).pick({
@@ -91,6 +116,18 @@ export const insertSyncLogSchema = createInsertSchema(syncLogs).pick({
   message: true,
 });
 
+export const insertCompanyRuleSchema = createInsertSchema(companyRules).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
+export const insertCustomRuleSchema = createInsertSchema(customRules).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -103,6 +140,12 @@ export type KommoConfig = typeof kommoConfig.$inferSelect;
 
 export type InsertSyncLog = z.infer<typeof insertSyncLogSchema>;
 export type SyncLog = typeof syncLogs.$inferSelect;
+
+export type InsertCompanyRule = z.infer<typeof insertCompanyRuleSchema>;
+export type CompanyRule = typeof companyRules.$inferSelect;
+
+export type InsertCustomRule = z.infer<typeof insertCustomRuleSchema>;
+export type CustomRule = typeof customRules.$inferSelect;
 
 // Validation schemas for forms
 export const ruleFormSchema = z.object({
@@ -161,3 +204,22 @@ export const registerFormSchema = z
     message: "As senhas não coincidem",
     path: ["confirmPassword"],
   });
+
+export const companyRuleFormSchema = z.object({
+  rule_id: z.number().min(1, "ID da regra é obrigatório"),
+  pontos: z
+    .number()
+    .min(-100, "O valor mínimo é -100")
+    .max(100, "O valor máximo é 100"),
+  active: z.boolean().default(true),
+});
+
+export const customRuleFormSchema = z.object({
+  nome: z.string().min(3, "O nome deve ter pelo menos 3 caracteres"),
+  pontos: z
+    .number()
+    .min(-100, "O valor mínimo é -100")
+    .max(100, "O valor máximo é 100"),
+  descricao: z.string().optional(),
+  active: z.boolean().default(true),
+});

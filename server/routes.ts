@@ -5,6 +5,8 @@ import {
   ruleFormSchema,
   kommoConfigFormSchema,
   loginFormSchema,
+  companyRuleFormSchema,
+  customRuleFormSchema,
   Rule,
 } from "@shared/schema.ts";
 import { z } from "zod";
@@ -125,9 +127,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const rules = await supabase.getRulesPaginated(
           offset,
           limit,
-          companyId as string,
+          companyId,
         );
-        const totalRules = await supabase.getTotalRules(companyId as string);
+        const totalRules = await supabase.getTotalRules(companyId);
         const totalPages = Math.ceil(totalRules / limit);
 
         return res.status(200).json({
@@ -252,6 +254,243 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .json({ message: "Erro ao atualizar pontos da regra" });
       }
     },
+  );
+
+  // Company Rules Configuration Routes
+  app.get(
+    "/api/company-rules",
+    authenticateSupabaseJWT,
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const companyId = (req as any).companyId;
+
+        // Get all general rules with company-specific configurations
+        const { data: generalRules } = await supabaseServer
+          .from("rules")
+          .select("*")
+          .order("created_at", { ascending: true });
+
+        // Get company-specific rule configurations
+        const { data: companyConfigs } = await supabaseServer
+          .from("company_rules")
+          .select("*")
+          .eq("company_id", companyId)
+          .eq("active", true);
+
+        // Get custom rules for this company
+        const { data: customRules } = await supabaseServer
+          .from("custom_rules")
+          .select("*")
+          .eq("company_id", companyId)
+          .eq("active", true)
+          .order("created_at", { ascending: true });
+
+        // Merge general rules with company configurations
+        const rulesWithConfigs = generalRules?.map(rule => {
+          const companyConfig = companyConfigs?.find(config => config.rule_id === rule.id);
+          return {
+            ...rule,
+            company_pontos: companyConfig?.pontos || rule.pontos,
+            has_custom_config: !!companyConfig,
+            is_custom: false
+          };
+        }) || [];
+
+        // Add custom rules
+        const customRulesFormatted = customRules?.map(rule => ({
+          ...rule,
+          company_pontos: rule.pontos,
+          has_custom_config: true,
+          is_custom: true
+        })) || [];
+
+        const allRules = [...rulesWithConfigs, ...customRulesFormatted];
+
+        return res.status(200).json(allRules);
+      } catch (error) {
+        console.error("Error fetching company rules:", error);
+        return res.status(500).json({ message: "Erro ao buscar configurações de regras" });
+      }
+    }
+  );
+
+  app.post(
+    "/api/company-rules",
+    authenticateSupabaseJWT,
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const companyId = (req as any).companyId;
+        const validation = companyRuleFormSchema.safeParse(req.body);
+
+        if (!validation.success) {
+          return res.status(400).json({ message: "Dados inválidos", errors: validation.error.errors });
+        }
+
+        const { rule_id, pontos, active } = validation.data;
+
+        // Check if configuration already exists
+        const { data: existing } = await supabaseServer
+          .from("company_rules")
+          .select("*")
+          .eq("company_id", companyId)
+          .eq("rule_id", rule_id)
+          .single();
+
+        if (existing) {
+          // Update existing configuration
+          const { data: updated, error } = await supabaseServer
+            .from("company_rules")
+            .update({ pontos, active, updated_at: new Date().toISOString() })
+            .eq("id", existing.id)
+            .select()
+            .single();
+
+          if (error) throw error;
+          return res.status(200).json(updated);
+        } else {
+          // Create new configuration
+          const { data: created, error } = await supabaseServer
+            .from("company_rules")
+            .insert({ company_id: companyId, rule_id, pontos, active })
+            .select()
+            .single();
+
+          if (error) throw error;
+          return res.status(201).json(created);
+        }
+      } catch (error) {
+        console.error("Error creating/updating company rule config:", error);
+        return res.status(500).json({ message: "Erro ao configurar regra da empresa" });
+      }
+    }
+  );
+
+  app.post(
+    "/api/custom-rules",
+    authenticateSupabaseJWT,
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const companyId = (req as any).companyId;
+        const validation = customRuleFormSchema.safeParse(req.body);
+
+        if (!validation.success) {
+          return res.status(400).json({ message: "Dados inválidos", errors: validation.error.errors });
+        }
+
+        const { nome, pontos, descricao, active } = validation.data;
+        const coluna_nome = convertToSnakeCase(nome);
+
+        // Create custom rule
+        const { data: created, error } = await supabaseServer
+          .from("custom_rules")
+          .insert({ 
+            company_id: companyId, 
+            nome, 
+            coluna_nome, 
+            pontos, 
+            descricao, 
+            active 
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        return res.status(201).json(created);
+      } catch (error) {
+        console.error("Error creating custom rule:", error);
+        return res.status(500).json({ message: "Erro ao criar regra personalizada" });
+      }
+    }
+  );
+
+  app.patch(
+    "/api/custom-rules/:id",
+    authenticateSupabaseJWT,
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const ruleId = parseInt(req.params.id);
+        const companyId = (req as any).companyId;
+        const { pontos, active } = req.body;
+
+        if (isNaN(ruleId)) {
+          return res.status(400).json({ message: "ID de regra inválido" });
+        }
+
+        // Verify rule belongs to company
+        const { data: rule } = await supabaseServer
+          .from("custom_rules")
+          .select("*")
+          .eq("id", ruleId)
+          .eq("company_id", companyId)
+          .single();
+
+        if (!rule) {
+          return res.status(404).json({ message: "Regra personalizada não encontrada" });
+        }
+
+        // Update custom rule
+        const updateData: any = { updated_at: new Date().toISOString() };
+        if (pontos !== undefined) updateData.pontos = pontos;
+        if (active !== undefined) updateData.active = active;
+
+        const { data: updated, error } = await supabaseServer
+          .from("custom_rules")
+          .update(updateData)
+          .eq("id", ruleId)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return res.status(200).json(updated);
+      } catch (error) {
+        console.error("Error updating custom rule:", error);
+        return res.status(500).json({ message: "Erro ao atualizar regra personalizada" });
+      }
+    }
+  );
+
+  app.delete(
+    "/api/custom-rules/:id",
+    authenticateSupabaseJWT,
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const ruleId = parseInt(req.params.id);
+        const companyId = (req as any).companyId;
+
+        if (isNaN(ruleId)) {
+          return res.status(400).json({ message: "ID de regra inválido" });
+        }
+
+        // Verify rule belongs to company
+        const { data: rule } = await supabaseServer
+          .from("custom_rules")
+          .select("*")
+          .eq("id", ruleId)
+          .eq("company_id", companyId)
+          .single();
+
+        if (!rule) {
+          return res.status(404).json({ message: "Regra personalizada não encontrada" });
+        }
+
+        // Delete custom rule
+        const { error } = await supabaseServer
+          .from("custom_rules")
+          .delete()
+          .eq("id", ruleId);
+
+        if (error) throw error;
+        return res.status(200).json({ message: "Regra personalizada excluída com sucesso" });
+      } catch (error) {
+        console.error("Error deleting custom rule:", error);
+        return res.status(500).json({ message: "Erro ao excluir regra personalizada" });
+      }
+    }
   );
 
   // Kommo config routes
@@ -518,8 +757,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Registra o erro
         await supabase.createSyncLog({
           type: "ERROR",
-          message: `Erro ao forçar sincronização: ${error.message}`,
-          created_at: new Date().toISOString(),
+          message: `Erro ao forçar sincronização: ${(error as Error).message}`,
         });
 
         return res
@@ -645,7 +883,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           lastSync: config?.last_sync || null,
           nextSync: config?.next_sync || null,
           latestLog,
-          status: latestLog?.type === "ERROR" ? "error" : "connected",
+          status: latestLog && latestLog.length > 0 && latestLog[0].type === "ERROR" ? "error" : "connected",
         });
       } catch (error) {
         console.error("Error fetching sync status:", error);
