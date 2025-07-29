@@ -1,5 +1,5 @@
 modules = ["nodejs-20", "web"]
-run = "npm run dev"
+run = "npm run build && npm run start"
 hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
 [nix]
@@ -45,11 +45,10 @@ args = "npm run dev"
 
 [[ports]]
 localPort = 5001
-externalPort = 3001
+externalPort = 80
 
 [[ports]]
 localPort = 6000
 
 [[ports]]
 localPort = 8080
-externalPort = 80

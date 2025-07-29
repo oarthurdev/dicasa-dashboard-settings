@@ -63,23 +63,23 @@ export default function Sidebar() {
       <nav className="flex-1 overflow-y-auto py-4">
         <ul className="space-y-1">
           <SidebarItem
-            href="/welcome"
+            href="/admin/welcome"
             icon={<Home size={20} />}
-            active={location === "/welcome" || location === "/"}
+            active={location === "/admin/welcome" || location === "/admin"}
           >
             Boas-vindas
           </SidebarItem>
           <SidebarItem
-            href="/rules"
+            href="/admin/rules"
             icon={<BookOpen size={20} />}
-            active={location === "/rules"}
+            active={location === "/admin/rules"}
           >
             Regras
           </SidebarItem>
           <SidebarItem
-            href="/settings/dynamic-metrics"
+            href="/admin/settings/dynamic-metrics"
             icon={<Target size={20} />}
-            active={location === "/settings/dynamic-metrics"}
+            active={location === "/admin/settings/dynamic-metrics"}
           >
             Métricas Dinâmicas
           </SidebarItem>
@@ -94,16 +94,16 @@ export default function Sidebar() {
               <CollapsibleContent>
                 <ul className="pl-6 mt-2 space-y-1">
                   <SidebarItem
-                    href="/settings/general"
+                    href="/admin/settings/general"
                     icon={<Settings size={16} />}
-                    active={location === "/settings/general"}
+                    active={location === "/admin/settings/general"}
                   >
                     Geral
                   </SidebarItem>
                   <SidebarItem
-                    href="/settings/kommo"
+                    href="/admin/settings/kommo"
                     icon={<Settings size={16} />}
-                    active={location === "/settings/kommo"}
+                    active={location === "/admin/settings/kommo"}
                   >
                     Kommo
                   </SidebarItem>
@@ -112,9 +112,9 @@ export default function Sidebar() {
             </Collapsible>
           </li>
           <SidebarItem
-            href="/monitoring"
+            href="/admin/monitoring"
             icon={<BarChart3 size={20} />}
-            active={location === "/monitoring"}
+            active={location === "/admin/monitoring"}
           >
             Dashboard / Monitoramento
           </SidebarItem>

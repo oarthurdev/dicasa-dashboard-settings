@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Create axios instance with interceptors
 const api = axios.create({
-  baseURL: window.location.origin + ":3001",
+  baseURL: "",
 });
 
 // Request interceptor to add auth token

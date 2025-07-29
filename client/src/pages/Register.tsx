@@ -48,7 +48,7 @@ export default function Register() {
       setSuccess(true);
       // Redireciona para a página inicial após 2 segundos
       setTimeout(() => {
-        setLocation("/");
+        setLocation("/admin/welcome");
       }, 2000);
     } else {
       setRegisterError("Falha no registro. Verifique se seu email é válido.");

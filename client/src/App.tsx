@@ -21,14 +21,14 @@ function Router() {
   useEffect(() => {
     const enforceAuth = () => {
       if (!isAuthenticated) {
-        if (location !== "/login" && location !== "/register") {
-          setLocation("/login");
+        if (location !== "/admin/login" && location !== "/admin/register") {
+          setLocation("/admin/login");
         }
         return;
       }
 
-      if (location === "/login" || location === "/register") {
-        setLocation("/welcome");
+      if (location === "/admin/login" || location === "/admin/register") {
+        setLocation("/admin/welcome");
       }
     };
 
@@ -38,11 +38,11 @@ function Router() {
   if (!isAuthenticated) {
     return (
       <Switch>
-        <Route path="/login" component={Login} />
-        <Route path="/register" component={Register} />
+        <Route path="/admin/login" component={Login} />
+        <Route path="/admin/register" component={Register} />
         <Route
           component={() => {
-            setLocation("/login");
+            setLocation("/admin/login");
             return null;
           }}
         />
@@ -53,14 +53,20 @@ function Router() {
   return (
     <AuthWrapper>
       <Switch>
-        <Route path="/" component={Welcome} />
-        <Route path="/welcome" component={Welcome} />
-        <Route path="/rules" component={Rules} />
-        <Route path="/settings/dynamic-metrics" component={DynamicMetrics} />
-        <Route path="/settings/general" component={GeneralSettings} />
-        <Route path="/settings/kommo" component={KommoConfig} />
-        <Route path="/settings/company-branding" component={CompanyBranding} />
-        <Route path="/monitoring" component={Monitoring} />
+        <Route path="/admin" component={Welcome} />
+        <Route path="/admin/welcome" component={Welcome} />
+        <Route path="/admin/rules" component={Rules} />
+        <Route
+          path="/admin/settings/dynamic-metrics"
+          component={DynamicMetrics}
+        />
+        <Route path="/admin/settings/general" component={GeneralSettings} />
+        <Route path="/admin/settings/kommo" component={KommoConfig} />
+        <Route
+          path="/admin/settings/company-branding"
+          component={CompanyBranding}
+        />
+        <Route path="/admin/monitoring" component={Monitoring} />
         <Route component={NotFound} />
       </Switch>
     </AuthWrapper>

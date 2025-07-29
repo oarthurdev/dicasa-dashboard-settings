@@ -45,7 +45,7 @@ import api from "@/lib/api";
 
 type FormValues = z.infer<typeof kommoConfigFormSchema>;
 
-const BASE_URL = window.location.origin + ":3001";
+const BASE_URL = "";
 
 export default function KommoConfig() {
   const [showPassword, setShowPassword] = useState(false);
@@ -255,7 +255,7 @@ export default function KommoConfig() {
           </h1>
         </div>
       </div>
-      
+
       <div className="flex-1 overflow-y-auto p-6 pt-0">
         <div className="max-w-4xl mx-auto">
           <Card className="bg-card rounded-lg shadow-sm p-6">
