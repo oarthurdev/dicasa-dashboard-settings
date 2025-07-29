@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -30,6 +31,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import type { z } from "zod";
 import type { KommoConfig } from "@shared/schema";
 import api from "@/lib/api";
@@ -41,6 +43,7 @@ const BASE_URL = import.meta.env.VITE_ADMIN_API_URL;
 export default function KommoConfig() {
   const [showPassword, setShowPassword] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
+  const [selectedPipelines, setSelectedPipelines] = useState<number[]>([]);
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
   const navigate = (path: string) => {
@@ -74,7 +77,7 @@ export default function KommoConfig() {
       return res.json();
     },
     staleTime: 0,
-    cacheTime: 0,
+    gcTime: 0,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   });
@@ -85,8 +88,9 @@ export default function KommoConfig() {
     defaultValues: {
       api_url: "",
       access_token: "",
-      sync_interval: 5,
-      pipeline_id: "",
+      custom_endpoint: "",
+      pipeline_id: [],
+      active: true,
     },
   });
 
@@ -108,14 +112,21 @@ export default function KommoConfig() {
   // Update form when config is loaded
   useEffect(() => {
     if (config) {
-      form.reset(
-        {
-          api_url: config.api_url,
-          access_token: config.access_token,
-          sync_interval: config.sync_interval ?? 5,
-        },
-        { keepValues: false },
-      );
+      const pipelineIds = Array.isArray(config.pipeline_id) 
+        ? config.pipeline_id 
+        : config.pipeline_id 
+          ? [config.pipeline_id] 
+          : [];
+      
+      form.reset({
+        api_url: config.api_url || "",
+        access_token: config.access_token || "",
+        custom_endpoint: config.custom_endpoint || "",
+        pipeline_id: pipelineIds,
+        active: config.active ?? true,
+      }, { keepValues: false });
+      
+      setSelectedPipelines(pipelineIds);
     }
   }, [config, form]);
 
@@ -135,7 +146,7 @@ export default function KommoConfig() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["kommo-config"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/kommo-config"] });
       toast({
         title: "Configurações salvas",
         description: "As configurações da Kommo foram salvas com sucesso.",
@@ -190,6 +201,22 @@ export default function KommoConfig() {
     } finally {
       setIsTestingConnection(false);
     }
+  };
+
+  // Handle pipeline selection
+  const handlePipelineToggle = (pipelineId: number, checked: boolean) => {
+    let newSelection = [...selectedPipelines];
+    
+    if (checked) {
+      if (!newSelection.includes(pipelineId)) {
+        newSelection.push(pipelineId);
+      }
+    } else {
+      newSelection = newSelection.filter(id => id !== pipelineId);
+    }
+    
+    setSelectedPipelines(newSelection);
+    form.setValue("pipeline_id", newSelection);
   };
 
   if (isLoading) {
@@ -258,83 +285,15 @@ export default function KommoConfig() {
 
               <FormField
                 control={form.control}
-                name="sync_interval"
+                name="custom_endpoint"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Intervalo de Sincronização (minutos)</FormLabel>
+                    <FormLabel>Endpoint Personalizado (Opcional)</FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
-                        min={1}
-                        max={60}
-                        {...field}
-                        onChange={(e) =>
-                          field.onChange(parseInt(e.target.value))
-                        }
-                      />
+                      <Input {...field} />
                     </FormControl>
                     <FormDescription>
-                      Frequência de atualização dos dados (padrão: 5 minutos)
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="sync_start_date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Data de Início da Sincronização</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="datetime-local"
-                        value={
-                          field.value
-                            ? new Date(field.value).toISOString().slice(0, 16)
-                            : ""
-                        }
-                        onChange={(e) => {
-                          const date = e.target.value
-                            ? new Date(e.target.value)
-                            : null;
-                          field.onChange(date);
-                        }}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Data inicial para sincronização dos dados
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="sync_end_date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Data Final da Sincronização</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="datetime-local"
-                        value={
-                          field.value
-                            ? new Date(field.value).toISOString().slice(0, 16)
-                            : ""
-                        }
-                        onChange={(e) => {
-                          const date = e.target.value
-                            ? new Date(e.target.value)
-                            : null;
-                          field.onChange(date);
-                        }}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Data final para sincronização dos dados
+                      Endpoint customizado se necessário
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -346,28 +305,65 @@ export default function KommoConfig() {
                 name="pipeline_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Funil para sincronização</FormLabel>
-                    <FormControl>
-                      <select
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        {...field}
-                        disabled={!config?.api_url || !config?.access_token}
-                      >
-                        <option value="">Selecione um funil</option>
-                        {config?.api_url &&
-                          config?.access_token &&
-                          pipelines.map((pipeline) => (
-                            <option key={pipeline.id} value={pipeline.id}>
-                              {pipeline.name}
-                            </option>
-                          ))}
-                      </select>
-                    </FormControl>
+                    <FormLabel>Funis para Sincronização</FormLabel>
                     <FormDescription>
                       {!config?.api_url || !config?.access_token
-                        ? "Salve a configuração da API primeiro para selecionar um funil"
-                        : "Selecione o funil que será usado para sincronização"}
+                        ? "Salve a configuração da API primeiro para selecionar funis"
+                        : "Selecione os funis que serão utilizados para sincronização"}
                     </FormDescription>
+                    
+                    {config?.api_url && config?.access_token && (
+                      <div className="space-y-3 border rounded-lg p-4">
+                        {pipelines.length === 0 ? (
+                          <div className="text-sm text-muted-foreground">
+                            Nenhum funil encontrado. Verifique suas credenciais.
+                          </div>
+                        ) : (
+                          pipelines.map((pipeline) => {
+                            const pipelineId = parseInt(pipeline.id);
+                            const isSelected = selectedPipelines.includes(pipelineId);
+                            
+                            return (
+                              <div key={pipeline.id} className="flex items-center space-x-3">
+                                <Checkbox
+                                  id={`pipeline-${pipeline.id}`}
+                                  checked={isSelected}
+                                  onCheckedChange={(checked) => 
+                                    handlePipelineToggle(pipelineId, checked as boolean)
+                                  }
+                                />
+                                <label
+                                  htmlFor={`pipeline-${pipeline.id}`}
+                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                >
+                                  {pipeline.name}
+                                </label>
+                                <Badge variant="outline">{pipeline.id}</Badge>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    )}
+                    
+                    {selectedPipelines.length > 0 && (
+                      <div className="mt-3">
+                        <p className="text-sm text-muted-foreground">
+                          Funis selecionados: {selectedPipelines.length}
+                        </p>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {selectedPipelines.map((pipelineId) => {
+                            const pipeline = pipelines.find(p => parseInt(p.id) === pipelineId);
+                            return (
+                              <Badge key={pipelineId} variant="default">
+                                {pipeline?.name || `ID: ${pipelineId}`}
+                              </Badge>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    
                     <FormMessage />
                   </FormItem>
                 )}
@@ -377,18 +373,21 @@ export default function KommoConfig() {
                 control={form.control}
                 name="active"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Ativa</FormLabel>
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                     <FormControl>
-                      <Input
-                        type="checkbox"
+                      <Checkbox
                         checked={field.value}
-                        onChange={(e) => field.onChange(e.target.checked)}
+                        onCheckedChange={field.onChange}
                       />
                     </FormControl>
-                    <FormDescription>
-                      Ativa a sincronização dos dados
-                    </FormDescription>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        Ativar Sincronização
+                      </FormLabel>
+                      <FormDescription>
+                        Marque para ativar a sincronização automática dos dados
+                      </FormDescription>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -450,8 +449,9 @@ export default function KommoConfig() {
                               });
                             } catch (error) {
                               toast({
-                                title: "Erro",
-                                description: "Erro ao excluir dados.",
+                                title: "Erro ao excluir dados",
+                                description:
+                                  "Ocorreu um erro ao excluir os dados.",
                                 variant: "destructive",
                               });
                             }
@@ -466,7 +466,7 @@ export default function KommoConfig() {
 
                 <Button
                   type="submit"
-                  disabled={saveConfigMutation.isPending || isLoading}
+                  disabled={saveConfigMutation.isPending || selectedPipelines.length === 0}
                 >
                   {saveConfigMutation.isPending
                     ? "Salvando..."

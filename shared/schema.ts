@@ -6,6 +6,7 @@ import {
   boolean,
   timestamp,
   numeric,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -33,12 +34,9 @@ export const kommoConfig = pgTable("kommo_config", {
   api_url: text("api_url").notNull(),
   access_token: text("access_token").notNull(),
   custom_endpoint: text("custom_endpoint"),
-  sync_interval: integer("sync_interval").default(5),
   last_sync: timestamp("last_sync"),
   next_sync: timestamp("next_sync"),
-  sync_start_date: numeric("sync_start_date"),
-  sync_end_date: numeric("sync_end_date"),
-  pipeline_id: text("pipeline_id"),
+  pipeline_id: jsonb("pipeline_id").$type<number[]>(),
   active: boolean("active").default(true),
 });
 
@@ -80,6 +78,23 @@ export const customRules = pgTable("custom_rules", {
   updated_at: timestamp("updated_at").defaultNow(),
 });
 
+// Table for dynamic metrics based on pipeline stages
+export const dynamicMetrics = pgTable("dynamic_metrics", {
+  id: integer("id").primaryKey(),
+  company_id: uuid("company_id")
+    .references(() => companies.id)
+    .notNull(),
+  nome: text("nome").notNull(),
+  pipeline_stage_id: integer("pipeline_stage_id").notNull(),
+  pipeline_stage_name: text("pipeline_stage_name").notNull(),
+  valor_minimo: integer("valor_minimo").notNull(),
+  cor_sucesso: text("cor_sucesso").default("#22c55e"), // green-500
+  cor_alerta: text("cor_alerta").default("#ef4444"), // red-500
+  active: boolean("active").default(true),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
 export const insertRuleSchema = createInsertSchema(rules).pick({
   nome: true,
   pontos: true,
@@ -90,8 +105,11 @@ export const insertKommoConfigSchema = createInsertSchema(kommoConfig).pick({
   api_url: true,
   access_token: true,
   custom_endpoint: true,
-  sync_interval: true,
+  pipeline_id: true,
+  active: true,
 });
+
+
 
 export const insertSyncLogSchema = createInsertSchema(syncLogs).pick({
   type: true,
@@ -105,6 +123,12 @@ export const insertCompanyRuleSchema = createInsertSchema(companyRules).omit({
 });
 
 export const insertCustomRuleSchema = createInsertSchema(customRules).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
+export const insertDynamicMetricSchema = createInsertSchema(dynamicMetrics).omit({
   id: true,
   created_at: true,
   updated_at: true,
@@ -125,6 +149,9 @@ export type CompanyRule = typeof companyRules.$inferSelect;
 export type InsertCustomRule = z.infer<typeof insertCustomRuleSchema>;
 export type CustomRule = typeof customRules.$inferSelect;
 
+export type InsertDynamicMetric = z.infer<typeof insertDynamicMetricSchema>;
+export type DynamicMetric = typeof dynamicMetrics.$inferSelect;
+
 // Validation schemas for forms
 export const ruleFormSchema = z.object({
   nome: z.string().min(3, "O nome deve ter pelo menos 3 caracteres"),
@@ -135,32 +162,14 @@ export const ruleFormSchema = z.object({
   descricao: z.string().optional(),
 });
 
-export const kommoConfigFormSchema = z
-  .object({
-    api_url: z.string().url("URL inválida"),
-    access_token: z.string().min(5, "Token inválido"),
-    custom_endpoint: z.string().optional(),
-    sync_interval: z
-      .number()
-      .min(1, "Mínimo 1 minuto")
-      .max(60, "Máximo 60 minutos"),
-    sync_start_date: z.union([z.date(), z.number()]),
-    sync_end_date: z.union([z.date(), z.number()]),
-    active: z.boolean().default(true),
-    pipeline_id: z.string().optional(),
-  })
-  .refine(
-    (data) => {
-      if (data.sync_start_date && data.sync_end_date) {
-        return data.sync_end_date > data.sync_start_date;
-      }
-      return true;
-    },
-    {
-      message: "A data final deve ser maior que a data inicial",
-      path: ["sync_end_date"],
-    },
-  );
+// Form schema for Kommo configuration
+export const kommoConfigFormSchema = z.object({
+  api_url: z.string().min(1, "URL da API é obrigatória"),
+  access_token: z.string().min(1, "Token de acesso é obrigatório"),
+  custom_endpoint: z.string().optional(),
+  pipeline_id: z.array(z.number()).min(1, "Selecione pelo menos um funil"),
+  active: z.boolean().default(true),
+});
 
 export const loginFormSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -183,6 +192,7 @@ export const registerFormSchema = z
     path: ["confirmPassword"],
   });
 
+// Updated company rule form schema
 export const companyRuleFormSchema = z.object({
   rule_id: z.number().min(1, "ID da regra é obrigatório"),
   pontos: z
@@ -192,6 +202,7 @@ export const companyRuleFormSchema = z.object({
   active: z.boolean().default(true),
 });
 
+// Updated custom rule form schema  
 export const customRuleFormSchema = z.object({
   nome: z.string().min(3, "O nome deve ter pelo menos 3 caracteres"),
   pontos: z
@@ -199,5 +210,16 @@ export const customRuleFormSchema = z.object({
     .min(-100, "O valor mínimo é -100")
     .max(100, "O valor máximo é 100"),
   descricao: z.string().optional(),
+  active: z.boolean().default(true),
+});
+
+// Dynamic metrics form schema
+export const dynamicMetricFormSchema = z.object({
+  nome: z.string().min(3, "O nome deve ter pelo menos 3 caracteres"),
+  pipeline_stage_id: z.number().min(1, "Selecione uma etapa do funil"),
+  pipeline_stage_name: z.string().min(1, "Nome da etapa é obrigatório"),
+  valor_minimo: z.number().min(0, "Valor mínimo deve ser positivo"),
+  cor_sucesso: z.string().default("#22c55e"),
+  cor_alerta: z.string().default("#ef4444"),
   active: z.boolean().default(true),
 });

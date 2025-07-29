@@ -7,6 +7,7 @@ import Register from "@/pages/Register";
 import Welcome from "@/pages/Welcome";
 import Rules from "@/pages/Rules";
 import KommoConfig from "@/pages/KommoConfig";
+import DynamicMetrics from "@/pages/DynamicMetrics";
 import Monitoring from "@/pages/Monitoring";
 import AuthWrapper from "@/components/layout/AuthWrapper";
 import { useEffect } from "react";
@@ -52,6 +53,7 @@ function Router() {
         <Route path="/" component={Welcome} />
         <Route path="/welcome" component={Welcome} />
         <Route path="/rules" component={Rules} />
+        <Route path="/dynamic-metrics" component={DynamicMetrics} />
         <Route path="/settings/general" component={GeneralSettings} />
         <Route path="/settings/kommo" component={KommoConfig} />
         <Route path="/monitoring" component={Monitoring} />
