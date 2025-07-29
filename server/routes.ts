@@ -724,17 +724,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const pipelineId of pipelineIds) {
           try {
             // Ensure URL format is correct (remove trailing slashes)
-            const baseUrl = config.api_url.replace(/\/+$/, '');
-            const statusesUrl = `${baseUrl}/api/v4/leads/pipelines/${pipelineId}/statuses`;
-            
-            console.log(`Fetching stages for pipeline ${pipelineId} from: ${statusesUrl}`);
-            
+            const baseUrl = config.api_url.replace(/\/+$/, "");
+            const statusesUrl = `${baseUrl}/leads/pipelines/${pipelineId}/statuses`;
+
+            console.log(
+              `Fetching stages for pipeline ${pipelineId} from: ${statusesUrl}`,
+            );
+
             const response = await fetch(statusesUrl, {
               headers: {
-                'Authorization': `Bearer ${config.access_token}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'User-Agent': 'Mozilla/5.0 (compatible; YourApp/1.0)'
+                authorization: `Bearer ${config.access_token}`,
+                "Content-Type": "application/json",
+                Accept: "application/json",
+                "User-Agent": "Mozilla/5.0 (compatible; YourApp/1.0)",
               },
             });
 
@@ -742,13 +744,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const data = await response.json();
 
               // Get pipeline name first
-              const pipelineUrl = `${baseUrl}/api/v4/leads/pipelines/${pipelineId}`;
+              const pipelineUrl = `${baseUrl}/leads/pipelines/${pipelineId}`;
               const pipelineResponse = await fetch(pipelineUrl, {
                 headers: {
-                  'Authorization': `Bearer ${config.access_token}`,
-                  'Content-Type': 'application/json',
-                  'Accept': 'application/json',
-                  'User-Agent': 'Mozilla/5.0 (compatible; YourApp/1.0)'
+                  authorization: `Bearer ${config.access_token}`,
+                  "Content-Type": "application/json",
+                  Accept: "application/json",
+                  "User-Agent": "Mozilla/5.0 (compatible; YourApp/1.0)",
                 },
               });
 
@@ -850,23 +852,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const pipelineId of pipelineIds) {
           try {
             // Ensure URL format is correct (remove trailing slashes)
-            const baseUrl = config.api_url.replace(/\/+$/, '');
-            const fullUrl = `${baseUrl}/api/v4/leads/pipelines/${pipelineId}`;
-            
+            const baseUrl = config.api_url.replace(/\/+$/, "");
+            const fullUrl = `${baseUrl}/leads/pipelines/${pipelineId}`;
+
             console.log(`Fetching pipeline ${pipelineId} from: ${fullUrl}`);
-            console.log(`Using token: ${config.access_token.substring(0, 20)}...`);
-            
+            console.log(
+              `Using token: ${config.access_token.substring(0, 20)}...`,
+            );
+
             const response = await fetch(fullUrl, {
               headers: {
-                'Authorization': `Bearer ${config.access_token}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'User-Agent': 'Mozilla/5.0 (compatible; YourApp/1.0)'
+                authorization: `Bearer ${config.access_token}`,
+                "Content-Type": "application/json",
+                Accept: "application/json",
+                "User-Agent": "Mozilla/5.0 (compatible; YourApp/1.0)",
               },
             });
 
-            console.log(`Response status for pipeline ${pipelineId}:`, response.status);
-            console.log(`Response headers:`, Object.fromEntries(response.headers.entries()));
+            console.log(
+              `Response status for pipeline ${pipelineId}:`,
+              response.status,
+            );
+            console.log(
+              `Response headers:`,
+              Object.fromEntries(response.headers.entries()),
+            );
 
             if (response.ok) {
               const data = await response.json();
@@ -881,7 +891,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 status: response.status,
                 statusText: response.statusText,
                 url: response.url,
-                errorBody: errorText
+                errorBody: errorText,
               });
 
               // If unauthorized, the token might be expired
@@ -953,7 +963,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Testa a conexão fazendo uma requisição para a API da Kommo
         const response = await fetch(`${api_url}/account`, {
           headers: {
-            Authorization: `Bearer ${access_token}`,
+            authorization: `Bearer ${access_token}`,
           },
         });
 
