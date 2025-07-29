@@ -767,12 +767,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 }
               }
             } else {
-              console.error(`Error fetching stages for pipeline ${pipelineId}:`, {
-                status: response.status,
-                statusText: response.statusText,
-                url: response.url
-              });
-              
+              console.error(
+                `Error fetching stages for pipeline ${pipelineId}:`,
+                {
+                  status: response.status,
+                  statusText: response.statusText,
+                  url: response.url,
+                },
+              );
+
               if (response.status === 401) {
                 console.error("Access token appears to be invalid or expired");
               }
@@ -859,9 +862,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               console.error(`Error fetching pipeline ${pipelineId}:`, {
                 status: response.status,
                 statusText: response.statusText,
-                url: response.url
+                url: response.url,
               });
-              
+
               // If unauthorized, the token might be expired
               if (response.status === 401) {
                 console.error("Access token appears to be invalid or expired");
