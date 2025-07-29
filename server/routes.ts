@@ -723,29 +723,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         for (const pipelineId of pipelineIds) {
           try {
-            const response = await fetch(
-              `${config.api_url}/leads/pipelines/${pipelineId}/statuses`,
-              {
-                headers: {
-                  Authorization: `Bearer ${config.access_token}`,
-                  "Content-Type": "application/json",
-                },
+            // Ensure URL format is correct (remove trailing slashes)
+            const baseUrl = config.api_url.replace(/\/+$/, '');
+            const statusesUrl = `${baseUrl}/api/v4/leads/pipelines/${pipelineId}/statuses`;
+            
+            console.log(`Fetching stages for pipeline ${pipelineId} from: ${statusesUrl}`);
+            
+            const response = await fetch(statusesUrl, {
+              headers: {
+                'Authorization': `Bearer ${config.access_token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'User-Agent': 'Mozilla/5.0 (compatible; YourApp/1.0)'
               },
-            );
+            });
 
             if (response.ok) {
               const data = await response.json();
 
               // Get pipeline name first
-              const pipelineResponse = await fetch(
-                `${config.api_url}/leads/pipelines/${pipelineId}`,
-                {
-                  headers: {
-                    Authorization: `Bearer ${config.access_token}`,
-                    "Content-Type": "application/json",
-                  },
+              const pipelineUrl = `${baseUrl}/api/v4/leads/pipelines/${pipelineId}`;
+              const pipelineResponse = await fetch(pipelineUrl, {
+                headers: {
+                  'Authorization': `Bearer ${config.access_token}`,
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json',
+                  'User-Agent': 'Mozilla/5.0 (compatible; YourApp/1.0)'
                 },
-              );
+              });
 
               let pipelineName = `Pipeline ${pipelineId}`;
               if (pipelineResponse.ok) {
@@ -753,6 +758,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 pipelineName = pipelineData.name;
               } else if (pipelineResponse.status === 401) {
                 console.error("Access token appears to be invalid or expired");
+                const errorText = await pipelineResponse.text();
+                console.error("Pipeline fetch error details:", errorText);
               }
 
               // Process stages from API response
@@ -842,32 +849,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         for (const pipelineId of pipelineIds) {
           try {
-            const response = await fetch(
-              `${config.api_url}/leads/pipelines/${pipelineId}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${config.access_token}`,
-                  "Content-Type": "application/json",
-                },
+            // Ensure URL format is correct (remove trailing slashes)
+            const baseUrl = config.api_url.replace(/\/+$/, '');
+            const fullUrl = `${baseUrl}/api/v4/leads/pipelines/${pipelineId}`;
+            
+            console.log(`Fetching pipeline ${pipelineId} from: ${fullUrl}`);
+            console.log(`Using token: ${config.access_token.substring(0, 20)}...`);
+            
+            const response = await fetch(fullUrl, {
+              headers: {
+                'Authorization': `Bearer ${config.access_token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'User-Agent': 'Mozilla/5.0 (compatible; YourApp/1.0)'
               },
-            );
+            });
+
+            console.log(`Response status for pipeline ${pipelineId}:`, response.status);
+            console.log(`Response headers:`, Object.fromEntries(response.headers.entries()));
 
             if (response.ok) {
               const data = await response.json();
+              console.log(`Pipeline ${pipelineId} data:`, data);
               pipelines.push({
                 id: data.id.toString(),
                 name: data.name,
               });
             } else {
+              const errorText = await response.text();
               console.error(`Error fetching pipeline ${pipelineId}:`, {
                 status: response.status,
                 statusText: response.statusText,
                 url: response.url,
+                errorBody: errorText
               });
 
               // If unauthorized, the token might be expired
               if (response.status === 401) {
                 console.error("Access token appears to be invalid or expired");
+                console.error("Error details:", errorText);
               }
             }
           } catch (error) {
