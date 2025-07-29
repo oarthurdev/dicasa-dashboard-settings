@@ -751,6 +751,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               if (pipelineResponse.ok) {
                 const pipelineData = await pipelineResponse.json();
                 pipelineName = pipelineData.name;
+              } else if (pipelineResponse.status === 401) {
+                console.error("Access token appears to be invalid or expired");
               }
 
               // Process stages from API response
@@ -763,6 +765,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     pipeline_name: pipelineName,
                   });
                 }
+              }
+            } else {
+              console.error(`Error fetching stages for pipeline ${pipelineId}:`, {
+                status: response.status,
+                statusText: response.statusText,
+                url: response.url
+              });
+              
+              if (response.status === 401) {
+                console.error("Access token appears to be invalid or expired");
               }
             }
           } catch (error) {
@@ -837,13 +849,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
               },
             );
 
-            console.log(response);
             if (response.ok) {
               const data = await response.json();
               pipelines.push({
                 id: data.id.toString(),
                 name: data.name,
               });
+            } else {
+              console.error(`Error fetching pipeline ${pipelineId}:`, {
+                status: response.status,
+                statusText: response.statusText,
+                url: response.url
+              });
+              
+              // If unauthorized, the token might be expired
+              if (response.status === 401) {
+                console.error("Access token appears to be invalid or expired");
+              }
             }
           } catch (error) {
             console.error(`Error fetching pipeline ${pipelineId}:`, error);
