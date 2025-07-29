@@ -137,8 +137,35 @@ export const insertDynamicMetricSchema = createInsertSchema(dynamicMetrics).omit
 export type InsertRule = z.infer<typeof insertRuleSchema>;
 export type Rule = typeof rules.$inferSelect;
 
-export type InsertKommoConfig = z.infer<typeof insertKommoConfigSchema>;
-export type KommoConfig = typeof kommoConfig.$inferSelect;
+export interface InsertKommoConfig {
+  company_id: string;
+  api_url: string;
+  access_token: string;
+  refresh_token: string;
+  client_id: string;
+  client_secret: string;
+  token_expires_at?: Date;
+  custom_endpoint?: string;
+  pipeline_id?: string;
+  active: boolean;
+}
+export interface KommoConfig {
+  id: number;
+  company_id: string;
+  api_url: string;
+  access_token: string;
+  refresh_token: string;
+  client_id: string;
+  client_secret: string;
+  token_expires_at?: Date;
+  custom_endpoint?: string;
+  pipeline_id?: string;
+  active: boolean;
+  last_sync?: Date;
+  next_sync?: Date;
+  created_at?: Date;
+  updated_at?: Date;
+}
 
 export type InsertSyncLog = z.infer<typeof insertSyncLogSchema>;
 export type SyncLog = typeof syncLogs.$inferSelect;
@@ -164,8 +191,11 @@ export const ruleFormSchema = z.object({
 
 // Form schema for Kommo configuration
 export const kommoConfigFormSchema = z.object({
-  api_url: z.string().min(1, "URL da API é obrigatória"),
+  api_url: z.string().url("URL deve ser válida"),
   access_token: z.string().min(1, "Token de acesso é obrigatório"),
+  refresh_token: z.string().min(1, "Refresh token é obrigatório"),
+  client_id: z.string().min(1, "Client ID é obrigatório"),
+  client_secret: z.string().min(1, "Client Secret é obrigatório"),
   custom_endpoint: z.string().optional(),
   pipeline_id: z.array(z.number()).min(1, "Selecione pelo menos um funil"),
   active: z.boolean().default(true),

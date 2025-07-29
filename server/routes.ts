@@ -718,6 +718,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(200).json([]);
         }
 
+        // Import KommoAuthManager
+        const { KommoAuthManager } = await import('./kommoAuth.ts');
+
         // Fetch pipeline stages from Kommo API
         const allStages = [];
 
@@ -725,43 +728,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             // Ensure URL format is correct (remove trailing slashes)
             const baseUrl = config.api_url.replace(/\/+$/, "");
-            const statusesUrl = `${baseUrl}/leads/pipelines/${pipelineId}/statuses`;
+            const statusesUrl = `${baseUrl}/api/v4/leads/pipelines/${pipelineId}/statuses`;
 
             console.log(
               `Fetching stages for pipeline ${pipelineId} from: ${statusesUrl}`,
             );
 
-            const response = await fetch(statusesUrl, {
-              headers: {
-                authorization: `Bearer ${config.access_token}`,
-                "Content-Type": "application/json",
-                Accept: "application/json",
-                "User-Agent": "Mozilla/5.0 (compatible; YourApp/1.0)",
-              },
-            });
+            const response = await KommoAuthManager.makeAuthenticatedRequest(
+              companyId,
+              statusesUrl
+            );
 
             if (response.ok) {
               const data = await response.json();
 
               // Get pipeline name first
-              const pipelineUrl = `${baseUrl}/leads/pipelines/${pipelineId}`;
-              const pipelineResponse = await fetch(pipelineUrl, {
-                headers: {
-                  authorization: `Bearer ${config.access_token}`,
-                  "Content-Type": "application/json",
-                  Accept: "application/json",
-                  "User-Agent": "Mozilla/5.0 (compatible; YourApp/1.0)",
-                },
-              });
+              const pipelineUrl = `${baseUrl}/api/v4/leads/pipelines/${pipelineId}`;
+              const pipelineResponse = await KommoAuthManager.makeAuthenticatedRequest(
+                companyId,
+                pipelineUrl
+              );
 
               let pipelineName = `Pipeline ${pipelineId}`;
               if (pipelineResponse.ok) {
                 const pipelineData = await pipelineResponse.json();
                 pipelineName = pipelineData.name;
-              } else if (pipelineResponse.status === 401) {
-                console.error("Access token appears to be invalid or expired");
-                const errorText = await pipelineResponse.text();
-                console.error("Pipeline fetch error details:", errorText);
+              } else {
+                console.error("Error fetching pipeline name:", await pipelineResponse.text());
               }
 
               // Process stages from API response
@@ -776,18 +769,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 }
               }
             } else {
+              const errorText = await response.text();
               console.error(
                 `Error fetching stages for pipeline ${pipelineId}:`,
                 {
                   status: response.status,
                   statusText: response.statusText,
                   url: response.url,
+                  errorBody: errorText
                 },
               );
-
-              if (response.status === 401) {
-                console.error("Access token appears to be invalid or expired");
-              }
             }
           } catch (error) {
             console.error(
@@ -846,6 +837,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(200).json([]);
         }
 
+        // Import KommoAuthManager
+        const { KommoAuthManager } = await import('./kommoAuth.ts');
+
         // Fetch pipeline details from Kommo API
         const pipelines = [];
 
@@ -853,29 +847,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             // Ensure URL format is correct (remove trailing slashes)
             const baseUrl = config.api_url.replace(/\/+$/, "");
-            const fullUrl = `${baseUrl}/leads/pipelines/${pipelineId}`;
+            const fullUrl = `${baseUrl}/api/v4/leads/pipelines/${pipelineId}`;
 
             console.log(`Fetching pipeline ${pipelineId} from: ${fullUrl}`);
-            console.log(
-              `Using token: ${config.access_token.substring(0, 20)}...`,
-            );
 
-            const response = await fetch(fullUrl, {
-              headers: {
-                authorization: `Bearer ${config.access_token}`,
-                "Content-Type": "application/json",
-                Accept: "application/json",
-                "User-Agent": "Mozilla/5.0 (compatible; YourApp/1.0)",
-              },
-            });
+            const response = await KommoAuthManager.makeAuthenticatedRequest(
+              companyId,
+              fullUrl
+            );
 
             console.log(
               `Response status for pipeline ${pipelineId}:`,
               response.status,
-            );
-            console.log(
-              `Response headers:`,
-              Object.fromEntries(response.headers.entries()),
             );
 
             if (response.ok) {
@@ -893,12 +876,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 url: response.url,
                 errorBody: errorText,
               });
-
-              // If unauthorized, the token might be expired
-              if (response.status === 401) {
-                console.error("Access token appears to be invalid or expired");
-                console.error("Error details:", errorText);
-              }
             }
           } catch (error) {
             console.error(`Error fetching pipeline ${pipelineId}:`, error);

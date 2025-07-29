@@ -88,6 +88,9 @@ export default function KommoConfig() {
     defaultValues: {
       api_url: "",
       access_token: "",
+      refresh_token: "",
+      client_id: "",
+      client_secret: "",
       custom_endpoint: "",
       pipeline_id: [],
       active: true,
@@ -122,6 +125,9 @@ export default function KommoConfig() {
         {
           api_url: config.api_url || "",
           access_token: config.access_token || "",
+          refresh_token: config.refresh_token || "",
+          client_id: config.client_id || "",
+          client_secret: config.client_secret || "",
           custom_endpoint: config.custom_endpoint || "",
           pipeline_id: pipelineIds,
           active: config.active ?? true,
@@ -280,6 +286,93 @@ export default function KommoConfig() {
                     </div>
                     <FormDescription>
                       Token de autenticação para acessar a API
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="refresh_token"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Refresh Token</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          {...field}
+                          type={showPassword ? "text" : "password"}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormDescription>
+                      Token usado para renovar o access token
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="client_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Client ID</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      ID da aplicação na Kommo
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="client_secret"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Client Secret</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          {...field}
+                          type={showPassword ? "text" : "password"}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormDescription>
+                      Chave secreta da aplicação na Kommo
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
