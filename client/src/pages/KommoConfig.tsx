@@ -15,6 +15,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -212,18 +219,25 @@ export default function KommoConfig() {
     }
   };
 
-  // Handle pipeline selection
-  const handlePipelineToggle = (pipelineId: number, checked: boolean) => {
+  // Handle pipeline selection for multi-select
+  const handlePipelineSelect = (pipelineId: string) => {
+    const id = parseInt(pipelineId);
     let newSelection = [...selectedPipelines];
 
-    if (checked) {
-      if (!newSelection.includes(pipelineId)) {
-        newSelection.push(pipelineId);
-      }
+    if (newSelection.includes(id)) {
+      // Remove if already selected
+      newSelection = newSelection.filter((selectedId) => selectedId !== id);
     } else {
-      newSelection = newSelection.filter((id) => id !== pipelineId);
+      // Add if not selected
+      newSelection.push(id);
     }
 
+    setSelectedPipelines(newSelection);
+    form.setValue("pipeline_id", newSelection);
+  };
+
+  const handleRemovePipeline = (pipelineId: number) => {
+    const newSelection = selectedPipelines.filter((id) => id !== pipelineId);
     setSelectedPipelines(newSelection);
     form.setValue("pipeline_id", newSelection);
   };
@@ -409,63 +423,69 @@ export default function KommoConfig() {
                     </FormDescription>
 
                     {config?.api_url && config?.access_token && (
-                      <div className="space-y-3 border rounded-lg p-4">
+                      <div className="space-y-3">
                         {pipelines.length === 0 ? (
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-sm text-muted-foreground border rounded-lg p-4">
                             Nenhum funil encontrado. Verifique suas credenciais.
                           </div>
                         ) : (
-                          pipelines.map((pipeline) => {
-                            const pipelineId = parseInt(pipeline.id);
-                            const isSelected =
-                              selectedPipelines.includes(pipelineId);
-
-                            return (
-                              <div
-                                key={pipeline.id}
-                                className="flex items-center space-x-3"
-                              >
-                                <Checkbox
-                                  id={`pipeline-${pipeline.id}`}
-                                  checked={isSelected}
-                                  onCheckedChange={(checked) =>
-                                    handlePipelineToggle(
-                                      pipelineId,
-                                      checked as boolean,
-                                    )
-                                  }
-                                />
-                                <label
-                                  htmlFor={`pipeline-${pipeline.id}`}
-                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                                >
-                                  {pipeline.name}
-                                </label>
-                                <Badge variant="outline">{pipeline.id}</Badge>
-                              </div>
-                            );
-                          })
+                          <Select onValueChange={handlePipelineSelect}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione um funil para adicionar" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {pipelines
+                                .filter(
+                                  (pipeline) =>
+                                    !selectedPipelines.includes(
+                                      parseInt(pipeline.id),
+                                    ),
+                                )
+                                .map((pipeline) => (
+                                  <SelectItem
+                                    key={pipeline.id}
+                                    value={pipeline.id}
+                                  >
+                                    <div className="flex items-center justify-between w-full">
+                                      <span>{pipeline.name}</span>
+                                      <Badge variant="outline" className="ml-2">
+                                        {pipeline.id}
+                                      </Badge>
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
                         )}
                       </div>
                     )}
 
                     {selectedPipelines.length > 0 && (
                       <div className="mt-3">
-                        <p className="text-sm text-muted-foreground">
-                          Funis selecionados: {selectedPipelines.length}
+                        <p className="text-sm text-muted-foreground mb-2">
+                          Funis selecionados ({selectedPipelines.length}):
                         </p>
-                        <div className="flex flex-wrap gap-2 mt-2">
+                        <div className="flex flex-wrap gap-2">
                           {selectedPipelines.map((pipelineId) => {
                             const pipeline = pipelines.find(
                               (p) => parseInt(p.id) === pipelineId,
                             );
                             return (
-                              <Badge key={pipelineId} variant="default">
+                              <Badge
+                                key={pipelineId}
+                                variant="default"
+                                className="cursor-pointer hover:bg-destructive"
+                                onClick={() => handleRemovePipeline(pipelineId)}
+                              >
                                 {pipeline?.name || `ID: ${pipelineId}`}
+                                <span className="ml-1 text-xs">×</span>
                               </Badge>
                             );
                           })}
                         </div>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Clique em um funil para removê-lo
+                        </p>
                       </div>
                     )}
 
