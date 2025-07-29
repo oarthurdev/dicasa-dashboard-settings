@@ -985,8 +985,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        const { api_url, access_token, custom_endpoint, pipeline_id, active } =
-          validation.data;
+        const { 
+          api_url, 
+          access_token, 
+          refresh_token, 
+          client_id, 
+          client_secret, 
+          custom_endpoint, 
+          pipeline_id, 
+          active 
+        } = validation.data;
 
         // Obter company_id do usuário autenticado
         const companyId = (req as any).companyId;
@@ -1013,6 +1021,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               {
                 api_url,
                 access_token,
+                refresh_token,
+                client_id,
+                client_secret,
                 custom_endpoint,
                 pipeline_id,
                 active,
@@ -1034,6 +1045,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (existingConfig.api_url !== api_url) changes.api_url = api_url;
           if (existingConfig.access_token !== access_token)
             changes.access_token = access_token;
+          if (existingConfig.refresh_token !== refresh_token)
+            changes.refresh_token = refresh_token;
+          if (existingConfig.client_id !== client_id)
+            changes.client_id = client_id;
+          if (existingConfig.client_secret !== client_secret)
+            changes.client_secret = client_secret;
           if (existingConfig.custom_endpoint !== custom_endpoint)
             changes.custom_endpoint = custom_endpoint;
           if (
