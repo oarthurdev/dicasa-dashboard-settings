@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { dynamicMetricFormSchema, type DynamicMetric, type MetricResult } from "@shared/schema";
@@ -125,15 +125,19 @@ export default function DynamicMetrics() {
   const selectedStage = pipelineStages.find(stage => stage.id === selectedStageId);
   
   // Auto-fill stage name when stage is selected
-  useState(() => {
+  React.useEffect(() => {
     if (selectedStage) {
       form.setValue("pipeline_stage_name", selectedStage.name);
     }
-  });
+  }, [selectedStage, form]);
 
   // Create metric mutation
   const createMetricMutation = useMutation({
     mutationFn: async (data: FormValues) => {
+      console.log("Mutation called with data:", data);
+      console.log("Token:", token);
+      console.log("Company ID:", localStorage.getItem("selected_company"));
+      
       const res = await api.post("/api/dynamic-metrics", data, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -215,6 +219,10 @@ export default function DynamicMetrics() {
   });
 
   const onSubmit = (data: FormValues) => {
+    console.log("Form submitted with data:", data);
+    console.log("Form errors:", form.formState.errors);
+    console.log("Is form valid:", form.formState.isValid);
+    
     if (editingMetric) {
       updateMetricMutation.mutate({ id: editingMetric.id, data });
     } else {
