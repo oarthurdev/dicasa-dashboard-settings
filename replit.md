@@ -112,6 +112,18 @@ Preferred communication style: Simple, everyday language.
 - PostgreSQL dialect with Neon serverless adapter
 
 ## Recent Changes
+- **2025-01-29**: Enhanced Dynamic Metrics system for proper integration with ranking project:
+  - Added metric_results table to store calculated values from ranking project
+  - Created comprehensive Dynamic Metrics page with configuration and results overview
+  - Implemented API endpoints for metric configuration and result storage
+  - Added pipeline stage integration for metric configuration
+  - Clear separation: this system configures metrics, ranking project calculates values
+  - Results are linked to metric configurations and show achievement status
+- **2025-01-29**: Added Company Branding system with multi-tenant theming:
+  - company_branding table for custom colors, logos, and theme settings
+  - API endpoints for branding configuration management
+  - Enhanced Welcome dashboard with real-time statistics
+  - Improved Monitoring page with detailed logs and system status
 - **2025-01-28**: Migrated from Replit Agent to standard Replit environment for better compatibility and security
 - **2025-01-28**: Implemented company-specific rules feature allowing each company to:
   - Configure custom point values for general system rules

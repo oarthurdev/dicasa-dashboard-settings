@@ -113,6 +113,25 @@ export const dynamicMetrics = pgTable("dynamic_metrics", {
   updated_at: timestamp("updated_at").defaultNow(),
 });
 
+// Table for storing metric results calculated by the ranking project
+export const metricResults = pgTable("metric_results", {
+  id: integer("id").primaryKey(),
+  dynamic_metric_id: integer("dynamic_metric_id")
+    .references(() => dynamicMetrics.id)
+    .notNull(),
+  company_id: uuid("company_id")
+    .references(() => companies.id)
+    .notNull(),
+  valor_atual: integer("valor_atual").notNull(),
+  status: text("status").notNull(), // "sucesso", "alerta", "neutro"
+  periodo_referencia: text("periodo_referencia"), // e.g., "2025-01", "2025-W01"
+  leads_count: integer("leads_count").notNull().default(0),
+  atingiu_meta: boolean("atingiu_meta").notNull().default(false),
+  calculado_em: timestamp("calculado_em").defaultNow(),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
 export const insertRuleSchema = createInsertSchema(rules).pick({
   nome: true,
   pontos: true,
@@ -153,6 +172,12 @@ export const insertCustomRuleSchema = createInsertSchema(customRules).omit({
 });
 
 export const insertDynamicMetricSchema = createInsertSchema(dynamicMetrics).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
+export const insertMetricResultSchema = createInsertSchema(metricResults).omit({
   id: true,
   created_at: true,
   updated_at: true,
@@ -202,6 +227,9 @@ export type CustomRule = typeof customRules.$inferSelect;
 
 export type InsertDynamicMetric = z.infer<typeof insertDynamicMetricSchema>;
 export type DynamicMetric = typeof dynamicMetrics.$inferSelect;
+
+export type InsertMetricResult = z.infer<typeof insertMetricResultSchema>;
+export type MetricResult = typeof metricResults.$inferSelect;
 
 export type InsertCompanyBranding = z.infer<typeof insertCompanyBrandingSchema>;
 export type CompanyBranding = typeof companyBranding.$inferSelect;

@@ -1540,6 +1540,293 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Dynamic Metrics Routes
+  app.get(
+    "/api/dynamic-metrics",
+    authenticateSupabaseJWT,
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const companyId = (req as any).companyId;
+
+        const { data: metrics, error } = await supabaseServer
+          .from("dynamic_metrics")
+          .select("*")
+          .eq("company_id", companyId as string)
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+        return res.status(200).json(metrics || []);
+      } catch (error) {
+        console.error("Error fetching dynamic metrics:", error);
+        return res
+          .status(500)
+          .json({ message: "Erro ao buscar métricas dinâmicas" });
+      }
+    },
+  );
+
+  app.get(
+    "/api/dynamic-metrics-with-results",
+    authenticateSupabaseJWT,
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const companyId = (req as any).companyId;
+
+        // Get metrics with their latest results
+        const { data: metrics, error } = await supabaseServer
+          .from("dynamic_metrics")
+          .select(`
+            *,
+            metric_results:metric_results!inner(
+              id,
+              valor_atual,
+              status,
+              leads_count,
+              atingiu_meta,
+              calculado_em,
+              periodo_referencia
+            )
+          `)
+          .eq("company_id", companyId as string)
+          .order("created_at", { ascending: false });
+
+        if (error && error.code !== "PGRST116") throw error;
+
+        // Also get metrics without results
+        const { data: metricsWithoutResults } = await supabaseServer
+          .from("dynamic_metrics")
+          .select("*")
+          .eq("company_id", companyId as string)
+          .not("id", "in", `(${(metrics || []).map(m => m.id).join(",") || "0"})`)
+          .order("created_at", { ascending: false });
+
+        // Format the response
+        const formattedMetrics = [
+          ...(metrics || []).map(metric => ({
+            ...metric,
+            current_result: metric.metric_results?.[0] || null
+          })),
+          ...(metricsWithoutResults || []).map(metric => ({
+            ...metric,
+            current_result: null
+          }))
+        ];
+
+        return res.status(200).json(formattedMetrics);
+      } catch (error) {
+        console.error("Error fetching dynamic metrics with results:", error);
+        return res
+          .status(500)
+          .json({ message: "Erro ao buscar métricas com resultados" });
+      }
+    },
+  );
+
+  app.post(
+    "/api/dynamic-metrics",
+    authenticateSupabaseJWT,
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const companyId = (req as any).companyId;
+        const validation = dynamicMetricFormSchema.safeParse(req.body);
+
+        if (!validation.success) {
+          return res.status(400).json({ 
+            message: "Dados inválidos",
+            errors: validation.error.errors 
+          });
+        }
+
+        const { data: newMetric, error } = await supabaseServer
+          .from("dynamic_metrics")
+          .insert({
+            company_id: companyId,
+            ...validation.data,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        return res.status(201).json(newMetric);
+      } catch (error) {
+        console.error("Error creating dynamic metric:", error);
+        return res
+          .status(500)
+          .json({ message: "Erro ao criar métrica dinâmica" });
+      }
+    },
+  );
+
+  app.patch(
+    "/api/dynamic-metrics/:id",
+    authenticateSupabaseJWT,
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const companyId = (req as any).companyId;
+        const { id } = req.params;
+        const updateData = req.body;
+
+        const { data: updatedMetric, error } = await supabaseServer
+          .from("dynamic_metrics")
+          .update(updateData)
+          .eq("id", id)
+          .eq("company_id", companyId as string)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return res.status(200).json(updatedMetric);
+      } catch (error) {
+        console.error("Error updating dynamic metric:", error);
+        return res
+          .status(500)
+          .json({ message: "Erro ao atualizar métrica dinâmica" });
+      }
+    },
+  );
+
+  app.delete(
+    "/api/dynamic-metrics/:id",
+    authenticateSupabaseJWT,
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const companyId = (req as any).companyId;
+        const { id } = req.params;
+
+        // First delete any associated metric results
+        await supabaseServer
+          .from("metric_results")
+          .delete()
+          .eq("dynamic_metric_id", id)
+          .eq("company_id", companyId as string);
+
+        // Then delete the metric
+        const { error } = await supabaseServer
+          .from("dynamic_metrics")
+          .delete()
+          .eq("id", id)
+          .eq("company_id", companyId as string);
+
+        if (error) throw error;
+        return res.status(200).json({ message: "Métrica excluída com sucesso" });
+      } catch (error) {
+        console.error("Error deleting dynamic metric:", error);
+        return res
+          .status(500)
+          .json({ message: "Erro ao excluir métrica dinâmica" });
+      }
+    },
+  );
+
+  // API endpoint for the ranking project to save metric results
+  app.post(
+    "/api/metric-results",
+    authenticateSupabaseJWT,
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const companyId = (req as any).companyId;
+        const results = req.body; // Array of metric results
+
+        // Validate that all metric IDs belong to the company
+        const metricIds = results.map((r: any) => r.dynamic_metric_id);
+        const { data: metrics } = await supabaseServer
+          .from("dynamic_metrics")
+          .select("id")
+          .eq("company_id", companyId as string)
+          .in("id", metricIds);
+
+        const validMetricIds = (metrics || []).map(m => m.id);
+        const validResults = results.filter((r: any) => 
+          validMetricIds.includes(r.dynamic_metric_id)
+        );
+
+        if (validResults.length === 0) {
+          return res.status(400).json({ 
+            message: "Nenhuma métrica válida encontrada" 
+          });
+        }
+
+        // Add company_id to all results
+        const resultsWithCompany = validResults.map((result: any) => ({
+          ...result,
+          company_id: companyId,
+        }));
+
+        // Insert new results (this will create new records each time)
+        const { data: savedResults, error } = await supabaseServer
+          .from("metric_results")
+          .insert(resultsWithCompany)
+          .select();
+
+        if (error) throw error;
+        return res.status(201).json(savedResults);
+      } catch (error) {
+        console.error("Error saving metric results:", error);
+        return res
+          .status(500)
+          .json({ message: "Erro ao salvar resultados das métricas" });
+      }
+    },
+  );
+
+  // Get pipeline stages for dynamic metrics configuration
+  app.get(
+    "/api/kommo/pipeline-stages",
+    authenticateSupabaseJWT,
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const companyId = (req as any).companyId;
+
+        // Get Kommo config to find selected pipelines
+        const { data: kommoConfig } = await supabaseServer
+          .from("kommo_config")
+          .select("pipeline_id")
+          .eq("company_id", companyId as string)
+          .single();
+
+        if (!kommoConfig?.pipeline_id) {
+          return res.status(200).json([]);
+        }
+
+        // Mock pipeline stages based on selected pipelines
+        // In a real implementation, this would fetch from Kommo API
+        const mockStages = [
+          { id: 1, name: "Primeiro Contato", pipeline_id: 1, pipeline_name: "Vendas Principal" },
+          { id: 2, name: "Qualificação", pipeline_id: 1, pipeline_name: "Vendas Principal" },
+          { id: 3, name: "Proposta", pipeline_id: 1, pipeline_name: "Vendas Principal" },
+          { id: 4, name: "Negociação", pipeline_id: 1, pipeline_name: "Vendas Principal" },
+          { id: 5, name: "Fechamento", pipeline_id: 1, pipeline_name: "Vendas Principal" },
+          { id: 6, name: "Lead Qualificado", pipeline_id: 2, pipeline_name: "Pré-Vendas" },
+          { id: 7, name: "Agendamento", pipeline_id: 2, pipeline_name: "Pré-Vendas" },
+          { id: 8, name: "Apresentação", pipeline_id: 2, pipeline_name: "Pré-Vendas" },
+        ];
+
+        // Filter stages by selected pipelines
+        const selectedPipelines = Array.isArray(kommoConfig.pipeline_id) 
+          ? kommoConfig.pipeline_id 
+          : [kommoConfig.pipeline_id];
+        
+        const filteredStages = mockStages.filter(stage => 
+          selectedPipelines.includes(stage.pipeline_id)
+        );
+
+        return res.status(200).json(filteredStages);
+      } catch (error) {
+        console.error("Error fetching pipeline stages:", error);
+        return res
+          .status(500)
+          .json({ message: "Erro ao buscar estágios dos funis" });
+      }
+    },
+  );
+
   const httpServer = createServer(app);
   return httpServer;
 }
