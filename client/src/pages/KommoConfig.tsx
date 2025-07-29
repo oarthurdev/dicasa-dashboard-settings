@@ -38,7 +38,7 @@ import api from "@/lib/api";
 
 type FormValues = z.infer<typeof kommoConfigFormSchema>;
 
-const BASE_URL = import.meta.env.VITE_ADMIN_API_URL;
+const BASE_URL = window.location.origin;
 
 export default function KommoConfig() {
   const [showPassword, setShowPassword] = useState(false);
@@ -112,20 +112,23 @@ export default function KommoConfig() {
   // Update form when config is loaded
   useEffect(() => {
     if (config) {
-      const pipelineIds = Array.isArray(config.pipeline_id) 
-        ? config.pipeline_id 
-        : config.pipeline_id 
-          ? [config.pipeline_id] 
+      const pipelineIds = Array.isArray(config.pipeline_id)
+        ? config.pipeline_id
+        : config.pipeline_id
+          ? [config.pipeline_id]
           : [];
-      
-      form.reset({
-        api_url: config.api_url || "",
-        access_token: config.access_token || "",
-        custom_endpoint: config.custom_endpoint || "",
-        pipeline_id: pipelineIds,
-        active: config.active ?? true,
-      }, { keepValues: false });
-      
+
+      form.reset(
+        {
+          api_url: config.api_url || "",
+          access_token: config.access_token || "",
+          custom_endpoint: config.custom_endpoint || "",
+          pipeline_id: pipelineIds,
+          active: config.active ?? true,
+        },
+        { keepValues: false },
+      );
+
       setSelectedPipelines(pipelineIds);
     }
   }, [config, form]);
@@ -206,15 +209,15 @@ export default function KommoConfig() {
   // Handle pipeline selection
   const handlePipelineToggle = (pipelineId: number, checked: boolean) => {
     let newSelection = [...selectedPipelines];
-    
+
     if (checked) {
       if (!newSelection.includes(pipelineId)) {
         newSelection.push(pipelineId);
       }
     } else {
-      newSelection = newSelection.filter(id => id !== pipelineId);
+      newSelection = newSelection.filter((id) => id !== pipelineId);
     }
-    
+
     setSelectedPipelines(newSelection);
     form.setValue("pipeline_id", newSelection);
   };
@@ -311,7 +314,7 @@ export default function KommoConfig() {
                         ? "Salve a configuração da API primeiro para selecionar funis"
                         : "Selecione os funis que serão utilizados para sincronização"}
                     </FormDescription>
-                    
+
                     {config?.api_url && config?.access_token && (
                       <div className="space-y-3 border rounded-lg p-4">
                         {pipelines.length === 0 ? (
@@ -321,15 +324,22 @@ export default function KommoConfig() {
                         ) : (
                           pipelines.map((pipeline) => {
                             const pipelineId = parseInt(pipeline.id);
-                            const isSelected = selectedPipelines.includes(pipelineId);
-                            
+                            const isSelected =
+                              selectedPipelines.includes(pipelineId);
+
                             return (
-                              <div key={pipeline.id} className="flex items-center space-x-3">
+                              <div
+                                key={pipeline.id}
+                                className="flex items-center space-x-3"
+                              >
                                 <Checkbox
                                   id={`pipeline-${pipeline.id}`}
                                   checked={isSelected}
-                                  onCheckedChange={(checked) => 
-                                    handlePipelineToggle(pipelineId, checked as boolean)
+                                  onCheckedChange={(checked) =>
+                                    handlePipelineToggle(
+                                      pipelineId,
+                                      checked as boolean,
+                                    )
                                   }
                                 />
                                 <label
@@ -345,7 +355,7 @@ export default function KommoConfig() {
                         )}
                       </div>
                     )}
-                    
+
                     {selectedPipelines.length > 0 && (
                       <div className="mt-3">
                         <p className="text-sm text-muted-foreground">
@@ -353,7 +363,9 @@ export default function KommoConfig() {
                         </p>
                         <div className="flex flex-wrap gap-2 mt-2">
                           {selectedPipelines.map((pipelineId) => {
-                            const pipeline = pipelines.find(p => parseInt(p.id) === pipelineId);
+                            const pipeline = pipelines.find(
+                              (p) => parseInt(p.id) === pipelineId,
+                            );
                             return (
                               <Badge key={pipelineId} variant="default">
                                 {pipeline?.name || `ID: ${pipelineId}`}
@@ -363,7 +375,7 @@ export default function KommoConfig() {
                         </div>
                       </div>
                     )}
-                    
+
                     <FormMessage />
                   </FormItem>
                 )}
@@ -381,9 +393,7 @@ export default function KommoConfig() {
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel>
-                        Ativar Sincronização
-                      </FormLabel>
+                      <FormLabel>Ativar Sincronização</FormLabel>
                       <FormDescription>
                         Marque para ativar a sincronização automática dos dados
                       </FormDescription>
@@ -466,7 +476,10 @@ export default function KommoConfig() {
 
                 <Button
                   type="submit"
-                  disabled={saveConfigMutation.isPending || selectedPipelines.length === 0}
+                  disabled={
+                    saveConfigMutation.isPending ||
+                    selectedPipelines.length === 0
+                  }
                 >
                   {saveConfigMutation.isPending
                     ? "Salvando..."

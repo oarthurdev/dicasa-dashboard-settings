@@ -94,7 +94,7 @@ app.use((req, res, next) => {
     await setupVite(app, server); // Configuração do Vite em dev
   }
 
-  const port = 6000;
+  const port = 5001;
   server.listen(
     {
       port,

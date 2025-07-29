@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Create axios instance with interceptors
 const api = axios.create({
-  baseURL: import.meta.env.VITE_ADMIN_API_URL,
+  baseURL: window.location.origin,
 });
 
 // Request interceptor to add auth token
