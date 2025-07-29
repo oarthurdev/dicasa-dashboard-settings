@@ -850,17 +850,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const data = await response.json();
         const pipelines = [];
 
-        // Process pipelines from API response
+        console.log("API Response structure:", JSON.stringify(data, null, 2));
+
+        // Process pipelines from API response - handle different response formats
+        let pipelineArray = [];
+        
         if (data._embedded && data._embedded.pipelines) {
-          for (const pipeline of data._embedded.pipelines) {
-            // Only include active pipelines
-            if (pipeline.is_main !== false) { // Include main pipelines and those without is_main property
-              pipelines.push({
-                id: pipeline.id.toString(),
-                name: pipeline.name,
-                is_main: pipeline.is_main || false,
-              });
-            }
+          // Format 1: Embedded pipelines
+          pipelineArray = data._embedded.pipelines;
+        } else if (Array.isArray(data)) {
+          // Format 2: Direct array
+          pipelineArray = data;
+        } else if (data.pipelines && Array.isArray(data.pipelines)) {
+          // Format 3: Pipelines property
+          pipelineArray = data.pipelines;
+        } else if (data.result && Array.isArray(data.result)) {
+          // Format 4: Result property
+          pipelineArray = data.result;
+        } else {
+          console.error("Unknown API response format:", data);
+        }
+
+        for (const pipeline of pipelineArray) {
+          // Only include active pipelines (skip archived/deleted ones)
+          if (pipeline.is_archive !== true && pipeline.is_deleted !== true) {
+            pipelines.push({
+              id: pipeline.id.toString(),
+              name: pipeline.name,
+              is_main: pipeline.is_main || false,
+              is_archive: pipeline.is_archive || false,
+            });
           }
         }
 
