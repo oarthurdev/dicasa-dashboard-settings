@@ -822,69 +822,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(200).json([]);
         }
 
-        // Parse pipeline_id - it's stored as text (JSON string) in database
-        let pipelineIds = [];
-        try {
-          if (config.pipeline_id) {
-            if (typeof config.pipeline_id === "string") {
-              pipelineIds = JSON.parse(config.pipeline_id);
-            } else if (Array.isArray(config.pipeline_id)) {
-              pipelineIds = config.pipeline_id;
-            }
-          }
-        } catch (error) {
-          console.error("Error parsing pipeline_id:", error);
-          return res.status(200).json([]);
-        }
-
-        if (!Array.isArray(pipelineIds) || pipelineIds.length === 0) {
-          return res.status(200).json([]);
-        }
-
         // Import KommoAuthManager
         const { KommoAuthManager } = await import("./kommoAuth.ts");
 
-        // Fetch pipeline details from Kommo API
+        // Fetch ALL pipelines from Kommo API
+        const baseUrl = config.api_url.replace(/\/+$/, "");
+        const pipelinesUrl = `${baseUrl}/leads/pipelines`;
+
+        console.log(`Fetching all pipelines from: ${pipelinesUrl}`);
+
+        const response = await KommoAuthManager.makeAuthenticatedRequest(
+          companyId,
+          pipelinesUrl,
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Error fetching pipelines:", {
+            status: response.status,
+            statusText: response.statusText,
+            url: response.url,
+            errorBody: errorText,
+          });
+          return res.status(200).json([]);
+        }
+
+        const data = await response.json();
         const pipelines = [];
 
-        for (const pipelineId of pipelineIds) {
-          try {
-            // Ensure URL format is correct (remove trailing slashes)
-            const baseUrl = config.api_url.replace(/\/+$/, "");
-            const fullUrl = `${baseUrl}/leads/pipelines/${pipelineId}`;
-
-            console.log(`Fetching pipeline ${pipelineId} from: ${fullUrl}`);
-
-            const response = await KommoAuthManager.makeAuthenticatedRequest(
-              companyId,
-              fullUrl,
-            );
-
-            console.log(
-              `Response status for pipeline ${pipelineId}:`,
-              response.status,
-            );
-
-            if (response.ok) {
-              const data = await response.json();
+        // Process pipelines from API response
+        if (data._embedded && data._embedded.pipelines) {
+          for (const pipeline of data._embedded.pipelines) {
+            // Only include active pipelines
+            if (pipeline.is_main !== false) { // Include main pipelines and those without is_main property
               pipelines.push({
-                id: data.id.toString(),
-                name: data.name,
-              });
-            } else {
-              const errorText = await response.text();
-              console.error(`Error fetching pipeline ${pipelineId}:`, {
-                status: response.status,
-                statusText: response.statusText,
-                url: response.url,
-                errorBody: errorText,
+                id: pipeline.id.toString(),
+                name: pipeline.name,
+                is_main: pipeline.is_main || false,
               });
             }
-          } catch (error) {
-            console.error(`Error fetching pipeline ${pipelineId}:`, error);
           }
         }
 
+        console.log(`Found ${pipelines.length} active pipelines`);
         return res.status(200).json(pipelines);
       } catch (error) {
         console.error("Error fetching pipelines:", error);
