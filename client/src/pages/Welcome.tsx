@@ -1,21 +1,27 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Users, 
-  TrendingUp, 
-  Activity, 
-  Settings, 
-  BarChart3, 
+import {
+  Users,
+  TrendingUp,
+  Activity,
+  Settings,
+  BarChart3,
   Palette,
   Database,
   Clock,
   CheckCircle,
   AlertTriangle,
-  Zap
+  Zap,
 } from "lucide-react";
 import api from "@/lib/api";
 
@@ -68,7 +74,9 @@ export default function Welcome() {
               <div className="flex items-center">
                 <Users className="h-8 w-8 text-blue-600 mr-3" />
                 <div>
-                  <p className="text-2xl font-bold">{stats?.totalBrokers || "—"}</p>
+                  <p className="text-2xl font-bold">
+                    {stats?.totalBrokers || "—"}
+                  </p>
                   <p className="text-sm text-muted-foreground">Corretores</p>
                 </div>
               </div>
@@ -80,7 +88,9 @@ export default function Welcome() {
               <div className="flex items-center">
                 <TrendingUp className="h-8 w-8 text-green-600 mr-3" />
                 <div>
-                  <p className="text-2xl font-bold">{stats?.activeRules || "—"}</p>
+                  <p className="text-2xl font-bold">
+                    {stats?.activeRules || "—"}
+                  </p>
                   <p className="text-sm text-muted-foreground">Regras Ativas</p>
                 </div>
               </div>
@@ -114,7 +124,9 @@ export default function Welcome() {
                 <Clock className="h-8 w-8 text-purple-600 mr-3" />
                 <div>
                   <p className="text-sm font-medium">
-                    {stats?.nextSyncTime ? new Date(stats.nextSyncTime).toLocaleTimeString('pt-BR') : "—"}
+                    {stats?.nextSyncTime
+                      ? new Date(stats.nextSyncTime).toLocaleTimeString("pt-BR")
+                      : "—"}
                   </p>
                   <p className="text-sm text-muted-foreground">Próxima Sync</p>
                 </div>
@@ -125,7 +137,10 @@ export default function Welcome() {
 
         {/* Main Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/rules")}>
+          <Card
+            className="hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => navigate("/rules")}
+          >
             <CardHeader>
               <CardTitle className="flex items-center gap-3">
                 <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
@@ -134,7 +149,8 @@ export default function Welcome() {
                 Gestão de Regras
               </CardTitle>
               <CardDescription>
-                Configure regras de pontuação que afetam o ranking dos corretores
+                Configure regras de pontuação que afetam o ranking dos
+                corretores
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -149,7 +165,10 @@ export default function Welcome() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/settings/kommo-config")}>
+          <Card
+            className="hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => navigate("/settings/kommo")}
+          >
             <CardHeader>
               <CardTitle className="flex items-center gap-3">
                 <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
@@ -158,7 +177,8 @@ export default function Welcome() {
                 Integração Kommo
               </CardTitle>
               <CardDescription>
-                Configure a conexão com a API da Kommo para sincronização de dados
+                Configure a conexão com a API da Kommo para sincronização de
+                dados
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -173,7 +193,10 @@ export default function Welcome() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/monitoring")}>
+          <Card
+            className="hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => navigate("/monitoring")}
+          >
             <CardHeader>
               <CardTitle className="flex items-center gap-3">
                 <div className="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
@@ -197,7 +220,10 @@ export default function Welcome() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/settings/company-branding")}>
+          <Card
+            className="hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => navigate("/settings/company-branding")}
+          >
             <CardHeader>
               <CardTitle className="flex items-center gap-3">
                 <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
@@ -221,7 +247,10 @@ export default function Welcome() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/settings/dynamic-metrics")}>
+          <Card
+            className="hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => navigate("/settings/dynamic-metrics")}
+          >
             <CardHeader>
               <CardTitle className="flex items-center gap-3">
                 <div className="p-2 bg-teal-100 dark:bg-teal-900/20 rounded-lg">
@@ -245,7 +274,10 @@ export default function Welcome() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/settings/general")}>
+          <Card
+            className="hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => navigate("/settings/general")}
+          >
             <CardHeader>
               <CardTitle className="flex items-center gap-3">
                 <div className="p-2 bg-gray-100 dark:bg-gray-900/20 rounded-lg">
@@ -281,29 +313,35 @@ export default function Welcome() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${stats?.kommoConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+                <div
+                  className={`w-3 h-3 rounded-full ${stats?.kommoConnected ? "bg-green-500" : "bg-red-500"}`}
+                />
                 <div>
                   <p className="font-medium">Conexão Kommo</p>
                   <p className="text-sm text-muted-foreground">
-                    {stats?.kommoConnected ? 'Funcionando normalmente' : 'Verificar configurações'}
+                    {stats?.kommoConnected
+                      ? "Funcionando normalmente"
+                      : "Verificar configurações"}
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-3">
                 <div className="w-3 h-3 rounded-full bg-blue-500" />
                 <div>
                   <p className="font-medium">Banco de Dados</p>
-                  <p className="text-sm text-muted-foreground">Conectado e operacional</p>
+                  <p className="text-sm text-muted-foreground">
+                    Conectado e operacional
+                  </p>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-3">
                 <div className="w-3 h-3 rounded-full bg-green-500" />
                 <div>
                   <p className="font-medium">Sincronização</p>
                   <p className="text-sm text-muted-foreground">
-                    {stats?.lastSyncStatus || 'Aguardando próxima execução'}
+                    {stats?.lastSyncStatus || "Aguardando próxima execução"}
                   </p>
                 </div>
               </div>

@@ -2,8 +2,19 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Home, BookOpen, Settings, BarChart3, LogOut, Target } from "lucide-react";
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import {
+  Home,
+  BookOpen,
+  Settings,
+  BarChart3,
+  LogOut,
+  Target,
+} from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from "@/components/ui/collapsible";
 
 type SidebarItemProps = {
   href: string;
@@ -66,9 +77,9 @@ export default function Sidebar() {
             Regras
           </SidebarItem>
           <SidebarItem
-            href="/dynamic-metrics"
+            href="/settings/dynamic-metrics"
             icon={<Target size={20} />}
-            active={location === "/dynamic-metrics"}
+            active={location === "/settings/dynamic-metrics"}
           >
             Métricas Dinâmicas
           </SidebarItem>

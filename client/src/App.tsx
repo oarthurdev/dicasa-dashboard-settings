@@ -40,10 +40,12 @@ function Router() {
       <Switch>
         <Route path="/login" component={Login} />
         <Route path="/register" component={Register} />
-        <Route component={() => {
-          setLocation("/login");
-          return null;
-        }} />
+        <Route
+          component={() => {
+            setLocation("/login");
+            return null;
+          }}
+        />
       </Switch>
     );
   }
@@ -56,7 +58,7 @@ function Router() {
         <Route path="/rules" component={Rules} />
         <Route path="/settings/dynamic-metrics" component={DynamicMetrics} />
         <Route path="/settings/general" component={GeneralSettings} />
-        <Route path="/settings/kommo-config" component={KommoConfig} />
+        <Route path="/settings/kommo" component={KommoConfig} />
         <Route path="/settings/company-branding" component={CompanyBranding} />
         <Route path="/monitoring" component={Monitoring} />
         <Route component={NotFound} />
