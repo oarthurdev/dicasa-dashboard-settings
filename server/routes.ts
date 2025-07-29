@@ -660,25 +660,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(200).json([]);
         }
 
-        // Mock pipeline stages data
-        // In real implementation, this would fetch from Kommo API
-        const allStages = [
-          { id: 1, name: "Primeiro Contato", pipeline_id: 8846055, pipeline_name: "Vendas Principais" },
-          { id: 2, name: "Aquecendo", pipeline_id: 8846055, pipeline_name: "Vendas Principais" },
-          { id: 3, name: "Negociação", pipeline_id: 8846055, pipeline_name: "Vendas Principais" },
-          { id: 4, name: "Fechamento", pipeline_id: 8846055, pipeline_name: "Vendas Principais" },
-          { id: 5, name: "Lead Qualificado", pipeline_id: 8865115, pipeline_name: "Pipeline Secundário" },
-          { id: 6, name: "Proposta Enviada", pipeline_id: 8865115, pipeline_name: "Pipeline Secundário" },
-          { id: 7, name: "Aguardando Resposta", pipeline_id: 8865067, pipeline_name: "Leads Frios" },
-          { id: 8, name: "Reativação", pipeline_id: 8865067, pipeline_name: "Leads Frios" },
-        ];
+        // Fetch pipeline stages from Kommo API
+        const allStages = [];
+        
+        for (const pipelineId of config.pipeline_id) {
+          try {
+            const response = await fetch(`${config.api_url}/api/v4/leads/pipelines/${pipelineId}/statuses`, {
+              headers: {
+                'Authorization': `Bearer ${config.access_token}`,
+                'Content-Type': 'application/json'
+              }
+            });
 
-        // Filter stages based on selected pipelines
-        const filteredStages = allStages.filter(stage =>
-          config.pipeline_id.includes(stage.pipeline_id)
-        );
+            if (response.ok) {
+              const data = await response.json();
+              
+              // Get pipeline name first
+              const pipelineResponse = await fetch(`${config.api_url}/api/v4/leads/pipelines/${pipelineId}`, {
+                headers: {
+                  'Authorization': `Bearer ${config.access_token}`,
+                  'Content-Type': 'application/json'
+                }
+              });
+              
+              let pipelineName = `Pipeline ${pipelineId}`;
+              if (pipelineResponse.ok) {
+                const pipelineData = await pipelineResponse.json();
+                pipelineName = pipelineData.name;
+              }
 
-        return res.status(200).json(filteredStages);
+              // Process stages from API response
+              if (data._embedded && data._embedded.statuses) {
+                for (const status of data._embedded.statuses) {
+                  allStages.push({
+                    id: status.id,
+                    name: status.name,
+                    pipeline_id: status.pipeline_id,
+                    pipeline_name: pipelineName
+                  });
+                }
+              }
+            }
+          } catch (error) {
+            console.error(`Error fetching stages for pipeline ${pipelineId}:`, error);
+          }
+        }
+
+        return res.status(200).json(allStages);
       } catch (error) {
         console.error("Error fetching pipeline stages:", error);
         return res.status(500).json({ message: "Erro ao buscar etapas do funil" });
@@ -693,13 +721,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     companyContext,
     async (req: Request, res: Response) => {
       try {
-        // Mock pipelines data
-        // In real implementation, this would fetch from Kommo API
-        const pipelines = [
-          { id: "8846055", name: "Vendas Principais" },
-          { id: "8865115", name: "Pipeline Secundário" },
-          { id: "8865067", name: "Leads Frios" },
-        ];
+        const companyId = (req as any).companyId;
+
+        // Get company's Kommo config
+        const { data: config } = await supabaseServer
+          .from("kommo_config")
+          .select("*")
+          .eq("company_id", companyId)
+          .single();
+
+        if (!config || !config.pipeline_id || !Array.isArray(config.pipeline_id)) {
+          return res.status(200).json([]);
+        }
+
+        // Fetch pipeline details from Kommo API
+        const pipelines = [];
+        
+        for (const pipelineId of config.pipeline_id) {
+          try {
+            const response = await fetch(`${config.api_url}/api/v4/leads/pipelines/${pipelineId}`, {
+              headers: {
+                'Authorization': `Bearer ${config.access_token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              pipelines.push({
+                id: data.id.toString(),
+                name: data.name
+              });
+            }
+          } catch (error) {
+            console.error(`Error fetching pipeline ${pipelineId}:`, error);
+          }
+        }
 
         return res.status(200).json(pipelines);
       } catch (error) {
@@ -791,17 +848,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     companyContext,
     async (req: Request, res: Response) => {
       try {
-        const parsedBody = {
-          ...req.body,
-          sync_start_date: req.body.sync_start_date
-            ? Math.floor(Date.parse(req.body.sync_start_date) / 1000)
-            : null,
-          sync_end_date: req.body.sync_end_date
-            ? Math.floor(Date.parse(req.body.sync_end_date) / 1000)
-            : null,
-        };
-
-        const validation = kommoConfigFormSchema.safeParse(parsedBody);
+        const validation = kommoConfigFormSchema.safeParse(req.body);
 
         if (!validation.success) {
           return res.status(400).json({
@@ -813,9 +860,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const {
           api_url,
           access_token,
-          sync_interval,
-          sync_start_date,
-          sync_end_date,
+          custom_endpoint,
           pipeline_id,
           active,
         } = validation.data;
@@ -845,9 +890,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               {
                 api_url,
                 access_token,
-                sync_interval,
-                sync_start_date,
-                sync_end_date,
+                custom_endpoint,
                 pipeline_id,
                 active,
                 company_id,
@@ -868,13 +911,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (existingConfig.api_url !== api_url) changes.api_url = api_url;
           if (existingConfig.access_token !== access_token)
             changes.access_token = access_token;
-          if (existingConfig.sync_interval !== sync_interval)
-            changes.sync_interval = sync_interval;
-          if (existingConfig.sync_start_date !== sync_start_date)
-            changes.sync_start_date = sync_start_date;
-          if (existingConfig.sync_end_date !== sync_end_date)
-            changes.sync_end_date = sync_end_date;
-          if (existingConfig.pipeline_id !== pipeline_id)
+          if (existingConfig.custom_endpoint !== custom_endpoint)
+            changes.custom_endpoint = custom_endpoint;
+          if (JSON.stringify(existingConfig.pipeline_id) !== JSON.stringify(pipeline_id))
             changes.pipeline_id = pipeline_id;
           if (existingConfig.active !== active) changes.active = active;
 
