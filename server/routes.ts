@@ -288,32 +288,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .order("created_at", { ascending: true });
 
         // Merge general rules with company configurations
-        const rulesWithConfigs = generalRules?.map(rule => {
-          const companyConfig = companyConfigs?.find(config => config.rule_id === rule.id);
-          return {
-            ...rule,
-            company_pontos: companyConfig?.pontos || rule.pontos,
-            has_custom_config: !!companyConfig,
-            is_custom: false
-          };
-        }) || [];
+        const rulesWithConfigs =
+          generalRules?.map((rule) => {
+            const companyConfig = companyConfigs?.find(
+              (config) => config.rule_id === rule.id,
+            );
+            return {
+              ...rule,
+              company_pontos: companyConfig?.pontos || rule.pontos,
+              has_custom_config: !!companyConfig,
+              is_custom: false,
+            };
+          }) || [];
 
         // Add custom rules
-        const customRulesFormatted = customRules?.map(rule => ({
-          ...rule,
-          company_pontos: rule.pontos,
-          has_custom_config: true,
-          is_custom: true
-        })) || [];
+        const customRulesFormatted =
+          customRules?.map((rule) => ({
+            ...rule,
+            company_pontos: rule.pontos,
+            has_custom_config: true,
+            is_custom: true,
+          })) || [];
 
         const allRules = [...rulesWithConfigs, ...customRulesFormatted];
 
         return res.status(200).json(allRules);
       } catch (error) {
         console.error("Error fetching company rules:", error);
-        return res.status(500).json({ message: "Erro ao buscar configurações de regras" });
+        return res
+          .status(500)
+          .json({ message: "Erro ao buscar configurações de regras" });
       }
-    }
+    },
   );
 
   app.post(
@@ -326,7 +332,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const validation = companyRuleFormSchema.safeParse(req.body);
 
         if (!validation.success) {
-          return res.status(400).json({ message: "Dados inválidos", errors: validation.error.errors });
+          return res
+            .status(400)
+            .json({
+              message: "Dados inválidos",
+              errors: validation.error.errors,
+            });
         }
 
         const { rule_id, pontos, active } = validation.data;
@@ -363,9 +374,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } catch (error) {
         console.error("Error creating/updating company rule config:", error);
-        return res.status(500).json({ message: "Erro ao configurar regra da empresa" });
+        return res
+          .status(500)
+          .json({ message: "Erro ao configurar regra da empresa" });
       }
-    }
+    },
   );
 
   app.post(
@@ -378,7 +391,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const validation = customRuleFormSchema.safeParse(req.body);
 
         if (!validation.success) {
-          return res.status(400).json({ message: "Dados inválidos", errors: validation.error.errors });
+          return res
+            .status(400)
+            .json({
+              message: "Dados inválidos",
+              errors: validation.error.errors,
+            });
         }
 
         const { nome, pontos, descricao, active } = validation.data;
@@ -387,13 +405,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Create custom rule
         const { data: created, error } = await supabaseServer
           .from("custom_rules")
-          .insert({ 
-            company_id: companyId, 
-            nome, 
-            coluna_nome, 
-            pontos, 
-            descricao, 
-            active 
+          .insert({
+            company_id: companyId,
+            nome,
+            coluna_nome,
+            pontos,
+            descricao,
+            active,
           })
           .select()
           .single();
@@ -402,9 +420,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(201).json(created);
       } catch (error) {
         console.error("Error creating custom rule:", error);
-        return res.status(500).json({ message: "Erro ao criar regra personalizada" });
+        return res
+          .status(500)
+          .json({ message: "Erro ao criar regra personalizada" });
       }
-    }
+    },
   );
 
   app.patch(
@@ -430,7 +450,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .single();
 
         if (!rule) {
-          return res.status(404).json({ message: "Regra personalizada não encontrada" });
+          return res
+            .status(404)
+            .json({ message: "Regra personalizada não encontrada" });
         }
 
         // Update custom rule
@@ -449,9 +471,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(200).json(updated);
       } catch (error) {
         console.error("Error updating custom rule:", error);
-        return res.status(500).json({ message: "Erro ao atualizar regra personalizada" });
+        return res
+          .status(500)
+          .json({ message: "Erro ao atualizar regra personalizada" });
       }
-    }
+    },
   );
 
   app.delete(
@@ -476,7 +500,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .single();
 
         if (!rule) {
-          return res.status(404).json({ message: "Regra personalizada não encontrada" });
+          return res
+            .status(404)
+            .json({ message: "Regra personalizada não encontrada" });
         }
 
         // Delete custom rule
@@ -486,12 +512,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .eq("id", ruleId);
 
         if (error) throw error;
-        return res.status(200).json({ message: "Regra personalizada excluída com sucesso" });
+        return res
+          .status(200)
+          .json({ message: "Regra personalizada excluída com sucesso" });
       } catch (error) {
         console.error("Error deleting custom rule:", error);
-        return res.status(500).json({ message: "Erro ao excluir regra personalizada" });
+        return res
+          .status(500)
+          .json({ message: "Erro ao excluir regra personalizada" });
       }
-    }
+    },
   );
 
   // Dynamic Metrics Routes
@@ -514,9 +544,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(200).json(metrics || []);
       } catch (error) {
         console.error("Error fetching dynamic metrics:", error);
-        return res.status(500).json({ message: "Erro ao buscar métricas dinâmicas" });
+        return res
+          .status(500)
+          .json({ message: "Erro ao buscar métricas dinâmicas" });
       }
-    }
+    },
   );
 
   app.post(
@@ -529,7 +561,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const validation = dynamicMetricFormSchema.safeParse(req.body);
 
         if (!validation.success) {
-          return res.status(400).json({ message: "Dados inválidos", errors: validation.error.errors });
+          return res
+            .status(400)
+            .json({
+              message: "Dados inválidos",
+              errors: validation.error.errors,
+            });
         }
 
         const metricData = {
@@ -548,9 +585,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(201).json(created);
       } catch (error) {
         console.error("Error creating dynamic metric:", error);
-        return res.status(500).json({ message: "Erro ao criar métrica dinâmica" });
+        return res
+          .status(500)
+          .json({ message: "Erro ao criar métrica dinâmica" });
       }
-    }
+    },
   );
 
   app.patch(
@@ -575,7 +614,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .single();
 
         if (!metric) {
-          return res.status(404).json({ message: "Métrica dinâmica não encontrada" });
+          return res
+            .status(404)
+            .json({ message: "Métrica dinâmica não encontrada" });
         }
 
         const updateData = {
@@ -595,9 +636,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(200).json(updated);
       } catch (error) {
         console.error("Error updating dynamic metric:", error);
-        return res.status(500).json({ message: "Erro ao atualizar métrica dinâmica" });
+        return res
+          .status(500)
+          .json({ message: "Erro ao atualizar métrica dinâmica" });
       }
-    }
+    },
   );
 
   app.delete(
@@ -622,7 +665,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .single();
 
         if (!metric) {
-          return res.status(404).json({ message: "Métrica dinâmica não encontrada" });
+          return res
+            .status(404)
+            .json({ message: "Métrica dinâmica não encontrada" });
         }
 
         const { error } = await supabaseServer
@@ -632,12 +677,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         if (error) throw error;
 
-        return res.status(200).json({ message: "Métrica dinâmica excluída com sucesso" });
+        return res
+          .status(200)
+          .json({ message: "Métrica dinâmica excluída com sucesso" });
       } catch (error) {
         console.error("Error deleting dynamic metric:", error);
-        return res.status(500).json({ message: "Erro ao excluir métrica dinâmica" });
+        return res
+          .status(500)
+          .json({ message: "Erro ao excluir métrica dinâmica" });
       }
-    }
+    },
   );
 
   // Pipeline Stages Route
@@ -656,33 +705,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .eq("company_id", companyId)
           .single();
 
-        if (!config || !config.pipeline_id || !Array.isArray(config.pipeline_id)) {
+        if (
+          !config ||
+          !config.pipeline_id ||
+          !Array.isArray(config.pipeline_id)
+        ) {
           return res.status(200).json([]);
         }
 
         // Fetch pipeline stages from Kommo API
         const allStages = [];
-        
+
         for (const pipelineId of config.pipeline_id) {
           try {
-            const response = await fetch(`${config.api_url}/api/v4/leads/pipelines/${pipelineId}/statuses`, {
-              headers: {
-                'Authorization': `Bearer ${config.access_token}`,
-                'Content-Type': 'application/json'
-              }
-            });
+            const response = await fetch(
+              `${config.api_url}/leads/pipelines/${pipelineId}/statuses`,
+              {
+                headers: {
+                  Authorization: `Bearer ${config.access_token}`,
+                  "Content-Type": "application/json",
+                },
+              },
+            );
 
             if (response.ok) {
               const data = await response.json();
-              
+
               // Get pipeline name first
-              const pipelineResponse = await fetch(`${config.api_url}/api/v4/leads/pipelines/${pipelineId}`, {
-                headers: {
-                  'Authorization': `Bearer ${config.access_token}`,
-                  'Content-Type': 'application/json'
-                }
-              });
-              
+              const pipelineResponse = await fetch(
+                `${config.api_url}/leads/pipelines/${pipelineId}`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${config.access_token}`,
+                    "Content-Type": "application/json",
+                  },
+                },
+              );
+
               let pipelineName = `Pipeline ${pipelineId}`;
               if (pipelineResponse.ok) {
                 const pipelineData = await pipelineResponse.json();
@@ -696,22 +755,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     id: status.id,
                     name: status.name,
                     pipeline_id: status.pipeline_id,
-                    pipeline_name: pipelineName
+                    pipeline_name: pipelineName,
                   });
                 }
               }
             }
           } catch (error) {
-            console.error(`Error fetching stages for pipeline ${pipelineId}:`, error);
+            console.error(
+              `Error fetching stages for pipeline ${pipelineId}:`,
+              error,
+            );
           }
         }
 
         return res.status(200).json(allStages);
       } catch (error) {
         console.error("Error fetching pipeline stages:", error);
-        return res.status(500).json({ message: "Erro ao buscar etapas do funil" });
+        return res
+          .status(500)
+          .json({ message: "Erro ao buscar etapas do funil" });
       }
-    }
+    },
   );
 
   // Kommo Pipelines Route
@@ -730,27 +794,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .eq("company_id", companyId)
           .single();
 
-        if (!config || !config.pipeline_id || !Array.isArray(config.pipeline_id)) {
+        if (
+          !config ||
+          !config.pipeline_id ||
+          !Array.isArray(config.pipeline_id)
+        ) {
           return res.status(200).json([]);
         }
 
         // Fetch pipeline details from Kommo API
         const pipelines = [];
-        
+
         for (const pipelineId of config.pipeline_id) {
           try {
-            const response = await fetch(`${config.api_url}/api/v4/leads/pipelines/${pipelineId}`, {
-              headers: {
-                'Authorization': `Bearer ${config.access_token}`,
-                'Content-Type': 'application/json'
-              }
-            });
+            const response = await fetch(
+              `${config.api_url}/leads/pipelines/${pipelineId}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${config.access_token}`,
+                  "Content-Type": "application/json",
+                },
+              },
+            );
 
             if (response.ok) {
               const data = await response.json();
               pipelines.push({
                 id: data.id.toString(),
-                name: data.name
+                name: data.name,
               });
             }
           } catch (error) {
@@ -763,7 +834,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error fetching pipelines:", error);
         return res.status(500).json({ message: "Erro ao buscar funis" });
       }
-    }
+    },
   );
 
   // Kommo config routes
@@ -857,13 +928,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        const {
-          api_url,
-          access_token,
-          custom_endpoint,
-          pipeline_id,
-          active,
-        } = validation.data;
+        const { api_url, access_token, custom_endpoint, pipeline_id, active } =
+          validation.data;
 
         // Obter company_id do usuário autenticado
         const companyId = (req as any).companyId;
@@ -913,7 +979,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             changes.access_token = access_token;
           if (existingConfig.custom_endpoint !== custom_endpoint)
             changes.custom_endpoint = custom_endpoint;
-          if (JSON.stringify(existingConfig.pipeline_id) !== JSON.stringify(pipeline_id))
+          if (
+            JSON.stringify(existingConfig.pipeline_id) !==
+            JSON.stringify(pipeline_id)
+          )
             changes.pipeline_id = pipeline_id;
           if (existingConfig.active !== active) changes.active = active;
 
@@ -1138,7 +1207,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           lastSync: config?.last_sync || null,
           nextSync: config?.next_sync || null,
           latestLog,
-          status: latestLog && latestLog.length > 0 && latestLog[0].type === "ERROR" ? "error" : "connected",
+          status:
+            latestLog && latestLog.length > 0 && latestLog[0].type === "ERROR"
+              ? "error"
+              : "connected",
         });
       } catch (error) {
         console.error("Error fetching sync status:", error);

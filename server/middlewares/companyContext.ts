@@ -33,7 +33,7 @@ export async function companyContext(
     // Armazena o ID da empresa na requisição
     // (req as any).companyId = data.id;
 
-    (req as any).companyId = "4f114478-6405-4971-9344-01f647c6edb8";
+    (req as any).companyId = "7cac0f39-95dc-4843-a3a7-e88b07858a78";
 
     next();
   } catch (err) {
