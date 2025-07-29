@@ -125,12 +125,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Buscar regras padrão e regras personalizadas da empresa
-        const rules = await supabase.getRulesPaginated(
-          offset,
-          limit,
-          companyId,
-        );
-        const totalRules = await supabase.getTotalRules(companyId);
+        const rules = await supabase.getRulesPaginated(offset, limit);
+        const totalRules = await supabase.getTotalRules();
         const totalPages = Math.ceil(totalRules / limit);
 
         return res.status(200).json({
@@ -332,12 +328,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const validation = companyRuleFormSchema.safeParse(req.body);
 
         if (!validation.success) {
-          return res
-            .status(400)
-            .json({
-              message: "Dados inválidos",
-              errors: validation.error.errors,
-            });
+          return res.status(400).json({
+            message: "Dados inválidos",
+            errors: validation.error.errors,
+          });
         }
 
         const { rule_id, pontos, active } = validation.data;
@@ -391,12 +385,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const validation = customRuleFormSchema.safeParse(req.body);
 
         if (!validation.success) {
-          return res
-            .status(400)
-            .json({
-              message: "Dados inválidos",
-              errors: validation.error.errors,
-            });
+          return res.status(400).json({
+            message: "Dados inválidos",
+            errors: validation.error.errors,
+          });
         }
 
         const { nome, pontos, descricao, active } = validation.data;
@@ -561,12 +553,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const validation = dynamicMetricFormSchema.safeParse(req.body);
 
         if (!validation.success) {
-          return res
-            .status(400)
-            .json({
-              message: "Dados inválidos",
-              errors: validation.error.errors,
-            });
+          return res.status(400).json({
+            message: "Dados inválidos",
+            errors: validation.error.errors,
+          });
         }
 
         const metricData = {
@@ -796,8 +786,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         if (
           !config ||
-          !config.pipeline_id ||
-          !Array.isArray(config.pipeline_id)
+          !Array.isArray(config.pipeline_id) ||
+          config.pipeline_id.length === 0 ||
+          !config.pipeline_id.every((id) => typeof id === "number")
         ) {
           return res.status(200).json([]);
         }

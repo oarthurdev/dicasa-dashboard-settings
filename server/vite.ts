@@ -73,13 +73,12 @@ export async function setupVite(app: Express, server: Server) {
 
 // Função para servir arquivos estáticos em produção
 export function serveStatic(app: Express) {
-  const distDir = path.resolve(__dirname, "..", "dist");
+  const distDir = path.resolve(__dirname, "..", "dist"); // Caminho correto para a pasta 'dist'
 
-  // Serve os arquivos estáticos em /ranking
-  app.use("/admin", express.static(distDir));
+  app.use(express.static(distDir)); // Serve os arquivos estáticos
 
-  // Serve index.html em qualquer rota que comece com /ranking
-  app.get("/admin*", (req, res) => {
-    res.sendFile(path.resolve(distDir, "index.html"));
+  // Roteia todas as outras requisições para o arquivo 'index.html' de produção
+  app.get("*", (req, res) => {
+    res.sendFile(path.resolve(distDir, "public/index.html"));
   });
 }

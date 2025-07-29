@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => {
       outDir: "../dist",
       emptyOutDir: true,
     },
-    base: "/admin/",
+    base: "/",
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "client", "src"),

@@ -133,15 +133,31 @@ export default function Rules() {
 
   // Company Rules Mutations
   const updateCompanyRuleMutation = useMutation({
-    mutationFn: async ({ ruleId, points, isCustom }: { ruleId: number; points: number; isCustom: boolean }) => {
+    mutationFn: async ({
+      ruleId,
+      points,
+      isCustom,
+    }: {
+      ruleId: number;
+      points: number;
+      isCustom: boolean;
+    }) => {
       if (isCustom) {
-        await api.patch(`/api/custom-rules/${ruleId}`, { pontos: points }, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await api.patch(
+          `/api/custom-rules/${ruleId}`,
+          { pontos: points },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
       } else {
-        await api.post("/api/company-rules", { rule_id: ruleId, pontos: points, active: true }, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await api.post(
+          "/api/company-rules",
+          { rule_id: ruleId, pontos: points, active: true },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
       }
     },
     onSuccess: () => {
@@ -155,14 +171,20 @@ export default function Rules() {
     onError: (error: any) => {
       toast({
         title: "Erro ao atualizar pontos",
-        description: error.response?.data.message ?? "Erro ao atualizar os pontos da regra.",
+        description:
+          error.response?.data.message ??
+          "Erro ao atualizar os pontos da regra.",
         variant: "destructive",
       });
     },
   });
 
   const createCustomRuleMutation = useMutation({
-    mutationFn: async (data: { nome: string; pontos: number; descricao?: string }) => {
+    mutationFn: async (data: {
+      nome: string;
+      pontos: number;
+      descricao?: string;
+    }) => {
       await api.post("/api/custom-rules", data, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -178,7 +200,9 @@ export default function Rules() {
     onError: (error: any) => {
       toast({
         title: "Erro ao criar regra",
-        description: error.response?.data.message ?? "Erro ao criar a regra personalizada.",
+        description:
+          error.response?.data.message ??
+          "Erro ao criar a regra personalizada.",
         variant: "destructive",
       });
     },
@@ -201,7 +225,9 @@ export default function Rules() {
     onError: (error: any) => {
       toast({
         title: "Erro ao excluir regra",
-        description: error.response?.data.message ?? "Erro ao excluir a regra personalizada.",
+        description:
+          error.response?.data.message ??
+          "Erro ao excluir a regra personalizada.",
         variant: "destructive",
       });
     },
@@ -259,11 +285,17 @@ export default function Rules() {
 
         <Tabs defaultValue="company-rules" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="company-rules" className="flex items-center gap-2">
+            <TabsTrigger
+              value="company-rules"
+              className="flex items-center gap-2"
+            >
               <Settings className="h-4 w-4" />
               Configuração da Empresa
             </TabsTrigger>
-            <TabsTrigger value="system-rules" className="flex items-center gap-2">
+            <TabsTrigger
+              value="system-rules"
+              className="flex items-center gap-2"
+            >
               <Plus className="h-4 w-4" />
               Regras do Sistema
             </TabsTrigger>
@@ -286,8 +318,12 @@ export default function Rules() {
                 onUpdateRulePoints={(ruleId, points, isCustom) =>
                   updateCompanyRuleMutation.mutate({ ruleId, points, isCustom })
                 }
-                onCreateCustomRule={(data) => createCustomRuleMutation.mutate(data)}
-                onDeleteCustomRule={(ruleId) => deleteCustomRuleMutation.mutate(ruleId)}
+                onCreateCustomRule={(data) =>
+                  createCustomRuleMutation.mutate(data)
+                }
+                onDeleteCustomRule={(ruleId) =>
+                  deleteCustomRuleMutation.mutate(ruleId)
+                }
                 isLoading={
                   updateCompanyRuleMutation.isPending ||
                   createCustomRuleMutation.isPending ||

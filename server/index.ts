@@ -85,15 +85,6 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // Detecta ambiente de produção ou desenvolvimento
-  const isProduction = process.env.NODE_ENV === "production";
-
-  if (isProduction) {
-    serveStatic(app); // Serve o build da aplicação
-  } else {
-    await setupVite(app, server); // Configuração do Vite em dev
-  }
-
   const port = 5001;
   server.listen(
     {
@@ -102,9 +93,7 @@ app.use((req, res, next) => {
       reusePort: true,
     },
     () => {
-      log(
-        `🚀 Servindo em http://localhost:${port} (${isProduction ? "PROD" : "DEV"})`,
-      );
+      log(`🚀 Servindo em http://localhost:${port})`);
     },
   );
 })();

@@ -52,17 +52,8 @@ export const supabase = {
   /**
    * Get all rules
    */
-  async getRulesPaginated(
-    offset: number,
-    limit: number,
-    companyId?: number,
-  ): Promise<Rule[]> {
+  async getRulesPaginated(offset: number, limit: number): Promise<Rule[]> {
     let query = supabaseClient.from("rules").select("*");
-
-    if (companyId) {
-      // Buscar regras padrão (company_id é null) ou regras da empresa específica
-      query = query.or(`company_id.is.null,company_id.eq.${companyId}`);
-    }
 
     const { data, error } = await query
       .order("id")
@@ -76,15 +67,10 @@ export const supabase = {
     return data as Rule[];
   },
 
-  async getTotalRules(companyId?: number): Promise<number> {
+  async getTotalRules(): Promise<number> {
     let query = supabaseClient
       .from("rules")
       .select("*", { count: "exact", head: true });
-
-    if (companyId) {
-      // Contar regras padrão (company_id é null) ou regras da empresa específica
-      query = query.or(`company_id.is.null,company_id.eq.${companyId}`);
-    }
 
     const { count, error } = await query;
 
