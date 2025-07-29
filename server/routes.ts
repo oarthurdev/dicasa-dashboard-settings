@@ -867,7 +867,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
             if (response.ok) {
               const data = await response.json();
-              console.log(`Pipeline ${pipelineId} data:`, data);
               pipelines.push({
                 id: data.id.toString(),
                 name: data.name,
@@ -985,15 +984,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        const { 
-          api_url, 
-          access_token, 
-          refresh_token, 
-          client_id, 
-          client_secret, 
-          custom_endpoint, 
-          pipeline_id, 
-          active 
+        const {
+          api_url,
+          access_token,
+          refresh_token,
+          client_id,
+          client_secret,
+          custom_endpoint,
+          pipeline_id,
+          active,
         } = validation.data;
 
         // Obter company_id do usuário autenticado
