@@ -829,8 +829,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const baseUrl = config.api_url.replace(/\/+$/, "");
         const pipelinesUrl = `${baseUrl}/leads/pipelines`;
 
-        console.log(`Fetching all pipelines from: ${pipelinesUrl}`);
-
         const response = await KommoAuthManager.makeAuthenticatedRequest(
           companyId,
           pipelinesUrl,
@@ -854,7 +852,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Process pipelines from API response - handle different response formats
         let pipelineArray = [];
-        
+
         if (data._embedded && data._embedded.pipelines) {
           // Format 1: Embedded pipelines
           pipelineArray = data._embedded.pipelines;

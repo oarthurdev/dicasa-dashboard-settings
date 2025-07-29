@@ -350,9 +350,7 @@ export default function KommoConfig() {
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
-                    <FormDescription>
-                      ID da aplicação na Kommo
-                    </FormDescription>
+                    <FormDescription>ID da aplicação na Kommo</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -448,9 +446,6 @@ export default function KommoConfig() {
                                   >
                                     <div className="flex items-center justify-between w-full">
                                       <span>{pipeline.name}</span>
-                                      <Badge variant="outline" className="ml-2">
-                                        {pipeline.id}
-                                      </Badge>
                                     </div>
                                   </SelectItem>
                                 ))}
