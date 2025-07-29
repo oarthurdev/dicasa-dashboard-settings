@@ -695,18 +695,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .eq("company_id", companyId)
           .single();
 
-        if (
-          !config ||
-          !config.pipeline_id ||
-          !Array.isArray(config.pipeline_id)
-        ) {
+        if (!config || !config.api_url || !config.access_token) {
+          return res.status(200).json([]);
+        }
+
+        // Parse pipeline_id - it's stored as text (JSON string) in database
+        let pipelineIds = [];
+        try {
+          if (config.pipeline_id) {
+            if (typeof config.pipeline_id === 'string') {
+              pipelineIds = JSON.parse(config.pipeline_id);
+            } else if (Array.isArray(config.pipeline_id)) {
+              pipelineIds = config.pipeline_id;
+            }
+          }
+        } catch (error) {
+          console.error("Error parsing pipeline_id:", error);
+          return res.status(200).json([]);
+        }
+
+        if (!Array.isArray(pipelineIds) || pipelineIds.length === 0) {
           return res.status(200).json([]);
         }
 
         // Fetch pipeline stages from Kommo API
         const allStages = [];
 
-        for (const pipelineId of config.pipeline_id) {
+        for (const pipelineId of pipelineIds) {
           try {
             const response = await fetch(
               `${config.api_url}/leads/pipelines/${pipelineId}/statuses`,
@@ -784,19 +799,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .eq("company_id", companyId)
           .single();
 
-        if (
-          !config ||
-          !Array.isArray(config.pipeline_id) ||
-          config.pipeline_id.length === 0 ||
-          !config.pipeline_id.every((id) => typeof id === "number")
-        ) {
+        if (!config || !config.api_url || !config.access_token) {
+          return res.status(200).json([]);
+        }
+
+        // Parse pipeline_id - it's stored as text (JSON string) in database
+        let pipelineIds = [];
+        try {
+          if (config.pipeline_id) {
+            if (typeof config.pipeline_id === 'string') {
+              pipelineIds = JSON.parse(config.pipeline_id);
+            } else if (Array.isArray(config.pipeline_id)) {
+              pipelineIds = config.pipeline_id;
+            }
+          }
+        } catch (error) {
+          console.error("Error parsing pipeline_id:", error);
+          return res.status(200).json([]);
+        }
+
+        if (!Array.isArray(pipelineIds) || pipelineIds.length === 0) {
           return res.status(200).json([]);
         }
 
         // Fetch pipeline details from Kommo API
         const pipelines = [];
 
-        for (const pipelineId of config.pipeline_id) {
+        for (const pipelineId of pipelineIds) {
           try {
             const response = await fetch(
               `${config.api_url}/leads/pipelines/${pipelineId}`,
@@ -1102,47 +1131,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-  // Kommo pipelines routes
-  app.get(
-    "/api/kommo/pipelines",
-    authenticateSupabaseJWT,
-    companyContext,
-    async (req: Request, res: Response) => {
-      try {
-        const companyId = (req as any).companyId;
-
-        const { data: kommoConfig } = await supabaseServer
-          .from("kommo_config")
-          .select("api_url,access_token")
-          .eq("company_id", companyId as string)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .single();
-
-        if (!kommoConfig?.api_url || !kommoConfig?.access_token) {
-          return res
-            .status(400)
-            .json({ message: "Configuração Kommo não encontrada" });
-        }
-
-        const response = await fetch(`${kommoConfig.api_url}/leads/pipelines`, {
-          headers: {
-            Authorization: `Bearer ${kommoConfig.access_token}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch pipelines");
-        }
-
-        const data = await response.json();
-        return res.json(data._embedded?.pipelines || []);
-      } catch (error) {
-        console.error("Error fetching pipelines:", error);
-        return res.status(500).json({ message: "Erro ao buscar funis" });
-      }
-    },
-  );
+  
 
   // Monitoring routes
   app.get(
