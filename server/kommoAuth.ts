@@ -17,10 +17,13 @@ export class KommoAuthManager {
     clientSecret: string,
     refreshToken: string,
   ): Promise<TokenResponse> {
-    const normalizedUrl = apiUrl.replace(/\/api\/v4\/?$/, ""); // Remove /api/v4 ou /api/v4/
-    const baseUrl = normalizedUrl.replace(/\/+$/, ""); // Remove barras finais extras, se houver
+    // Extract the base domain from the API URL
+    const urlObj = new URL(apiUrl);
+    const baseUrl = `${urlObj.protocol}//${urlObj.hostname}`;
     const tokenUrl = `${baseUrl}/oauth2/access_token`;
 
+    console.log(`Attempting token refresh at: ${tokenUrl}`);
+    
     const response = await fetch(tokenUrl, {
       method: "POST",
       headers: {
@@ -37,7 +40,12 @@ export class KommoAuthManager {
 
     if (!response.ok) {
       const error = await response.text();
-      console.error("Token refresh failed:", error);
+      console.error("Token refresh failed:", {
+        url: tokenUrl,
+        status: response.status,
+        statusText: response.statusText,
+        error: error
+      });
       throw new Error(
         `Failed to refresh token: ${response.status} ${response.statusText}`,
       );
