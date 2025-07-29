@@ -703,7 +703,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let pipelineIds = [];
         try {
           if (config.pipeline_id) {
-            if (typeof config.pipeline_id === 'string') {
+            if (typeof config.pipeline_id === "string") {
               pipelineIds = JSON.parse(config.pipeline_id);
             } else if (Array.isArray(config.pipeline_id)) {
               pipelineIds = config.pipeline_id;
@@ -807,7 +807,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let pipelineIds = [];
         try {
           if (config.pipeline_id) {
-            if (typeof config.pipeline_id === 'string') {
+            if (typeof config.pipeline_id === "string") {
               pipelineIds = JSON.parse(config.pipeline_id);
             } else if (Array.isArray(config.pipeline_id)) {
               pipelineIds = config.pipeline_id;
@@ -837,6 +837,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               },
             );
 
+            console.log(response);
             if (response.ok) {
               const data = await response.json();
               pipelines.push({
@@ -1130,8 +1131,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     },
   );
-
-  
 
   // Monitoring routes
   app.get(
