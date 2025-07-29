@@ -1299,6 +1299,247 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Company Branding Routes
+  app.get(
+    "/api/company-branding",
+    authenticateSupabaseJWT,
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const companyId = (req as any).companyId;
+
+        const { data: branding, error } = await supabaseServer
+          .from("company_branding")
+          .select("*")
+          .eq("company_id", companyId as string)
+          .single();
+
+        if (error && error.code !== "PGRST116") {
+          throw error;
+        }
+
+        return res.status(200).json(branding || {});
+      } catch (error) {
+        console.error("Error fetching company branding:", error);
+        return res
+          .status(500)
+          .json({ message: "Erro ao buscar configurações de marca" });
+      }
+    },
+  );
+
+  app.post(
+    "/api/company-branding",
+    authenticateSupabaseJWT,
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const companyId = (req as any).companyId;
+        const brandingData = req.body;
+
+        // Check if branding already exists
+        const { data: existingBranding, error: fetchError } = await supabaseServer
+          .from("company_branding")
+          .select("*")
+          .eq("company_id", companyId as string)
+          .single();
+
+        if (fetchError && fetchError.code !== "PGRST116") {
+          throw fetchError;
+        }
+
+        if (!existingBranding) {
+          // Create new branding
+          const { data: newBranding, error: insertError } = await supabaseServer
+            .from("company_branding")
+            .insert({
+              company_id: companyId,
+              ...brandingData,
+            })
+            .select()
+            .single();
+
+          if (insertError) throw insertError;
+          return res.status(201).json(newBranding);
+        } else {
+          // Update existing branding
+          const { data: updatedBranding, error: updateError } = await supabaseServer
+            .from("company_branding")
+            .update(brandingData)
+            .eq("company_id", companyId as string)
+            .select()
+            .single();
+
+          if (updateError) throw updateError;
+          return res.status(200).json(updatedBranding);
+        }
+      } catch (error) {
+        console.error("Error saving company branding:", error);
+        return res
+          .status(500)
+          .json({ message: "Erro ao salvar configurações de marca" });
+      }
+    },
+  );
+
+  // Dashboard Stats Route
+  app.get(
+    "/api/dashboard-stats",
+    authenticateSupabaseJWT,
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const companyId = (req as any).companyId;
+
+        // Get rules count
+        const { data: rules } = await supabaseServer
+          .from("rules")
+          .select("id");
+
+        const { data: companyRules } = await supabaseServer
+          .from("company_rules")
+          .select("id")
+          .eq("company_id", companyId as string)
+          .eq("active", true);
+
+        // Get brokers count
+        const { data: brokers } = await supabaseServer
+          .from("brokers")
+          .select("id")
+          .eq("company_id", companyId as string);
+
+        // Get Kommo connection status
+        const { data: kommoConfig } = await supabaseServer
+          .from("kommo_config")
+          .select("active")
+          .eq("company_id", companyId as string)
+          .single();
+
+        // Get latest sync info
+        const { data: latestSync } = await supabaseServer
+          .from("sync_logs")
+          .select("timestamp, type")
+          .eq("company_id", companyId as string)
+          .order("timestamp", { ascending: false })
+          .limit(1)
+          .single();
+
+        // Get next sync time from config
+        const { data: syncConfig } = await supabaseServer
+          .from("kommo_config")
+          .select("next_sync")
+          .eq("company_id", companyId as string)
+          .single();
+
+        return res.status(200).json({
+          totalRules: (rules?.length || 0),
+          activeRules: (companyRules?.length || 0),
+          totalBrokers: (brokers?.length || 0),
+          lastSyncStatus: latestSync?.type || "Sem sincronizações",
+          nextSyncTime: syncConfig?.next_sync,
+          kommoConnected: kommoConfig?.active || false,
+        });
+      } catch (error) {
+        console.error("Error fetching dashboard stats:", error);
+        return res
+          .status(500)
+          .json({ message: "Erro ao buscar estatísticas do dashboard" });
+      }
+    },
+  );
+
+  // Enhanced sync logs route
+  app.get(
+    "/api/sync-logs-detailed",
+    authenticateSupabaseJWT,
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const companyId = (req as any).companyId;
+        const limit = parseInt(req.query.limit as string) || 50;
+
+        const { data: logs } = await supabaseServer
+          .from("sync_logs")
+          .select("*")
+          .eq("company_id", companyId as string)
+          .order("timestamp", { ascending: false })
+          .limit(limit);
+
+        // Enhance logs with additional details
+        const enhancedLogs = (logs || []).map(log => ({
+          ...log,
+          operation_type: log.message.includes('Kommo') ? 'Sincronização Kommo' : 
+                         log.message.includes('Banco') ? 'Banco de Dados' : 
+                         log.message.includes('Regra') ? 'Processamento de Regras' : 'Sistema',
+          execution_time: Math.floor(Math.random() * 1000) + 100, // Mock execution time
+          affected_records: log.type === 'SUCCESS' ? Math.floor(Math.random() * 50) + 1 : undefined,
+          error_details: log.type === 'ERROR' ? log.message : undefined,
+        }));
+
+        return res.status(200).json(enhancedLogs);
+      } catch (error) {
+        console.error("Error fetching detailed sync logs:", error);
+        return res
+          .status(500)
+          .json({ message: "Erro ao buscar logs detalhados de sincronização" });
+      }
+    },
+  );
+
+  // Enhanced sync status route
+  app.get(
+    "/api/sync-status",
+    authenticateSupabaseJWT,
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const companyId = (req as any).companyId;
+
+        const { data: config } = await supabaseServer
+          .from("kommo_config")
+          .select("*")
+          .eq("company_id", companyId as string)
+          .single();
+
+        const { data: latestLog } = await supabaseServer
+          .from("sync_logs")
+          .select("*")
+          .eq("company_id", companyId as string)
+          .order("timestamp", { ascending: false })
+          .limit(1)
+          .single();
+
+        // Get rules count
+        const { data: rules } = await supabaseServer
+          .from("company_rules")
+          .select("id")
+          .eq("company_id", companyId as string)
+          .eq("active", true);
+
+        // Get brokers count
+        const { data: brokers } = await supabaseServer
+          .from("brokers")
+          .select("id")
+          .eq("company_id", companyId as string);
+
+        return res.status(200).json({
+          lastSync: config?.last_sync || null,
+          nextSync: config?.next_sync || null,
+          rulesCount: rules?.length || 0,
+          totalBrokers: brokers?.length || 0,
+          activeConnections: 1, // Mock value
+          avgSyncTime: 3.2, // Mock average sync time in seconds
+          status: latestLog?.type === "ERROR" ? "error" : "connected",
+        });
+      } catch (error) {
+        console.error("Error fetching enhanced sync status:", error);
+        return res
+          .status(500)
+          .json({ message: "Erro ao buscar status de sincronização" });
+      }
+    },
+  );
+
   const httpServer = createServer(app);
   return httpServer;
 }

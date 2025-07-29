@@ -247,357 +247,372 @@ export default function KommoConfig() {
   }
 
   return (
-    <div className="flex-1 overflow-auto">
-      <div className="p-6">
+    <div className="h-full flex flex-col">
+      <div className="p-6 pb-0">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-2xl font-bold text-foreground mb-6">
             Configurações Kommo
           </h1>
-
-          <Card className="bg-card rounded-lg shadow-sm p-6"></div>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="api_url"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>URL da API da Kommo</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormDescription>URL base da API da Kommo</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="access_token"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Token de Acesso</FormLabel>
-                    <div className="flex">
+        </div>
+      </div>
+      
+      <div className="flex-1 overflow-y-auto p-6 pt-0">
+        <div className="max-w-4xl mx-auto">
+          <Card className="bg-card rounded-lg shadow-sm p-6">
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-6"
+              >
+                <FormField
+                  control={form.control}
+                  name="api_url"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>URL da API da Kommo</FormLabel>
                       <FormControl>
-                        <Input
-                          type={showPassword ? "text" : "password"}
-                          className="flex-1 rounded-r-none"
-                          {...field}
+                        <Input {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        URL base da API da Kommo
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="access_token"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Token de Acesso</FormLabel>
+                      <div className="flex">
+                        <FormControl>
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            className="flex-1 rounded-r-none"
+                            {...field}
+                          />
+                        </FormControl>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="rounded-l-none"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? (
+                            <EyeOff size={16} />
+                          ) : (
+                            <Eye size={16} />
+                          )}
+                        </Button>
+                      </div>
+                      <FormDescription>
+                        Token de autenticação para acessar a API
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="refresh_token"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Refresh Token</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            {...field}
+                            type={showPassword ? "text" : "password"}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </FormControl>
+                      <FormDescription>
+                        Token usado para renovar o access token
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="client_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Client ID</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        ID da aplicação na Kommo
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="client_secret"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Client Secret</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            {...field}
+                            type={showPassword ? "text" : "password"}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </FormControl>
+                      <FormDescription>
+                        Chave secreta da aplicação na Kommo
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="custom_endpoint"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Endpoint Personalizado (Opcional)</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Endpoint customizado se necessário
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="pipeline_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Funis para Sincronização</FormLabel>
+                      <FormDescription>
+                        {!config?.api_url || !config?.access_token
+                          ? "Salve a configuração da API primeiro para selecionar funis"
+                          : "Selecione os funis que serão utilizados para sincronização"}
+                      </FormDescription>
+
+                      {config?.api_url && config?.access_token && (
+                        <div className="space-y-3">
+                          {pipelines.length === 0 ? (
+                            <div className="text-sm text-muted-foreground border rounded-lg p-4">
+                              Nenhum funil encontrado. Verifique suas
+                              credenciais.
+                            </div>
+                          ) : (
+                            <Select onValueChange={handlePipelineSelect}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione um funil para adicionar" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {pipelines
+                                  .filter(
+                                    (pipeline) =>
+                                      !selectedPipelines.includes(
+                                        parseInt(pipeline.id),
+                                      ),
+                                  )
+                                  .map((pipeline) => (
+                                    <SelectItem
+                                      key={pipeline.id}
+                                      value={pipeline.id}
+                                    >
+                                      <div className="flex items-center justify-between w-full">
+                                        <span>{pipeline.name}</span>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        </div>
+                      )}
+
+                      {selectedPipelines.length > 0 && (
+                        <div className="mt-3">
+                          <p className="text-sm text-muted-foreground mb-2">
+                            Funis selecionados ({selectedPipelines.length}):
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedPipelines.map((pipelineId) => {
+                              const pipeline = pipelines.find(
+                                (p) => parseInt(p.id) === pipelineId,
+                              );
+                              return (
+                                <Badge
+                                  key={pipelineId}
+                                  variant="default"
+                                  className="cursor-pointer hover:bg-destructive"
+                                  onClick={() =>
+                                    handleRemovePipeline(pipelineId)
+                                  }
+                                >
+                                  {pipeline?.name || `ID: ${pipelineId}`}
+                                  <span className="ml-1 text-xs">×</span>
+                                </Badge>
+                              );
+                            })}
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Clique em um funil para removê-lo
+                          </p>
+                        </div>
+                      )}
+
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="active"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
                         />
                       </FormControl>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="rounded-l-none"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? (
-                          <EyeOff size={16} />
-                        ) : (
-                          <Eye size={16} />
-                        )}
-                      </Button>
-                    </div>
-                    <FormDescription>
-                      Token de autenticação para acessar a API
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Ativar Sincronização</FormLabel>
+                        <FormDescription>
+                          Marque para ativar a sincronização automática dos
+                          dados
+                        </FormDescription>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="refresh_token"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Refresh Token</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input
-                          {...field}
-                          type={showPassword ? "text" : "password"}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
+                <div className="pt-4 border-t border-gray-200 flex justify-between items-center">
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={testConnection}
+                      disabled={isTestingConnection}
+                    >
+                      {isTestingConnection ? (
+                        <>
+                          <RefreshCw className="mr-1 h-4 w-4 animate-spin" />
+                          <span>Testando...</span>
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="mr-1 h-4 w-4" />
+                          <span>Testar Conexão</span>
+                        </>
+                      )}
+                    </Button>
+
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" type="button">
+                          <Trash2 className="mr-1 h-4 w-4" />
+                          Resetar Dashboard
                         </Button>
-                      </div>
-                    </FormControl>
-                    <FormDescription>
-                      Token usado para renovar o access token
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            Excluir todos os dados?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta ação irá excluir permanentemente todos os dados
+                            das tabelas brokers, broker_points, activities e
+                            leads.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={async () => {
+                              try {
+                                await api.post("/api/data/delete-all", null, {
+                                  headers: {
+                                    Authorization: `Bearer ${token}`,
+                                  },
+                                });
+                                toast({
+                                  title: "Dados excluídos",
+                                  description:
+                                    "Todos os dados foram excluídos com sucesso.",
+                                });
+                              } catch (error) {
+                                toast({
+                                  title: "Erro ao excluir dados",
+                                  description:
+                                    "Ocorreu um erro ao excluir os dados.",
+                                  variant: "destructive",
+                                });
+                              }
+                            }}
+                          >
+                            Excluir
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
 
-              <FormField
-                control={form.control}
-                name="client_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Client ID</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormDescription>ID da aplicação na Kommo</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="client_secret"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Client Secret</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input
-                          {...field}
-                          type={showPassword ? "text" : "password"}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                    </FormControl>
-                    <FormDescription>
-                      Chave secreta da aplicação na Kommo
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="custom_endpoint"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Endpoint Personalizado (Opcional)</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Endpoint customizado se necessário
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="pipeline_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Funis para Sincronização</FormLabel>
-                    <FormDescription>
-                      {!config?.api_url || !config?.access_token
-                        ? "Salve a configuração da API primeiro para selecionar funis"
-                        : "Selecione os funis que serão utilizados para sincronização"}
-                    </FormDescription>
-
-                    {config?.api_url && config?.access_token && (
-                      <div className="space-y-3">
-                        {pipelines.length === 0 ? (
-                          <div className="text-sm text-muted-foreground border rounded-lg p-4">
-                            Nenhum funil encontrado. Verifique suas credenciais.
-                          </div>
-                        ) : (
-                          <Select onValueChange={handlePipelineSelect}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione um funil para adicionar" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {pipelines
-                                .filter(
-                                  (pipeline) =>
-                                    !selectedPipelines.includes(
-                                      parseInt(pipeline.id),
-                                    ),
-                                )
-                                .map((pipeline) => (
-                                  <SelectItem
-                                    key={pipeline.id}
-                                    value={pipeline.id}
-                                  >
-                                    <div className="flex items-center justify-between w-full">
-                                      <span>{pipeline.name}</span>
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                            </SelectContent>
-                          </Select>
-                        )}
-                      </div>
-                    )}
-
-                    {selectedPipelines.length > 0 && (
-                      <div className="mt-3">
-                        <p className="text-sm text-muted-foreground mb-2">
-                          Funis selecionados ({selectedPipelines.length}):
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedPipelines.map((pipelineId) => {
-                            const pipeline = pipelines.find(
-                              (p) => parseInt(p.id) === pipelineId,
-                            );
-                            return (
-                              <Badge
-                                key={pipelineId}
-                                variant="default"
-                                className="cursor-pointer hover:bg-destructive"
-                                onClick={() => handleRemovePipeline(pipelineId)}
-                              >
-                                {pipeline?.name || `ID: ${pipelineId}`}
-                                <span className="ml-1 text-xs">×</span>
-                              </Badge>
-                            );
-                          })}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Clique em um funil para removê-lo
-                        </p>
-                      </div>
-                    )}
-
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="active"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Ativar Sincronização</FormLabel>
-                      <FormDescription>
-                        Marque para ativar a sincronização automática dos dados
-                      </FormDescription>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="pt-4 border-t border-gray-200 flex justify-between items-center">
-                <div className="flex gap-2">
                   <Button
-                    type="button"
-                    variant="outline"
-                    onClick={testConnection}
-                    disabled={isTestingConnection}
+                    type="submit"
+                    disabled={
+                      saveConfigMutation.isPending ||
+                      selectedPipelines.length === 0
+                    }
                   >
-                    {isTestingConnection ? (
-                      <>
-                        <RefreshCw className="mr-1 h-4 w-4 animate-spin" />
-                        <span>Testando...</span>
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="mr-1 h-4 w-4" />
-                        <span>Testar Conexão</span>
-                      </>
-                    )}
+                    {saveConfigMutation.isPending
+                      ? "Salvando..."
+                      : "Salvar Configurações"}
                   </Button>
-
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive" type="button">
-                        <Trash2 className="mr-1 h-4 w-4" />
-                        Resetar Dashboard
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>
-                          Excluir todos os dados?
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Esta ação irá excluir permanentemente todos os dados
-                          das tabelas brokers, broker_points, activities e
-                          leads.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={async () => {
-                            try {
-                              await api.post("/api/data/delete-all", null, {
-                                headers: {
-                                  Authorization: `Bearer ${token}`,
-                                },
-                              });
-                              toast({
-                                title: "Dados excluídos",
-                                description:
-                                  "Todos os dados foram excluídos com sucesso.",
-                              });
-                            } catch (error) {
-                              toast({
-                                title: "Erro ao excluir dados",
-                                description:
-                                  "Ocorreu um erro ao excluir os dados.",
-                                variant: "destructive",
-                              });
-                            }
-                          }}
-                        >
-                          Excluir
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
                 </div>
-
-                <Button
-                  type="submit"
-                  disabled={
-                    saveConfigMutation.isPending ||
-                    selectedPipelines.length === 0
-                  }
-                >
-                  {saveConfigMutation.isPending
-                    ? "Salvando..."
-                    : "Salvar Configurações"}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </Card>
+              </form>
+            </Form>
+          </Card>
         </div>
       </div>
     </div>

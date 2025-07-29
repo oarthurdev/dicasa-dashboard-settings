@@ -9,6 +9,7 @@ import Rules from "@/pages/Rules";
 import KommoConfig from "@/pages/KommoConfig";
 import DynamicMetrics from "@/pages/DynamicMetrics";
 import Monitoring from "@/pages/Monitoring";
+import CompanyBranding from "@/pages/CompanyBranding";
 import AuthWrapper from "@/components/layout/AuthWrapper";
 import { useEffect } from "react";
 import GeneralSettings from "@/pages/GeneralSettings";
@@ -53,9 +54,10 @@ function Router() {
         <Route path="/" component={Welcome} />
         <Route path="/welcome" component={Welcome} />
         <Route path="/rules" component={Rules} />
-        <Route path="/dynamic-metrics" component={DynamicMetrics} />
+        <Route path="/settings/dynamic-metrics" component={DynamicMetrics} />
         <Route path="/settings/general" component={GeneralSettings} />
-        <Route path="/settings/kommo" component={KommoConfig} />
+        <Route path="/settings/kommo-config" component={KommoConfig} />
+        <Route path="/settings/company-branding" component={CompanyBranding} />
         <Route path="/monitoring" component={Monitoring} />
         <Route component={NotFound} />
       </Switch>

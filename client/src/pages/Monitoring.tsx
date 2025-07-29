@@ -5,7 +5,19 @@ import { Button } from "@/components/ui/button";
 import { SyncLog } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle, AlertCircle, Clock, RefreshCw } from "lucide-react";
+import { 
+  CheckCircle, 
+  AlertCircle, 
+  Clock, 
+  RefreshCw, 
+  Activity,
+  Database,
+  Zap,
+  FileText,
+  TrendingUp,
+  AlertTriangle,
+  Info
+} from "lucide-react";
 import { formatDate, getTimeRemaining } from "@/lib/dateUtils";
 import api from "@/lib/api";
 
@@ -21,13 +33,16 @@ export default function Monitoring() {
     status: string;
     lastSync: string | null;
     rulesCount: number;
+    totalBrokers: number;
+    activeConnections: number;
+    avgSyncTime: number;
   }
 
-  interface SyncLog {
-    id: string;
-    timestamp: string;
-    type: string;
-    message: string;
+  interface DetailedSyncLog extends SyncLog {
+    execution_time?: number;
+    affected_records?: number;
+    error_details?: string;
+    operation_type?: string;
   }
 
   const {
@@ -50,10 +65,10 @@ export default function Monitoring() {
     data: syncLogs,
     isLoading: isLogsLoading,
     refetch: refetchLogs,
-  } = useQuery<SyncLog[]>({
-    queryKey: ["/api/sync-logs", refreshCounter],
+  } = useQuery<DetailedSyncLog[]>({
+    queryKey: ["/api/sync-logs-detailed", refreshCounter],
     queryFn: async () => {
-      const res = await api.get("/api/sync-logs", {
+      const res = await api.get("/api/sync-logs-detailed", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -61,6 +76,7 @@ export default function Monitoring() {
       return res.data;
     },
   });
+
   // Update time remaining
   useEffect(() => {
     if (!syncStatus?.nextSync) return;
@@ -85,228 +101,352 @@ export default function Monitoring() {
   const getLogTypeColor = (type: string) => {
     switch (type) {
       case "INFO":
-        return "bg-green-100 text-green-800";
-      case "DEBUG":
-        return "bg-blue-100 text-blue-800";
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300";
+      case "SUCCESS":
+        return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300";
+      case "WARNING":
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300";
       case "ERROR":
-        return "bg-red-100 text-red-800";
+        return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300";
+      case "DEBUG":
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300";
+    }
+  };
+
+  const getLogIcon = (type: string) => {
+    switch (type) {
+      case "INFO":
+        return <Info className="h-4 w-4" />;
+      case "SUCCESS":
+        return <CheckCircle className="h-4 w-4" />;
+      case "WARNING":
+        return <AlertTriangle className="h-4 w-4" />;
+      case "ERROR":
+        return <AlertCircle className="h-4 w-4" />;
+      default:
+        return <FileText className="h-4 w-4" />;
     }
   };
 
   return (
-    <section className="p-6">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">
-          Dashboard / Monitoramento
-        </h1>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          {/* Status Card */}
-          <Card className="border-0 bg-card/90 shadow-md hover:shadow-lg transition-shadow">
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-xl font-medium">
-                Status da Sincronização
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              {isStatusLoading ? (
-                <Skeleton className="h-10 w-full" />
-              ) : (
-                <div className="flex items-center">
-                  {syncStatus?.status === "connected" ? (
-                    <>
-                      <CheckCircle className="text-green-500 mr-2 h-5 w-5" />
-                      <span className="text-green-700 font-medium">
-                        Conectado
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <AlertCircle className="text-red-500 mr-2 h-5 w-5" />
-                      <span className="text-red-700 font-medium">
-                        Erro de conexão
-                      </span>
-                    </>
-                  )}
-                </div>
-              )}
-              <p className="mt-2 text-sm text-gray-500">
-                Última sincronização:{" "}
-                <span className="font-medium">
-                  {isStatusLoading ? (
-                    <Skeleton className="h-4 w-28 inline-block" />
-                  ) : (
-                    formatDate(
-                      syncStatus?.lastSync
-                        ? new Date(syncStatus.lastSync)
-                        : null,
-                    )
-                  )}
-                </span>
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Next Update Card */}
-          <Card className="border-0 bg-card/90 shadow-md hover:shadow-lg transition-shadow">
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-xl font-medium">
-                Próxima Atualização
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              {isStatusLoading ? (
-                <Skeleton className="h-10 w-full" />
-              ) : (
-                <div className="flex items-center">
-                  <Clock className="text-blue-500 mr-2 h-5 w-5" />
-                  <span
-                    className="text-gray-700 font-medium"
-                    id="nextUpdateTime"
-                  >
-                    {timeRemaining}
-                  </span>
-                </div>
-              )}
-              <p className="mt-2 text-sm text-gray-500">
-                Agendada para:{" "}
-                <span className="font-medium">
-                  {isStatusLoading ? (
-                    <Skeleton className="h-4 w-20 inline-block" />
-                  ) : syncStatus?.nextSync ? (
-                    new Date(syncStatus.nextSync).toLocaleTimeString("pt-BR", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
-                  ) : (
-                    "N/A"
-                  )}
-                </span>
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Statistics Card */}
-          <Card className="border-0 bg-card/90 shadow-md hover:shadow-lg transition-shadow">
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-xl font-medium">
-                Estatísticas
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              {isStatusLoading ? (
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-full" />
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-500">
-                      Registros Processados:
-                    </span>
-                    <span className="font-medium">1,254</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-500">
-                      Regras Aplicadas:
-                    </span>
-                    <span className="font-medium">
-                      {syncStatus?.rulesCount || "..."}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-500">Erros:</span>
-                    <span className="font-medium text-red-600">0</span>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sync Logs Card */}
-        <Card className="overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-            <h2 className="font-medium text-gray-700">Logs de Sincronização</h2>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-primary-600 hover:text-primary-800 text-sm flex items-center"
-              onClick={refreshData}
-              disabled={isLogsLoading}
-            >
-              <RefreshCw
-                className={`h-4 w-4 mr-1 ${isLogsLoading ? "animate-spin" : ""}`}
-              />
-              <span>Atualizar</span>
+    <div className="h-full flex flex-col">
+      <div className="p-6 pb-0">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-foreground mb-6">
+              Monitoramento do Sistema
+            </h1>
+            <Button onClick={refreshData} variant="outline" size="sm">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Atualizar
             </Button>
           </div>
+        </div>
+      </div>
+      
+      <div className="flex-1 overflow-y-auto p-6 pt-0">
+        <div className="max-w-6xl mx-auto space-y-6">
+          {/* Enhanced Status Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Status Card */}
+            <Card>
+              <CardHeader className="space-y-1 pb-3">
+                <CardTitle className="text-lg font-medium flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  Status da Sincronização
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isStatusLoading ? (
+                  <Skeleton className="h-10 w-full" />
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center">
+                      {syncStatus?.status === "connected" ? (
+                        <>
+                          <CheckCircle className="text-green-500 mr-2 h-5 w-5" />
+                          <span className="text-green-700 font-medium">
+                            Conectado
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <AlertCircle className="text-red-500 mr-2 h-5 w-5" />
+                          <span className="text-red-700 font-medium">
+                            Desconectado
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    {syncStatus?.lastSync && (
+                      <p className="text-xs text-muted-foreground">
+                        Última sincronização: {new Date(syncStatus.lastSync).toLocaleString('pt-BR')}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-          <div className="overflow-x-auto" style={{ maxHeight: "300px" }}>
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Timestamp
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tipo
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Mensagem
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {isLogsLoading
-                  ? Array(6)
-                      .fill(0)
-                      .map((_, index) => (
-                        <tr key={index}>
-                          <td className="px-6 py-4">
-                            <Skeleton className="h-4 w-20" />
+            {/* Next Sync Card */}
+            <Card>
+              <CardHeader className="space-y-1 pb-3">
+                <CardTitle className="text-lg font-medium flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Próxima Sincronização
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isStatusLoading ? (
+                  <Skeleton className="h-10 w-full" />
+                ) : (
+                  <div className="space-y-2">
+                    <div className="text-lg font-bold text-foreground">
+                      {timeRemaining || "—"}
+                    </div>
+                    {syncStatus?.nextSync && (
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(syncStatus.nextSync).toLocaleString('pt-BR')}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Rules Count Card */}
+            <Card>
+              <CardHeader className="space-y-1 pb-3">
+                <CardTitle className="text-lg font-medium flex items-center gap-2">
+                  <Database className="h-5 w-5" />
+                  Regras Ativas
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isStatusLoading ? (
+                  <Skeleton className="h-10 w-full" />
+                ) : (
+                  <div className="space-y-2">
+                    <div className="text-2xl font-bold text-foreground">
+                      {syncStatus?.rulesCount || 0}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Regras configuradas
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Performance Card */}
+            <Card>
+              <CardHeader className="space-y-1 pb-3">
+                <CardTitle className="text-lg font-medium flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Performance
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isStatusLoading ? (
+                  <Skeleton className="h-10 w-full" />
+                ) : (
+                  <div className="space-y-2">
+                    <div className="text-lg font-bold text-foreground">
+                      {syncStatus?.avgSyncTime ? `${syncStatus.avgSyncTime}s` : "—"}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Tempo médio de sincronização
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Detailed Logs Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Logs Detalhados do Sistema
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="max-h-96 overflow-y-auto">
+                <table className="w-full">
+                  <thead className="sticky top-0 bg-muted/50">
+                    <tr className="border-b">
+                      <th className="text-left p-4 font-medium">Horário</th>
+                      <th className="text-left p-4 font-medium">Tipo</th>
+                      <th className="text-left p-4 font-medium">Operação</th>
+                      <th className="text-left p-4 font-medium">Mensagem</th>
+                      <th className="text-left p-4 font-medium">Detalhes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {isLogsLoading ? (
+                      Array.from({ length: 5 }).map((_, i) => (
+                        <tr key={i} className="border-b">
+                          <td className="p-4"><Skeleton className="h-4 w-20" /></td>
+                          <td className="p-4"><Skeleton className="h-4 w-16" /></td>
+                          <td className="p-4"><Skeleton className="h-4 w-24" /></td>
+                          <td className="p-4"><Skeleton className="h-4 w-48" /></td>
+                          <td className="p-4"><Skeleton className="h-4 w-16" /></td>
+                        </tr>
+                      ))
+                    ) : syncLogs && syncLogs.length > 0 ? (
+                      syncLogs.map((log: DetailedSyncLog) => (
+                        <tr key={log.id} className="border-b hover:bg-muted/50 transition-colors">
+                          <td className="p-4 text-sm text-muted-foreground">
+                            {new Date(log.timestamp).toLocaleTimeString("pt-BR", {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              second: '2-digit'
+                            })}
                           </td>
-                          <td className="px-6 py-4">
-                            <Skeleton className="h-4 w-16" />
+                          <td className="p-4">
+                            <Badge
+                              variant="outline"
+                              className={`${getLogTypeColor(log.type)} flex items-center gap-1`}
+                            >
+                              {getLogIcon(log.type)}
+                              {log.type}
+                            </Badge>
                           </td>
-                          <td className="px-6 py-4">
-                            <Skeleton className="h-4 w-full" />
+                          <td className="p-4">
+                            <span className="text-sm font-medium">
+                              {log.operation_type || "Sistema"}
+                            </span>
+                          </td>
+                          <td className="p-4 text-sm">
+                            <div className="max-w-md">
+                              <p className="truncate">{log.message}</p>
+                              {log.error_details && (
+                                <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                                  {log.error_details}
+                                </p>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-4 text-sm text-muted-foreground">
+                            <div className="space-y-1">
+                              {log.execution_time && (
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  {log.execution_time}ms
+                                </div>
+                              )}
+                              {log.affected_records && (
+                                <div className="flex items-center gap-1">
+                                  <Database className="h-3 w-3" />
+                                  {log.affected_records} registros
+                                </div>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))
-                  : (syncLogs || []).map((log: SyncLog) => (
-                      <tr key={log.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(log.timestamp).toLocaleTimeString("pt-BR")}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge
-                            variant="outline"
-                            className={getLogTypeColor(log.type)}
-                          >
-                            {log.type}
-                          </Badge>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          {log.message}
+                    ) : (
+                      <tr>
+                        <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                          Nenhum log encontrado
                         </td>
                       </tr>
-                    ))}
-              </tbody>
-            </table>
-          </div>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              
+              <div className="border-t p-4 bg-muted/20">
+                <div className="flex justify-between items-center">
+                  <p className="text-sm text-muted-foreground">
+                    Logs são atualizados automaticamente a cada 30 segundos
+                  </p>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={refreshData}
+                    className="text-primary"
+                  >
+                    <RefreshCw className="h-4 w-4 mr-1" />
+                    Atualizar agora
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-          <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
-            <Button variant="link" size="sm" className="text-primary-600 p-0">
-              Ver todos os logs
-            </Button>
+          {/* System Health Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Zap className="h-5 w-5" />
+                  Conectividade
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">API Kommo</span>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${syncStatus?.status === 'connected' ? 'bg-green-500' : 'bg-red-500'}`} />
+                      <span className="text-xs text-muted-foreground">
+                        {syncStatus?.status === 'connected' ? 'Conectado' : 'Desconectado'}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Banco de Dados</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-green-500" />
+                      <span className="text-xs text-muted-foreground">Conectado</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Sistema de Sincronização</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-green-500" />
+                      <span className="text-xs text-muted-foreground">Ativo</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Database className="h-5 w-5" />
+                  Estatísticas
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Total de Corretores</span>
+                    <span className="font-medium">{syncStatus?.totalBrokers || 0}</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Conexões Ativas</span>
+                    <span className="font-medium">{syncStatus?.activeConnections || 0}</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Logs Registrados</span>
+                    <span className="font-medium">{syncLogs?.length || 0}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </Card>
+        </div>
       </div>
-    </section>
+    </div>
   );
 }

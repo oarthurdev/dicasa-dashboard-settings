@@ -18,6 +18,24 @@ export const companies = pgTable("companies", {
   created_at: timestamp("created_at").defaultNow(),
 });
 
+export const companyBranding = pgTable("company_branding", {
+  id: integer("id").primaryKey(),
+  company_id: uuid("company_id")
+    .references(() => companies.id)
+    .notNull()
+    .unique(),
+  primary_color: text("primary_color").default("#3b82f6"), // blue-500
+  secondary_color: text("secondary_color").default("#1e40af"), // blue-700
+  accent_color: text("accent_color").default("#22c55e"), // green-500
+  logo_url: text("logo_url"),
+  favicon_url: text("favicon_url"),
+  company_name_display: text("company_name_display"),
+  dashboard_title: text("dashboard_title").default("Ranking de Corretores"),
+  theme_mode: text("theme_mode").default("light"), // light, dark, auto
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
 export const rules = pgTable("rules", {
   id: integer("id").primaryKey(),
   nome: text("nome").notNull(),
@@ -122,6 +140,12 @@ export const insertCompanyRuleSchema = createInsertSchema(companyRules).omit({
   updated_at: true,
 });
 
+export const insertCompanyBrandingSchema = createInsertSchema(companyBranding).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
 export const insertCustomRuleSchema = createInsertSchema(customRules).omit({
   id: true,
   created_at: true,
@@ -178,6 +202,9 @@ export type CustomRule = typeof customRules.$inferSelect;
 
 export type InsertDynamicMetric = z.infer<typeof insertDynamicMetricSchema>;
 export type DynamicMetric = typeof dynamicMetrics.$inferSelect;
+
+export type InsertCompanyBranding = z.infer<typeof insertCompanyBrandingSchema>;
+export type CompanyBranding = typeof companyBranding.$inferSelect;
 
 // Validation schemas for forms
 export const ruleFormSchema = z.object({
@@ -252,4 +279,16 @@ export const dynamicMetricFormSchema = z.object({
   cor_sucesso: z.string().default("#22c55e"),
   cor_alerta: z.string().default("#ef4444"),
   active: z.boolean().default(true),
+});
+
+// Company branding form schema
+export const companyBrandingFormSchema = z.object({
+  primary_color: z.string().regex(/^#[0-9A-F]{6}$/i, "Cor deve ser um código hexadecimal válido"),
+  secondary_color: z.string().regex(/^#[0-9A-F]{6}$/i, "Cor deve ser um código hexadecimal válido"),
+  accent_color: z.string().regex(/^#[0-9A-F]{6}$/i, "Cor deve ser um código hexadecimal válido"),
+  logo_url: z.string().url("URL do logo deve ser válida").optional().or(z.literal("")),
+  favicon_url: z.string().url("URL do favicon deve ser válida").optional().or(z.literal("")),
+  company_name_display: z.string().min(1, "Nome para exibição é obrigatório"),
+  dashboard_title: z.string().min(1, "Título do dashboard é obrigatório"),
+  theme_mode: z.enum(["light", "dark", "auto"]),
 });
