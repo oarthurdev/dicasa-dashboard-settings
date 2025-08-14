@@ -111,13 +111,6 @@ export default function Sidebar() {
               </CollapsibleContent>
             </Collapsible>
           </li>
-          <SidebarItem
-            href="/admin/monitoring"
-            icon={<BarChart3 size={20} />}
-            active={location === "/admin/monitoring"}
-          >
-            Dashboard / Monitoramento
-          </SidebarItem>
         </ul>
       </nav>
 

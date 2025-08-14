@@ -1,6 +1,11 @@
-
-import React, { useState, useEffect, createContext, useContext, ReactNode } from "react";
-import { api } from "./api";
+import React, {
+  useState,
+  useEffect,
+  createContext,
+  useContext,
+  ReactNode,
+} from "react";
+import api from "./api";
 
 interface User {
   id: number;
@@ -14,7 +19,11 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  login: (email: string, password: string, companyId?: string) => Promise<boolean>;
+  login: (
+    email: string,
+    password: string,
+    companyId?: string,
+  ) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -37,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
         // Set token in API headers
-        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
       } catch (err) {
         // Invalid stored data, clear it
         localStorage.removeItem("auth.token");
@@ -48,12 +57,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = async (email: string, password: string, companyId?: string): Promise<boolean> => {
+  const login = async (
+    email: string,
+    password: string,
+    companyId?: string,
+  ): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const url = companyId ? `/api/auth/login?company_id=${companyId}` : "/api/auth/login";
+      const url = companyId
+        ? `/api/auth/login?company_id=${companyId}`
+        : "/api/auth/login";
       const response = await api.post(url, {
         email,
         password,
@@ -66,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("auth.user", JSON.stringify(userData));
 
       // Set token in API headers
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
       setUser(userData);
       setIsLoading(false);
@@ -82,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     localStorage.removeItem("auth.token");
     localStorage.removeItem("auth.user");
-    delete api.defaults.headers.common['Authorization'];
+    delete api.defaults.headers.common["Authorization"];
     setUser(null);
   };
 

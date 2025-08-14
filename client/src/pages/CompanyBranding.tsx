@@ -26,7 +26,7 @@ type FormValues = z.infer<typeof companyBrandingFormSchema>;
 
 export default function CompanyBranding() {
   const { toast } = useToast();
-  const token = localStorage.getItem("supabase.auth.token");
+  const token = localStorage.getItem("auth.token");
 
   // Fetch existing branding config
   const { data: branding, isLoading } = useQuery<CompanyBranding>({

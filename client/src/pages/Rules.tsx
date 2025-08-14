@@ -18,7 +18,7 @@ export default function Rules() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const token = localStorage.getItem("supabase.auth.token");
+  const token = localStorage.getItem("auth.token");
 
   const rulesQueryKey = ["/api/rules"];
 

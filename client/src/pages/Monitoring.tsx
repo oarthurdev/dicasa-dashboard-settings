@@ -25,7 +25,7 @@ export default function Monitoring() {
   const [refreshCounter, setRefreshCounter] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState("");
 
-  const token = localStorage.getItem("supabase.auth.token");
+  const token = localStorage.getItem("auth.token");
 
   // Fetch sync status
   interface SyncStatus {

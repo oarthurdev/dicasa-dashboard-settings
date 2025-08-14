@@ -72,7 +72,7 @@ export default function DynamicMetrics() {
   const [editingMetric, setEditingMetric] = useState<DynamicMetric | null>(null);
   const { toast } = useToast();
 
-  const token = localStorage.getItem("supabase.auth.token");
+  const token = localStorage.getItem("auth.token");
 
   // Fetch pipeline stages from selected pipelines
   const { data: pipelineStages = [] } = useQuery<

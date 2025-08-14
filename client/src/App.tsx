@@ -3,7 +3,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "./lib/auth";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/Login";
-import Register from "@/pages/Register";
 import Welcome from "@/pages/Welcome";
 import Rules from "@/pages/Rules";
 import KommoConfig from "@/pages/KommoConfig";
@@ -21,13 +20,13 @@ function Router() {
   useEffect(() => {
     const enforceAuth = () => {
       if (!isAuthenticated) {
-        if (location !== "/admin/login" && location !== "/admin/register") {
+        if (location !== "/admin/login") {
           setLocation("/admin/login");
         }
         return;
       }
 
-      if (location === "/admin/login" || location === "/admin/register") {
+      if (location === "/admin/login") {
         setLocation("/admin/welcome");
       }
     };
@@ -39,7 +38,6 @@ function Router() {
     return (
       <Switch>
         <Route path="/admin/login" component={Login} />
-        <Route path="/admin/register" component={Register} />
         <Route
           component={() => {
             setLocation("/admin/login");

@@ -67,7 +67,7 @@ export default function KommoConfig() {
     setLocation(path);
   };
 
-  const token = localStorage.getItem("supabase.auth.token");
+  const token = localStorage.getItem("auth.token");
 
   // Fetch existing config
   const { data: config, isLoading } = useQuery<KommoConfig>({

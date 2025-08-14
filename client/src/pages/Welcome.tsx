@@ -36,7 +36,7 @@ interface DashboardStats {
 
 export default function Welcome() {
   const [_, navigate] = useLocation();
-  const token = localStorage.getItem("supabase.auth.token");
+  const token = localStorage.getItem("auth.token");
 
   // Fetch dashboard stats
   const { data: stats, isLoading } = useQuery<DashboardStats>({

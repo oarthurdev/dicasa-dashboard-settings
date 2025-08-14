@@ -29,7 +29,7 @@ export default function CreateRuleModal({ isOpen, onClose }: CreateRuleModalProp
   const { toast } = useToast();
   const [previewColumnName, setPreviewColumnName] = useState("");
 
-  const token = localStorage.getItem("supabase.auth.token");
+  const token = localStorage.getItem("auth.token");
 
   const rulesQueryKey = ["/api/rules"];
 
