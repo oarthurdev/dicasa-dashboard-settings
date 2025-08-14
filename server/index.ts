@@ -75,6 +75,11 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Add root redirect to admin
+  app.get("/", (req, res) => {
+    res.redirect("/admin");
+  });
+
   // Registra suas rotas de API
   const server = await registerRoutes(app);
 
@@ -95,7 +100,7 @@ app.use((req, res, next) => {
     await setupVite(app, server); // Configuração do Vite em dev
   }
 
-  const port = 5001;
+  const port = process.env.PORT || 5000;
   server.listen(
     {
       port,
