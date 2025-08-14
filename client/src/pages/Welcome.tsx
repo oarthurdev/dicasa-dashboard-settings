@@ -60,36 +60,35 @@ export default function Welcome() {
         {/* Hero Header */}
         <div className="text-center space-y-6 py-12">
           <div className="relative">
-            <h1 className="text-6xl font-bold text-glow mb-4" data-text="Painel Administrativo">
+            <h1
+              className="text-6xl font-bold text-glow mb-4"
+              data-text="Painel Administrativo"
+            >
               Painel Administrativo
             </h1>
             <div className="absolute -top-4 -right-4 w-16 h-16 bg-primary/20 rounded-full blur-xl animate-pulse"></div>
-            <div className="absolute -bottom-4 -left-4 w-20 h-20 bg-primary/10 rounded-full blur-xl animate-pulse" style={{animationDelay: '1s'}}></div>
+            <div
+              className="absolute -bottom-4 -left-4 w-20 h-20 bg-primary/10 rounded-full blur-xl animate-pulse"
+              style={{ animationDelay: "1s" }}
+            ></div>
           </div>
           <p className="text-muted-foreground text-xl max-w-2xl mx-auto">
-            Sistema de configuração inteligente para o Dashboard de Ranking de Corretores
+            Sistema de configuração inteligente para o Dashboard de Ranking de
+            Corretores
           </p>
           <div className="flex justify-center gap-4 mt-8">
-            <Button 
-              className="btn-glow px-8 py-4 text-lg" 
+            <Button
+              className="btn-glow px-8 py-4 text-lg"
               onClick={() => navigate("/admin/rules")}
             >
               <Zap className="mr-2 h-5 w-5" />
               Configurar Regras
             </Button>
-            <Button 
-              variant="outline" 
-              className="px-8 py-4 text-lg card-glass hover:bg-primary/10"
-              onClick={() => navigate("/admin/monitoring")}
-            >
-              <BarChart3 className="mr-2 h-5 w-5" />
-              Ver Monitoramento
-            </Button>
           </div>
         </div>
 
         {/* Enhanced Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="card-hover group cursor-pointer relative overflow-hidden rounded-2xl p-6">
             <div className="flex items-center">
               <div className="p-3 bg-primary/20 rounded-2xl group-hover:scale-110 transition-transform duration-300">
@@ -103,7 +102,9 @@ export default function Welcome() {
                     stats?.totalBrokers || "—"
                   )}
                 </p>
-                <p className="text-sm text-muted-foreground font-medium">Corretores</p>
+                <p className="text-sm text-muted-foreground font-medium">
+                  Corretores
+                </p>
               </div>
             </div>
             <div className="absolute top-0 right-0 w-16 h-16 bg-primary/10 rounded-full blur-xl"></div>
@@ -122,7 +123,9 @@ export default function Welcome() {
                     stats?.activeRules || "—"
                   )}
                 </p>
-                <p className="text-sm text-muted-foreground font-medium">Regras Ativas</p>
+                <p className="text-sm text-muted-foreground font-medium">
+                  Regras Ativas
+                </p>
               </div>
             </div>
             <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/10 rounded-full blur-xl"></div>
@@ -140,7 +143,9 @@ export default function Welcome() {
                   ) : stats?.kommoConnected ? (
                     <>
                       <CheckCircle className="h-5 w-5 text-emerald-400" />
-                      <p className="text-lg font-bold text-emerald-400">Conectado</p>
+                      <p className="text-lg font-bold text-emerald-400">
+                        Conectado
+                      </p>
                     </>
                   ) : (
                     <>
@@ -149,34 +154,12 @@ export default function Welcome() {
                     </>
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground font-medium">Status Kommo</p>
+                <p className="text-sm text-muted-foreground font-medium">
+                  Status Kommo
+                </p>
               </div>
             </div>
             <div className="absolute top-0 right-0 w-16 h-16 bg-orange-500/10 rounded-full blur-xl"></div>
-          </div>
-
-          <div className="card-hover group cursor-pointer relative overflow-hidden rounded-2xl p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-violet-500/20 rounded-2xl group-hover:scale-110 transition-transform duration-300">
-                <Clock className="h-8 w-8 text-violet-400" />
-              </div>
-              <div className="ml-4">
-                <p className="text-lg font-bold text-foreground">
-                  {isLoading ? (
-                    <span className="animate-pulse">⭯</span>
-                  ) : stats?.nextSyncTime ? (
-                    new Date(stats.nextSyncTime).toLocaleTimeString("pt-BR", {
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })
-                  ) : (
-                    "—"
-                  )}
-                </p>
-                <p className="text-sm text-muted-foreground font-medium">Próxima Sync</p>
-              </div>
-            </div>
-            <div className="absolute top-0 right-0 w-16 h-16 bg-violet-500/10 rounded-full blur-xl"></div>
           </div>
         </div>
 
@@ -192,12 +175,17 @@ export default function Welcome() {
                   <Database className="h-8 w-8 text-primary" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-foreground">Gestão de Regras</h3>
-                  <p className="text-muted-foreground text-sm">Sistema de pontuação</p>
+                  <h3 className="text-xl font-bold text-foreground">
+                    Gestão de Regras
+                  </h3>
+                  <p className="text-muted-foreground text-sm">
+                    Sistema de pontuação
+                  </p>
                 </div>
               </div>
               <p className="text-muted-foreground mb-4">
-                Configure regras de pontuação que afetam o ranking dos corretores
+                Configure regras de pontuação que afetam o ranking dos
+                corretores
               </p>
               <ul className="text-sm text-muted-foreground space-y-2 mb-6">
                 <li className="flex items-center gap-2">
@@ -213,9 +201,7 @@ export default function Welcome() {
                   Ativar/desativar regras por empresa
                 </li>
               </ul>
-              <Button className="w-full btn-glow">
-                Gerenciar Regras
-              </Button>
+              <Button className="w-full btn-glow">Gerenciar Regras</Button>
             </div>
             <div className="absolute -top-4 -right-4 w-24 h-24 bg-primary/5 rounded-full blur-2xl"></div>
           </div>
@@ -230,12 +216,17 @@ export default function Welcome() {
                   <Zap className="h-8 w-8 text-emerald-400" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-foreground">Integração Kommo</h3>
-                  <p className="text-muted-foreground text-sm">Conexão de dados</p>
+                  <h3 className="text-xl font-bold text-foreground">
+                    Integração Kommo
+                  </h3>
+                  <p className="text-muted-foreground text-sm">
+                    Conexão de dados
+                  </p>
                 </div>
               </div>
               <p className="text-muted-foreground mb-4">
-                Configure a conexão com a API da Kommo para sincronização de dados
+                Configure a conexão com a API da Kommo para sincronização de
+                dados
               </p>
               <ul className="text-sm text-muted-foreground space-y-2 mb-6">
                 <li className="flex items-center gap-2">
@@ -268,8 +259,12 @@ export default function Welcome() {
                   <Palette className="h-8 w-8 text-violet-400" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-foreground">Marca e Visual</h3>
-                  <p className="text-muted-foreground text-sm">Identidade visual</p>
+                  <h3 className="text-xl font-bold text-foreground">
+                    Marca e Visual
+                  </h3>
+                  <p className="text-muted-foreground text-sm">
+                    Identidade visual
+                  </p>
                 </div>
               </div>
               <p className="text-muted-foreground mb-4">
@@ -381,16 +376,6 @@ export default function Welcome() {
                   <p className="font-medium">Banco de Dados</p>
                   <p className="text-sm text-muted-foreground">
                     Conectado e operacional
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 rounded-full bg-green-500" />
-                <div>
-                  <p className="font-medium">Sincronização</p>
-                  <p className="text-sm text-muted-foreground">
-                    {stats?.lastSyncStatus || "Aguardando próxima execução"}
                   </p>
                 </div>
               </div>
