@@ -10,7 +10,7 @@ import { Info } from "lucide-react";
 
 type Broker = {
   id: number;
-  name: string;
+  nome: string;
   cargo: string;
   active: boolean;
 };
@@ -21,7 +21,7 @@ export default function GeneralSettings() {
     queryFn: async () => {
       const response = await api.get("/api/brokers", {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("supabase.auth.token")}`,
+          Authorization: `Bearer ${localStorage.getItem("auth.token")}`,
         },
       });
       return response.data;
@@ -35,7 +35,7 @@ export default function GeneralSettings() {
         { active },
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("supabase.auth.token")}`,
+            Authorization: `Bearer ${localStorage.getItem("auth.token")}`,
           },
         },
       );

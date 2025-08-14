@@ -1,147 +1,109 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-} from "react";
-import { supabase } from "./supabase";
-import { Session, User as SupabaseUser } from "@supabase/supabase-js";
+import { useState, useEffect, createContext, useContext, ReactNode } from "react";
+import { api } from "./api";
 
-type AuthContextType = {
+interface User {
+  id: number;
+  email: string;
+  nome: string;
+  cargo: string;
+}
+
+interface AuthContextType {
+  user: User | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => Promise<void>;
   isLoading: boolean;
   error: string | null;
-};
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => void;
+}
 
-// Create a default context
-const defaultAuthContext: AuthContextType = {
-  isAuthenticated: false,
-  login: async () => false,
-  logout: async () => {},
-  isLoading: false,
-  error: null,
-};
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Create the context
-const AuthContext = createContext<AuthContextType>(defaultAuthContext);
-
-// Auth Provider Component
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Check auth state on initial load
+  const isAuthenticated = !!user;
+
   useEffect(() => {
-    const getUser = async () => {
-      // Get session data
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+    // Check if user is already logged in
+    const token = localStorage.getItem("auth.token");
+    const userData = localStorage.getItem("auth.user");
 
-      // Armazenar o token no localStorage se existir uma sessão
-      if (session?.access_token) {
-        localStorage.setItem("supabase.auth.token", session.access_token);
-      } else {
-        // Remover token se não existir sessão
-        localStorage.removeItem("supabase.auth.token");
+    if (token && userData) {
+      try {
+        const parsedUser = JSON.parse(userData);
+        setUser(parsedUser);
+        // Set token in API headers
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      } catch (err) {
+        // Invalid stored data, clear it
+        localStorage.removeItem("auth.token");
+        localStorage.removeItem("auth.user");
       }
+    }
 
-      // Set the user if we have a session
-      setUser(session);
-      setIsLoading(false);
-
-      // Listen for auth changes
-      const {
-        data: { subscription },
-      } = supabase.auth.onAuthStateChange((_event, session) => {
-        // Atualizar o token no localStorage quando a sessão mudar
-        if (session?.access_token) {
-          localStorage.setItem("supabase.auth.token", session.access_token);
-        } else {
-          localStorage.removeItem("supabase.auth.token");
-        }
-
-        setUser(session);
-        setIsLoading(false);
-      });
-
-      // Cleanup the subscription
-      return () => {
-        subscription?.unsubscribe();
-      };
-    };
-
-    getUser();
+    setIsLoading(false);
   }, []);
 
-  // Login function
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const response = await api.post("/api/auth/login", {
         email,
         password,
       });
 
-      if (error) {
-        throw error;
-      }
+      const { token, user: userData } = response.data;
 
-      // Armazenar o token no localStorage para uso nas requisições
-      if (data.session?.access_token) {
-        localStorage.setItem("supabase.auth.token", data.session.access_token);
-      }
+      // Store token and user data
+      localStorage.setItem("auth.token", token);
+      localStorage.setItem("auth.user", JSON.stringify(userData));
 
-      setUser(data.session);
+      // Set token in API headers
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+      setUser(userData);
       setIsLoading(false);
       return true;
-    } catch (error: any) {
-      setError(
-        error.message || "Falha na autenticação. Verifique suas credenciais.",
-      );
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || "Erro ao fazer login";
+      setError(errorMessage);
       setIsLoading(false);
       return false;
     }
   };
 
-  // Logout function
-  const logout = async () => {
-    setIsLoading(true);
-
-    try {
-      await supabase.auth.signOut();
-      // Remover o token do localStorage
-      localStorage.clear();
-      setUser(null);
-    } catch (error: any) {
-      setError(error.message || "Erro ao fazer logout.");
-    } finally {
-      setIsLoading(false);
-    }
+  const logout = () => {
+    localStorage.removeItem("auth.token");
+    localStorage.removeItem("auth.user");
+    delete api.defaults.headers.common['Authorization'];
+    setUser(null);
   };
 
-  return React.createElement(
-    AuthContext.Provider,
-    {
-      value: {
-        isAuthenticated: !!user,
-        login,
-        logout,
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated,
         isLoading,
         error,
-      },
-    },
-    children,
+        login,
+        logout,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
   );
 }
 
-// Auth Hook
 export function useAuth() {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
 }

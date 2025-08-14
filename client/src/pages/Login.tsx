@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useForm } from "react-hook-form";
@@ -10,7 +11,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
-import { Link } from "wouter";
 
 type FormValues = z.infer<typeof loginFormSchema>;
 
@@ -30,7 +30,7 @@ export default function Login() {
     setLoginError(null);
     const success = await login(data.email, data.password);
     if (!success) {
-      setLoginError("Email ou senha incorretos. Tente novamente.");
+      setLoginError("Email ou senha incorretos, ou você não tem permissão de administrador.");
     }
   };
 
@@ -39,7 +39,9 @@ export default function Login() {
       <Card className="w-[400px] shadow-lg border-0 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/95">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-semibold tracking-tight">Dashboard</CardTitle>
-          <CardDescription className="text-sm text-muted-foreground">Faça login para acessar o painel</CardDescription>
+          <CardDescription className="text-sm text-muted-foreground">
+            Faça login com suas credenciais de administrador
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Form {...form}>
@@ -107,12 +109,6 @@ export default function Login() {
               </Button>
             </form>
           </Form>
-
-          <div className="mt-6 text-center text-sm">
-            <Link href="/register" className="text-primary hover:underline">
-              Não tem uma conta? Cadastre-se
-            </Link>
-          </div>
         </CardContent>
       </Card>
     </div>

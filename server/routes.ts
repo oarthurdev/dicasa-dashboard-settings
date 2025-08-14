@@ -1,3 +1,4 @@
+
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { convertToSnakeCase } from "./utils.ts";
@@ -13,8 +14,13 @@ import {
 import { z } from "zod";
 import { supabase, supabaseClient as supabaseServer } from "./supabase.ts";
 import { companyContext } from "./middlewares/companyContext.ts";
-// Middleware de autenticação usando Supabase
-const authenticateSupabaseJWT = async (
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+
+// Middleware de autenticação usando tabela brokers
+const authenticateBrokerJWT = async (
   req: Request,
   res: Response,
   next: NextFunction,
@@ -29,16 +35,24 @@ const authenticateSupabaseJWT = async (
   const token = authHeader.split(" ")[1];
 
   try {
-    const { data, error } = await supabaseServer.auth.getUser(token);
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    
+    // Buscar o broker no banco de dados
+    const { data: broker, error } = await supabaseServer
+      .from("brokers")
+      .select("*")
+      .eq("email", decoded.email)
+      .eq("cargo", "Administrador")
+      .single();
 
-    if (error || !data.user) {
+    if (error || !broker) {
       return res
         .status(401)
         .json({ message: "Token de autenticação inválido" });
     }
 
     // Adiciona os dados do usuário ao objeto da requisição para uso posterior
-    (req as any).user = data.user;
+    (req as any).user = broker;
     next();
   } catch (error) {
     console.error("Erro na autenticação:", error);
@@ -59,45 +73,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const { email, password } = validation.data;
-
         const companyId = (req as any).companyId;
 
-        // Usar o Supabase para autenticação
-        const { data, error } = await supabaseServer.auth.signInWithPassword({
-          email,
-          password,
-        });
+        // Buscar o broker na tabela brokers
+        const { data: broker, error } = await supabaseServer
+          .from("brokers")
+          .select("*")
+          .eq("email", email)
+          .eq("company_id", companyId)
+          .single();
 
-        if (error || !data.user) {
+        if (error || !broker) {
           return res.status(401).json({ message: "Credenciais inválidas" });
         }
 
-        // Verificar se o usuário pertence à empresa correta
-        const { data: userCompany, error: userCompanyError } =
-          await supabaseServer
-            .from("profiles")
-            .select("*")
-            .eq("id", data.user.id)
-            .single();
-
-        if (userCompanyError || !userCompany) {
-          return res
-            .status(403)
-            .json({ message: "Usuário não associado a um perfil" });
+        // Verificar se o cargo é Administrador
+        if (broker.cargo !== "Administrador") {
+          return res.status(403).json({ 
+            message: "Acesso negado. Apenas administradores podem fazer login." 
+          });
         }
 
-        if (userCompany.company_id !== companyId) {
-          return res
-            .status(403)
-            .json({ message: "Usuário não pertence a esta empresa" });
+        // Verificar a senha
+        const isValidPassword = await bcrypt.compare(password, broker.password);
+        if (!isValidPassword) {
+          return res.status(401).json({ message: "Credenciais inválidas" });
         }
+
+        // Gerar token JWT
+        const token = jwt.sign(
+          { 
+            email: broker.email,
+            id: broker.id,
+            company_id: broker.company_id 
+          },
+          JWT_SECRET,
+          { expiresIn: '24h' }
+        );
 
         // Retorna o token de acesso e os dados do usuário
         return res.status(200).json({
-          token: data.session.access_token,
+          token,
           user: {
-            id: data.user.id,
-            email: data.user.email,
+            id: broker.id,
+            email: broker.email,
+            nome: broker.nome,
+            cargo: broker.cargo,
           },
         });
       } catch (error) {
@@ -110,7 +131,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rules routes
   app.get(
     "/api/rules",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -146,7 +167,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete(
     "/api/rules/:id",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -196,7 +217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch(
     "/api/rules/:id/points",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -256,7 +277,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Company Rules Configuration Routes
   app.get(
     "/api/company-rules",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -320,7 +341,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post(
     "/api/company-rules",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -377,7 +398,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post(
     "/api/custom-rules",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -421,7 +442,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch(
     "/api/custom-rules/:id",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -472,7 +493,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete(
     "/api/custom-rules/:id",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -519,7 +540,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Dynamic Metrics Routes
   app.get(
     "/api/dynamic-metrics",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -545,7 +566,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post(
     "/api/dynamic-metrics",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -584,7 +605,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch(
     "/api/dynamic-metrics/:id",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -635,7 +656,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete(
     "/api/dynamic-metrics/:id",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -682,7 +703,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Pipeline Stages Route
   app.get(
     "/api/kommo/pipeline-stages",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -805,7 +826,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Kommo Pipelines Route
   app.get(
     "/api/kommo/pipelines",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -893,7 +914,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Kommo config routes
   app.get(
     "/api/kommo-config",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -924,7 +945,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post(
     "/api/kommo-config/test",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -968,7 +989,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post(
     "/api/kommo-config",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -1102,7 +1123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Sync management routes
   app.post(
     "/api/sync/force",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -1164,7 +1185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Data management routes
   app.post(
     "/api/data/delete-all",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -1184,7 +1205,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Monitoring routes
   app.get(
     "/api/sync-logs",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -1210,7 +1231,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get(
     "/api/sync-status",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -1252,7 +1273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Broker routes
   app.get(
     "/api/brokers",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req, res) => {
       try {
@@ -1275,7 +1296,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch(
     "/api/brokers/:id",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req, res) => {
       const { id } = req.params;
@@ -1302,7 +1323,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Company Branding Routes
   app.get(
     "/api/company-branding",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -1330,7 +1351,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post(
     "/api/company-branding",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -1385,7 +1406,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard Stats Route
   app.get(
     "/api/dashboard-stats",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -1451,7 +1472,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Enhanced sync logs route
   app.get(
     "/api/sync-logs-detailed",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -1489,7 +1510,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Enhanced sync status route
   app.get(
     "/api/sync-status",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -1543,7 +1564,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Dynamic Metrics Routes
   app.get(
     "/api/dynamic-metrics",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -1568,7 +1589,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get(
     "/api/dynamic-metrics-with-results",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -1626,7 +1647,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post(
     "/api/dynamic-metrics",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -1662,7 +1683,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch(
     "/api/dynamic-metrics/:id",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -1691,7 +1712,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete(
     "/api/dynamic-metrics/:id",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -1726,7 +1747,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API endpoint for the ranking project to save metric results
   app.post(
     "/api/metric-results",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -1778,7 +1799,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get pipeline stages for dynamic metrics configuration
   app.get(
     "/api/kommo/pipeline-stages",
-    authenticateSupabaseJWT,
+    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
