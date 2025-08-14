@@ -55,170 +55,246 @@ export default function Welcome() {
   });
 
   return (
-    <section className="p-6 h-full overflow-y-auto">
-      <div className="max-w-6xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold text-foreground">
-            Painel Administrativo
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Sistema de configuração para o Dashboard de Ranking de Corretores
+    <section className="h-full overflow-y-auto scroll-smooth">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Hero Header */}
+        <div className="text-center space-y-6 py-12">
+          <div className="relative">
+            <h1 className="text-6xl font-bold text-glow mb-4" data-text="Painel Administrativo">
+              Painel Administrativo
+            </h1>
+            <div className="absolute -top-4 -right-4 w-16 h-16 bg-primary/20 rounded-full blur-xl animate-pulse"></div>
+            <div className="absolute -bottom-4 -left-4 w-20 h-20 bg-primary/10 rounded-full blur-xl animate-pulse" style={{animationDelay: '1s'}}></div>
+          </div>
+          <p className="text-muted-foreground text-xl max-w-2xl mx-auto">
+            Sistema de configuração inteligente para o Dashboard de Ranking de Corretores
           </p>
+          <div className="flex justify-center gap-4 mt-8">
+            <Button 
+              className="btn-glow px-8 py-4 text-lg" 
+              onClick={() => navigate("/admin/rules")}
+            >
+              <Zap className="mr-2 h-5 w-5" />
+              Configurar Regras
+            </Button>
+            <Button 
+              variant="outline" 
+              className="px-8 py-4 text-lg card-glass hover:bg-primary/10"
+              onClick={() => navigate("/admin/monitoring")}
+            >
+              <BarChart3 className="mr-2 h-5 w-5" />
+              Ver Monitoramento
+            </Button>
+          </div>
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="flex items-center p-6">
-              <div className="flex items-center">
-                <Users className="h-8 w-8 text-blue-600 mr-3" />
-                <div>
-                  <p className="text-2xl font-bold">
-                    {stats?.totalBrokers || "—"}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Corretores</p>
-                </div>
+        {/* Enhanced Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="card-hover group cursor-pointer relative overflow-hidden rounded-2xl p-6">
+            <div className="flex items-center">
+              <div className="p-3 bg-primary/20 rounded-2xl group-hover:scale-110 transition-transform duration-300">
+                <Users className="h-8 w-8 text-primary" />
               </div>
-            </CardContent>
-          </Card>
+              <div className="ml-4">
+                <p className="text-3xl font-bold text-foreground">
+                  {isLoading ? (
+                    <span className="animate-pulse">⭯</span>
+                  ) : (
+                    stats?.totalBrokers || "—"
+                  )}
+                </p>
+                <p className="text-sm text-muted-foreground font-medium">Corretores</p>
+              </div>
+            </div>
+            <div className="absolute top-0 right-0 w-16 h-16 bg-primary/10 rounded-full blur-xl"></div>
+          </div>
 
-          <Card>
-            <CardContent className="flex items-center p-6">
-              <div className="flex items-center">
-                <TrendingUp className="h-8 w-8 text-green-600 mr-3" />
-                <div>
-                  <p className="text-2xl font-bold">
-                    {stats?.activeRules || "—"}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Regras Ativas</p>
-                </div>
+          <div className="card-hover group cursor-pointer relative overflow-hidden rounded-2xl p-6">
+            <div className="flex items-center">
+              <div className="p-3 bg-emerald-500/20 rounded-2xl group-hover:scale-110 transition-transform duration-300">
+                <TrendingUp className="h-8 w-8 text-emerald-400" />
               </div>
-            </CardContent>
-          </Card>
+              <div className="ml-4">
+                <p className="text-3xl font-bold text-foreground">
+                  {isLoading ? (
+                    <span className="animate-pulse">⭯</span>
+                  ) : (
+                    stats?.activeRules || "—"
+                  )}
+                </p>
+                <p className="text-sm text-muted-foreground font-medium">Regras Ativas</p>
+              </div>
+            </div>
+            <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/10 rounded-full blur-xl"></div>
+          </div>
 
-          <Card>
-            <CardContent className="flex items-center p-6">
-              <div className="flex items-center">
-                <Activity className="h-8 w-8 text-orange-600 mr-3" />
-                <div>
-                  <div className="flex items-center gap-2">
-                    {stats?.kommoConnected ? (
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <AlertTriangle className="h-4 w-4 text-red-500" />
-                    )}
-                    <p className="text-sm font-medium">
-                      {stats?.kommoConnected ? "Conectado" : "Desconectado"}
-                    </p>
-                  </div>
-                  <p className="text-sm text-muted-foreground">Status Kommo</p>
-                </div>
+          <div className="card-hover group cursor-pointer relative overflow-hidden rounded-2xl p-6">
+            <div className="flex items-center">
+              <div className="p-3 bg-orange-500/20 rounded-2xl group-hover:scale-110 transition-transform duration-300">
+                <Activity className="h-8 w-8 text-orange-400" />
               </div>
-            </CardContent>
-          </Card>
+              <div className="ml-4">
+                <div className="flex items-center gap-2 mb-1">
+                  {isLoading ? (
+                    <span className="animate-pulse text-lg">⭯</span>
+                  ) : stats?.kommoConnected ? (
+                    <>
+                      <CheckCircle className="h-5 w-5 text-emerald-400" />
+                      <p className="text-lg font-bold text-emerald-400">Conectado</p>
+                    </>
+                  ) : (
+                    <>
+                      <AlertTriangle className="h-5 w-5 text-red-400" />
+                      <p className="text-lg font-bold text-red-400">Offline</p>
+                    </>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground font-medium">Status Kommo</p>
+              </div>
+            </div>
+            <div className="absolute top-0 right-0 w-16 h-16 bg-orange-500/10 rounded-full blur-xl"></div>
+          </div>
 
-          <Card>
-            <CardContent className="flex items-center p-6">
-              <div className="flex items-center">
-                <Clock className="h-8 w-8 text-purple-600 mr-3" />
-                <div>
-                  <p className="text-sm font-medium">
-                    {stats?.nextSyncTime
-                      ? new Date(stats.nextSyncTime).toLocaleTimeString("pt-BR")
-                      : "—"}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Próxima Sync</p>
-                </div>
+          <div className="card-hover group cursor-pointer relative overflow-hidden rounded-2xl p-6">
+            <div className="flex items-center">
+              <div className="p-3 bg-violet-500/20 rounded-2xl group-hover:scale-110 transition-transform duration-300">
+                <Clock className="h-8 w-8 text-violet-400" />
               </div>
-            </CardContent>
-          </Card>
+              <div className="ml-4">
+                <p className="text-lg font-bold text-foreground">
+                  {isLoading ? (
+                    <span className="animate-pulse">⭯</span>
+                  ) : stats?.nextSyncTime ? (
+                    new Date(stats.nextSyncTime).toLocaleTimeString("pt-BR", {
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })
+                  ) : (
+                    "—"
+                  )}
+                </p>
+                <p className="text-sm text-muted-foreground font-medium">Próxima Sync</p>
+              </div>
+            </div>
+            <div className="absolute top-0 right-0 w-16 h-16 bg-violet-500/10 rounded-full blur-xl"></div>
+          </div>
         </div>
 
-        {/* Main Actions */}
+        {/* Enhanced Action Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card
-            className="hover:shadow-lg transition-shadow cursor-pointer"
+          <div
+            className="card-hover group cursor-pointer rounded-2xl p-6 relative overflow-hidden"
             onClick={() => navigate("/admin/rules")}
           >
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                  <Database className="h-6 w-6 text-blue-600" />
+            <div className="relative z-10">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="p-4 bg-primary/20 rounded-2xl group-hover:scale-110 transition-transform duration-300">
+                  <Database className="h-8 w-8 text-primary" />
                 </div>
-                Gestão de Regras
-              </CardTitle>
-              <CardDescription>
-                Configure regras de pontuação que afetam o ranking dos
-                corretores
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Criar e editar regras personalizadas</li>
-                <li>• Definir valores de pontuação</li>
-                <li>• Ativar/desativar regras por empresa</li>
+                <div>
+                  <h3 className="text-xl font-bold text-foreground">Gestão de Regras</h3>
+                  <p className="text-muted-foreground text-sm">Sistema de pontuação</p>
+                </div>
+              </div>
+              <p className="text-muted-foreground mb-4">
+                Configure regras de pontuação que afetam o ranking dos corretores
+              </p>
+              <ul className="text-sm text-muted-foreground space-y-2 mb-6">
+                <li className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                  Criar e editar regras personalizadas
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                  Definir valores de pontuação
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                  Ativar/desativar regras por empresa
+                </li>
               </ul>
-              <Button className="w-full mt-4" variant="outline">
+              <Button className="w-full btn-glow">
                 Gerenciar Regras
               </Button>
-            </CardContent>
-          </Card>
+            </div>
+            <div className="absolute -top-4 -right-4 w-24 h-24 bg-primary/5 rounded-full blur-2xl"></div>
+          </div>
 
-          <Card
-            className="hover:shadow-lg transition-shadow cursor-pointer"
+          <div
+            className="card-hover group cursor-pointer rounded-2xl p-6 relative overflow-hidden"
             onClick={() => navigate("/admin/settings/kommo")}
           >
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                  <Zap className="h-6 w-6 text-green-600" />
+            <div className="relative z-10">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="p-4 bg-emerald-500/20 rounded-2xl group-hover:scale-110 transition-transform duration-300">
+                  <Zap className="h-8 w-8 text-emerald-400" />
                 </div>
-                Integração Kommo
-              </CardTitle>
-              <CardDescription>
-                Configure a conexão com a API da Kommo para sincronização de
-                dados
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Configurar credenciais de API</li>
-                <li>• Selecionar funis para sincronização</li>
-                <li>• Testar e monitorar conexão</li>
+                <div>
+                  <h3 className="text-xl font-bold text-foreground">Integração Kommo</h3>
+                  <p className="text-muted-foreground text-sm">Conexão de dados</p>
+                </div>
+              </div>
+              <p className="text-muted-foreground mb-4">
+                Configure a conexão com a API da Kommo para sincronização de dados
+              </p>
+              <ul className="text-sm text-muted-foreground space-y-2 mb-6">
+                <li className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></div>
+                  Configurar credenciais de API
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></div>
+                  Selecionar funis para sincronização
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></div>
+                  Testar e monitorar conexão
+                </li>
               </ul>
-              <Button className="w-full mt-4" variant="outline">
+              <Button className="w-full" variant="outline">
                 Configurar Kommo
               </Button>
-            </CardContent>
-          </Card>
+            </div>
+            <div className="absolute -top-4 -right-4 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl"></div>
+          </div>
 
-          <Card
-            className="hover:shadow-lg transition-shadow cursor-pointer"
+          <div
+            className="card-hover group cursor-pointer rounded-2xl p-6 relative overflow-hidden"
             onClick={() => navigate("/admin/settings/company-branding")}
           >
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
-                  <Palette className="h-6 w-6 text-purple-600" />
+            <div className="relative z-10">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="p-4 bg-violet-500/20 rounded-2xl group-hover:scale-110 transition-transform duration-300">
+                  <Palette className="h-8 w-8 text-violet-400" />
                 </div>
-                Marca e Visual
-              </CardTitle>
-              <CardDescription>
+                <div>
+                  <h3 className="text-xl font-bold text-foreground">Marca e Visual</h3>
+                  <p className="text-muted-foreground text-sm">Identidade visual</p>
+                </div>
+              </div>
+              <p className="text-muted-foreground mb-4">
                 Personalize cores, logos e identidade visual do dashboard
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Configurar cores do tema</li>
-                <li>• Upload de logo e favicon</li>
-                <li>• Personalizar títulos e textos</li>
+              </p>
+              <ul className="text-sm text-muted-foreground space-y-2 mb-6">
+                <li className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-violet-400 rounded-full"></div>
+                  Configurar cores do tema
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-violet-400 rounded-full"></div>
+                  Upload de logo e favicon
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-violet-400 rounded-full"></div>
+                  Personalizar títulos e textos
+                </li>
               </ul>
-              <Button className="w-full mt-4" variant="outline">
+              <Button className="w-full" variant="outline">
                 Personalizar Visual
               </Button>
-            </CardContent>
-          </Card>
+            </div>
+            <div className="absolute -top-4 -right-4 w-24 h-24 bg-violet-500/5 rounded-full blur-2xl"></div>
+          </div>
 
           <Card
             className="hover:shadow-lg transition-shadow cursor-pointer"

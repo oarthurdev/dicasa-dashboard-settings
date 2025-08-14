@@ -9,18 +9,24 @@ import cors from "cors";
 
 const app = express();
 
-const allowedDomains = ["replit.dev", "imobiliario.tec.br"];
+const allowedDomains = ["replit.dev", "imobiliario.tec.br", "localhost"];
 
 // CORS
 // Middleware de CORS com origem dinâmica
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin) return callback(null, false);
+      // Allow requests with no origin (like mobile apps, curl requests, Postman)
+      if (!origin) return callback(null, true);
 
       try {
         const url = new URL(origin);
         const domain = url.host;
+
+        // Allow localhost in development
+        if (process.env.NODE_ENV !== "production" && (domain.startsWith("localhost") || domain.startsWith("127.0.0.1"))) {
+          return callback(null, true);
+        }
 
         const isAllowed = allowedDomains.some(
           (baseDomain) =>

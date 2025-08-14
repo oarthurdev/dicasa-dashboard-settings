@@ -18,10 +18,17 @@ export default function AuthWrapper({ children }: AuthWrapperProps) {
   }
   
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden relative">
+      {/* Floating Orbs Background */}
+      <div className="floating-orb"></div>
+      <div className="floating-orb"></div>
+      <div className="floating-orb"></div>
+      
       <Sidebar />
-      <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
-        {children}
+      <main className="flex-1 overflow-x-hidden overflow-y-auto scroll-smooth bg-transparent backdrop-blur-sm">
+        <div className="min-h-full p-6">
+          {children}
+        </div>
       </main>
     </div>
   );
