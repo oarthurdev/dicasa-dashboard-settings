@@ -139,7 +139,7 @@ export default function Welcome() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <Card
             className="hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => navigate("/rules")}
+            onClick={() => navigate("/admin/rules")}
           >
             <CardHeader>
               <CardTitle className="flex items-center gap-3">
@@ -167,7 +167,7 @@ export default function Welcome() {
 
           <Card
             className="hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => navigate("/settings/kommo")}
+            onClick={() => navigate("/admin/settings/kommo")}
           >
             <CardHeader>
               <CardTitle className="flex items-center gap-3">
@@ -195,34 +195,7 @@ export default function Welcome() {
 
           <Card
             className="hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => navigate("/monitoring")}
-          >
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <div className="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
-                  <BarChart3 className="h-6 w-6 text-orange-600" />
-                </div>
-                Monitoramento
-              </CardTitle>
-              <CardDescription>
-                Acompanhe a sincronização de dados e visualize logs detalhados
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Status de sincronização em tempo real</li>
-                <li>• Logs detalhados de operações</li>
-                <li>• Histórico de atualizações</li>
-              </ul>
-              <Button className="w-full mt-4" variant="outline">
-                Ver Monitoramento
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card
-            className="hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => navigate("/settings/company-branding")}
+            onClick={() => navigate("/admin/settings/company-branding")}
           >
             <CardHeader>
               <CardTitle className="flex items-center gap-3">
@@ -249,7 +222,7 @@ export default function Welcome() {
 
           <Card
             className="hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => navigate("/settings/dynamic-metrics")}
+            onClick={() => navigate("/admin/settings/dynamic-metrics")}
           >
             <CardHeader>
               <CardTitle className="flex items-center gap-3">
@@ -276,7 +249,7 @@ export default function Welcome() {
 
           <Card
             className="hover:shadow-lg transition-shadow cursor-pointer"
-            onClick={() => navigate("/settings/general")}
+            onClick={() => navigate("/admin/settings/general")}
           >
             <CardHeader>
               <CardTitle className="flex items-center gap-3">

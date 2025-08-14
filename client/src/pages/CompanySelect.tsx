@@ -30,7 +30,7 @@ export default function CompanySelect() {
   const handleCompanySelect = (value: string) => {
     setSelectedCompany(value);
     localStorage.setItem("selected_company", value);
-    navigate("/rules");
+    navigate("/admin/rules");
   };
 
   return (

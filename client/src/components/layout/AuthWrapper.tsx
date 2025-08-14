@@ -13,7 +13,7 @@ export default function AuthWrapper({ children }: AuthWrapperProps) {
   
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
-    navigate("/login");
+    navigate("/admin/login");
     return null;
   }
   

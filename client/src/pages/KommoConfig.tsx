@@ -45,7 +45,7 @@ import api from "@/lib/api";
 
 type FormValues = z.infer<typeof kommoConfigFormSchema>;
 
-const BASE_URL = "";
+const BASE_URL = "/admin";
 
 export default function KommoConfig() {
   const [showPassword, setShowPassword] = useState(false);

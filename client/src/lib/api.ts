@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Create axios instance with interceptors
 const api = axios.create({
-  baseURL: "",
+  baseURL: "/admin",
 });
 
 // Request interceptor to add auth token

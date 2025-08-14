@@ -63,7 +63,7 @@ const authenticateBrokerJWT = async (
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.post(
-    "/api/auth/login",
+    "/admin/api/auth/login",
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -137,7 +137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Rules routes
   app.get(
-    "/api/rules",
+    "/admin/api/rules",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -173,7 +173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   app.delete(
-    "/api/rules/:id",
+    "/admin/api/rules/:id",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -223,7 +223,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   app.patch(
-    "/api/rules/:id/points",
+    "/admin/api/rules/:id/points",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -283,7 +283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Company Rules Configuration Routes
   app.get(
-    "/api/company-rules",
+    "/admin/api/company-rules",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -347,7 +347,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   app.post(
-    "/api/company-rules",
+    "/admin/api/company-rules",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -404,7 +404,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   app.post(
-    "/api/custom-rules",
+    "/admin/api/custom-rules",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -448,7 +448,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   app.patch(
-    "/api/custom-rules/:id",
+    "/admin/api/custom-rules/:id",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -499,7 +499,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   app.delete(
-    "/api/custom-rules/:id",
+    "/admin/api/custom-rules/:id",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -546,7 +546,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Dynamic Metrics Routes
   app.get(
-    "/api/dynamic-metrics",
+    "/admin/api/dynamic-metrics",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -572,7 +572,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   app.post(
-    "/api/dynamic-metrics",
+    "/admin/api/dynamic-metrics",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -611,7 +611,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   app.patch(
-    "/api/dynamic-metrics/:id",
+    "/admin/api/dynamic-metrics/:id",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -662,7 +662,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   app.delete(
-    "/api/dynamic-metrics/:id",
+    "/admin/api/dynamic-metrics/:id",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -709,7 +709,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Pipeline Stages Route
   app.get(
-    "/api/kommo/pipeline-stages",
+    "/admin/api/kommo/pipeline-stages",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -832,7 +832,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Kommo Pipelines Route
   app.get(
-    "/api/kommo/pipelines",
+    "/admin/api/kommo/pipelines",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -920,7 +920,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Kommo config routes
   app.get(
-    "/api/kommo-config",
+    "/admin/api/kommo-config",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -951,7 +951,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   app.post(
-    "/api/kommo-config/test",
+    "/admin/api/kommo-config/test",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -995,7 +995,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   app.post(
-    "/api/kommo-config",
+    "/admin/api/kommo-config",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -1129,7 +1129,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Sync management routes
   app.post(
-    "/api/sync/force",
+    "/admin/api/sync/force",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -1191,7 +1191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Data management routes
   app.post(
-    "/api/data/delete-all",
+    "/admin/api/data/delete-all",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -1211,7 +1211,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Monitoring routes
   app.get(
-    "/api/sync-logs",
+    "/admin/api/sync-logs",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -1237,7 +1237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   app.get(
-    "/api/sync-status",
+    "/admin/api/sync-status",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -1279,7 +1279,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Broker routes
   app.get(
-    "/api/brokers",
+    "/admin/api/brokers",
     authenticateBrokerJWT,
     companyContext,
     async (req, res) => {
@@ -1302,7 +1302,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   app.patch(
-    "/api/brokers/:id",
+    "/admin/api/brokers/:id",
     authenticateBrokerJWT,
     companyContext,
     async (req, res) => {
@@ -1329,7 +1329,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Company Branding Routes
   app.get(
-    "/api/company-branding",
+    "/admin/api/company-branding",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -1357,7 +1357,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   app.post(
-    "/api/company-branding",
+    "/admin/api/company-branding",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -1412,7 +1412,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Dashboard Stats Route
   app.get(
-    "/api/dashboard-stats",
+    "/admin/api/dashboard-stats",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -1478,7 +1478,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Enhanced sync logs route
   app.get(
-    "/api/sync-logs-detailed",
+    "/admin/api/sync-logs-detailed",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -1516,7 +1516,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Enhanced sync status route
   app.get(
-    "/api/sync-status",
+    "/admin/api/sync-status",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -1570,7 +1570,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Dynamic Metrics Routes
   app.get(
-    "/api/dynamic-metrics",
+    "/admin/api/dynamic-metrics",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -1595,7 +1595,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   app.get(
-    "/api/dynamic-metrics-with-results",
+    "/admin/api/dynamic-metrics-with-results",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -1653,7 +1653,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   app.post(
-    "/api/dynamic-metrics",
+    "/admin/api/dynamic-metrics",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -1689,7 +1689,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   app.patch(
-    "/api/dynamic-metrics/:id",
+    "/admin/api/dynamic-metrics/:id",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -1718,7 +1718,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   app.delete(
-    "/api/dynamic-metrics/:id",
+    "/admin/api/dynamic-metrics/:id",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -1753,7 +1753,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // API endpoint for the ranking project to save metric results
   app.post(
-    "/api/metric-results",
+    "/admin/api/metric-results",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
@@ -1805,7 +1805,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get pipeline stages for dynamic metrics configuration
   app.get(
-    "/api/kommo/pipeline-stages",
+    "/admin/api/kommo/pipeline-stages",
     authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
