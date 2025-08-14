@@ -28,7 +28,11 @@ export default function Login() {
 
   const onSubmit = async (data: FormValues) => {
     setLoginError(null);
-    const success = await login(data.email, data.password);
+    // Pegar company_id da URL se presente
+    const urlParams = new URLSearchParams(window.location.search);
+    const companyId = urlParams.get('company_id');
+    
+    const success = await login(data.email, data.password, companyId || undefined);
     if (!success) {
       setLoginError("Email ou senha incorretos, ou você não tem permissão de administrador.");
     }

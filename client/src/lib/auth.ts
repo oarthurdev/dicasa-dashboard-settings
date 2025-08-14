@@ -13,7 +13,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string, companyId?: string) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -47,12 +47,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string, companyId?: string): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await api.post("/api/auth/login", {
+      const url = companyId ? `/api/auth/login?company_id=${companyId}` : "/api/auth/login";
+      const response = await api.post(url, {
         email,
         password,
       });

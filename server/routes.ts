@@ -73,7 +73,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const { email, password } = validation.data;
-        const companyId = (req as any).companyId;
+        
+        // Usar company_id da query se fornecido, senão usar do middleware
+        const queryCompanyId = req.query.company_id as string;
+        const companyId = queryCompanyId || (req as any).companyId;
+
+        if (!companyId) {
+          return res.status(400).json({ message: "Company ID é obrigatório" });
+        }
 
         // Buscar o broker na tabela brokers
         const { data: broker, error } = await supabaseServer
