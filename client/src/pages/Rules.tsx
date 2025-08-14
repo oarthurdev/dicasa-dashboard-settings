@@ -240,47 +240,6 @@ export default function Rules() {
           <h1 className="text-2xl font-bold text-gray-800">
             Gerenciamento de Regras
           </h1>
-          <Button
-            onClick={async () => {
-              try {
-                setSyncLoading(true);
-                const response = await api.post("/api/sync/force", null, {
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
-                });
-
-                if (response.status === 200) {
-                  toast({
-                    title: "Sincronização finalizada",
-                    description: "A sincronização foi concluída com sucesso.",
-                    variant: "default",
-                  });
-                }
-              } catch (error) {
-                toast({
-                  title: "Erro ao forçar sincronização",
-                  description: "Ocorreu um erro ao iniciar a sincronização.",
-                  variant: "destructive",
-                });
-              } finally {
-                setSyncLoading(false);
-              }
-            }}
-            disabled={syncLoading}
-          >
-            {syncLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Sincronizando...
-              </>
-            ) : (
-              <>
-                <RefreshCcw className="mr-2 h-4 w-4" />
-                &nbsp;&nbsp;Forçar Sincronização
-              </>
-            )}
-          </Button>
         </div>
 
         <Tabs defaultValue="company-rules" className="w-full">

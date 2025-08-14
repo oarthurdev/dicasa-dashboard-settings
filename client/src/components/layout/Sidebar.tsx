@@ -94,13 +94,6 @@ export default function Sidebar() {
           >
             Notificações
           </SidebarItem>
-          <SidebarItem
-            href="/admin/monitoring"
-            icon={<BarChart3 size={20} />}
-            active={location === "/admin/monitoring"}
-          >
-            Monitoramento
-          </SidebarItem>
           <li>
             <Collapsible>
               <CollapsibleTrigger className="flex items-center w-full px-4 py-3 text-gray-700 hover:bg-gray-100 pl-6">

@@ -6,13 +6,49 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileText, Plus, Calendar, Mail, Settings, Download, Trash2, Play } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormDescription,
+} from "@/components/ui/form";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  FileText,
+  Plus,
+  Calendar,
+  Mail,
+  Settings,
+  Download,
+  Trash2,
+  Play,
+} from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { automaticReportFormSchema } from "@shared/schema";
@@ -52,9 +88,13 @@ const reportTypeLabels = {
 
 export default function AutomaticReports() {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingReport, setEditingReport] = useState<AutomaticReport | null>(null);
+  const [editingReport, setEditingReport] = useState<AutomaticReport | null>(
+    null,
+  );
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const token = localStorage.getItem("auth.token");
 
   const { data: reports = [], isLoading } = useQuery({
     queryKey: ["/admin/api/automatic-reports"],
@@ -79,11 +119,16 @@ export default function AutomaticReports() {
     mutationFn: (data: AutomaticReportFormData) =>
       fetch("/admin/api/automatic-reports", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(data),
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/admin/api/automatic-reports"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/admin/api/automatic-reports"],
+      });
       setDialogOpen(false);
       setEditingReport(null);
       form.reset();
@@ -102,14 +147,25 @@ export default function AutomaticReports() {
   });
 
   const updateReportMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<AutomaticReport> }) =>
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: Partial<AutomaticReport>;
+    }) =>
       fetch(`/admin/api/automatic-reports/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(data),
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/admin/api/automatic-reports"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/admin/api/automatic-reports"],
+      });
       toast({
         title: "Relatório atualizado",
         description: "As configurações foram salvas com sucesso",
@@ -119,9 +175,14 @@ export default function AutomaticReports() {
 
   const deleteReportMutation = useMutation({
     mutationFn: (id: number) =>
-      fetch(`/admin/api/automatic-reports/${id}`, { method: "DELETE" }),
+      fetch(`/admin/api/automatic-reports/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/admin/api/automatic-reports"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/admin/api/automatic-reports"],
+      });
       toast({
         title: "Relatório excluído",
         description: "O relatório automático foi removido",
@@ -131,9 +192,14 @@ export default function AutomaticReports() {
 
   const generateReportMutation = useMutation({
     mutationFn: (id: number) =>
-      fetch(`/admin/api/automatic-reports/${id}/generate`, { method: "POST" }),
+      fetch(`/admin/api/automatic-reports/${id}/generate`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/admin/api/automatic-reports"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/admin/api/automatic-reports"],
+      });
       toast({
         title: "Relatório gerado",
         description: "O relatório foi gerado e enviado por email",
@@ -177,7 +243,7 @@ export default function AutomaticReports() {
   const removeEmailRecipient = (email: string) => {
     form.setValue(
       "email_recipients",
-      emailRecipients.filter((e) => e !== email)
+      emailRecipients.filter((e) => e !== email),
     );
   };
 
@@ -185,7 +251,9 @@ export default function AutomaticReports() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Relatórios Automáticos</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Relatórios Automáticos
+          </h1>
           <p className="text-muted-foreground">
             Configure relatórios que são gerados e enviados automaticamente
           </p>
@@ -200,11 +268,16 @@ export default function AutomaticReports() {
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>
-                {editingReport ? "Editar Relatório" : "Novo Relatório Automático"}
+                {editingReport
+                  ? "Editar Relatório"
+                  : "Novo Relatório Automático"}
               </DialogTitle>
             </DialogHeader>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-6"
+              >
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -213,7 +286,10 @@ export default function AutomaticReports() {
                       <FormItem>
                         <FormLabel>Nome do Relatório</FormLabel>
                         <FormControl>
-                          <Input placeholder="Ex: Relatório Semanal de Vendas" {...field} />
+                          <Input
+                            placeholder="Ex: Relatório Semanal de Vendas"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -226,7 +302,10 @@ export default function AutomaticReports() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Frequência</FormLabel>
-                        <Select value={field.value} onValueChange={field.onChange}>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue />
@@ -267,17 +346,28 @@ export default function AutomaticReports() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Tipo de Relatório</FormLabel>
-                      <Select value={field.value} onValueChange={field.onChange}>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="ranking">Ranking de Corretores</SelectItem>
-                          <SelectItem value="metrics">Métricas Dinâmicas</SelectItem>
-                          <SelectItem value="kommo_sync">Sincronização Kommo</SelectItem>
-                          <SelectItem value="full">Relatório Completo</SelectItem>
+                          <SelectItem value="ranking">
+                            Ranking de Corretores
+                          </SelectItem>
+                          <SelectItem value="metrics">
+                            Métricas Dinâmicas
+                          </SelectItem>
+                          <SelectItem value="kommo_sync">
+                            Sincronização Kommo
+                          </SelectItem>
+                          <SelectItem value="full">
+                            Relatório Completo
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -294,16 +384,27 @@ export default function AutomaticReports() {
                       placeholder="email@exemplo.com"
                       value={newEmail}
                       onChange={(e) => setNewEmail(e.target.value)}
-                      onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addEmailRecipient())}
+                      onKeyPress={(e) =>
+                        e.key === "Enter" &&
+                        (e.preventDefault(), addEmailRecipient())
+                      }
                     />
-                    <Button type="button" onClick={addEmailRecipient} variant="outline">
+                    <Button
+                      type="button"
+                      onClick={addEmailRecipient}
+                      variant="outline"
+                    >
                       Adicionar
                     </Button>
                   </div>
                   {emailRecipients.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {emailRecipients.map((email) => (
-                        <Badge key={email} variant="secondary" className="flex items-center gap-1">
+                        <Badge
+                          key={email}
+                          variant="secondary"
+                          className="flex items-center gap-1"
+                        >
                           {email}
                           <Button
                             type="button"
@@ -327,7 +428,9 @@ export default function AutomaticReports() {
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                         <div className="space-y-0.5">
-                          <FormLabel className="text-sm">Incluir Gráficos</FormLabel>
+                          <FormLabel className="text-sm">
+                            Incluir Gráficos
+                          </FormLabel>
                         </div>
                         <FormControl>
                           <Switch
@@ -345,7 +448,9 @@ export default function AutomaticReports() {
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                         <div className="space-y-0.5">
-                          <FormLabel className="text-sm">Incluir Comparações</FormLabel>
+                          <FormLabel className="text-sm">
+                            Incluir Comparações
+                          </FormLabel>
                         </div>
                         <FormControl>
                           <Switch
@@ -366,7 +471,10 @@ export default function AutomaticReports() {
                   >
                     Cancelar
                   </Button>
-                  <Button type="submit" disabled={createReportMutation.isPending}>
+                  <Button
+                    type="submit"
+                    disabled={createReportMutation.isPending}
+                  >
                     {createReportMutation.isPending ? "Salvando..." : "Salvar"}
                   </Button>
                 </div>
@@ -401,9 +509,12 @@ export default function AutomaticReports() {
             {reports.length === 0 ? (
               <div className="text-center py-12">
                 <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Nenhum relatório configurado</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  Nenhum relatório configurado
+                </h3>
                 <p className="text-muted-foreground mb-4">
-                  Configure relatórios automáticos para receber atualizações regulares
+                  Configure relatórios automáticos para receber atualizações
+                  regulares
                 </p>
                 <Button onClick={() => handleOpenDialog()}>
                   <Plus className="h-4 w-4 mr-2" />
@@ -444,20 +555,30 @@ export default function AutomaticReports() {
                       <TableCell>{frequencyLabels[report.frequency]}</TableCell>
                       <TableCell>
                         {report.last_generated
-                          ? format(new Date(report.last_generated), "dd/MM/yyyy HH:mm", {
-                              locale: ptBR,
-                            })
+                          ? format(
+                              new Date(report.last_generated),
+                              "dd/MM/yyyy HH:mm",
+                              {
+                                locale: ptBR,
+                              },
+                            )
                           : "Nunca"}
                       </TableCell>
                       <TableCell>
                         {report.next_generation
-                          ? format(new Date(report.next_generation), "dd/MM/yyyy HH:mm", {
-                              locale: ptBR,
-                            })
+                          ? format(
+                              new Date(report.next_generation),
+                              "dd/MM/yyyy HH:mm",
+                              {
+                                locale: ptBR,
+                              },
+                            )
                           : "-"}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={report.active ? "default" : "secondary"}>
+                        <Badge
+                          variant={report.active ? "default" : "secondary"}
+                        >
                           {report.active ? "Ativo" : "Inativo"}
                         </Badge>
                       </TableCell>
@@ -466,7 +587,9 @@ export default function AutomaticReports() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => generateReportMutation.mutate(report.id)}
+                            onClick={() =>
+                              generateReportMutation.mutate(report.id)
+                            }
                             disabled={generateReportMutation.isPending}
                           >
                             <Play className="h-3 w-3" />
@@ -481,7 +604,9 @@ export default function AutomaticReports() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => deleteReportMutation.mutate(report.id)}
+                            onClick={() =>
+                              deleteReportMutation.mutate(report.id)
+                            }
                             disabled={deleteReportMutation.isPending}
                           >
                             <Trash2 className="h-3 w-3" />

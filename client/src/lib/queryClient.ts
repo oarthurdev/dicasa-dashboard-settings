@@ -1,6 +1,6 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
-const API_URL = import.meta.env.VITE_ADMIN_API_URL || "http://localhost:3000";
+const API_URL = "";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -11,12 +11,19 @@ async function throwIfResNotOk(res: Response) {
 
 export async function apiRequest<T = any>(
   url: string,
-  method: string = 'GET',
+  method: string = "GET",
   data?: unknown | undefined,
 ): Promise<T> {
+  const token = localStorage.getItem("auth.token");
+
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+    ...(token && { Authorization: `Bearer ${token}` }), // Adiciona o header Authorization se o token existir
+  };
+
   const res = await fetch(API_URL + url, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers: data ? { ...headers } : headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
@@ -58,4 +65,3 @@ export const queryClient = new QueryClient({
     },
   },
 });
-

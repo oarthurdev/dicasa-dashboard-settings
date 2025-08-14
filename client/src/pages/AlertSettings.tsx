@@ -6,9 +6,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Separator } from "@/components/ui/separator";
-import { Bell, Mail, Settings, Clock, TrendingUp, AlertTriangle } from "lucide-react";
+import {
+  Bell,
+  Mail,
+  Settings,
+  Clock,
+  TrendingUp,
+  AlertTriangle,
+} from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { alertSettingsFormSchema } from "@shared/schema";
@@ -19,6 +34,8 @@ type AlertSettingsFormData = z.infer<typeof alertSettingsFormSchema>;
 export default function AlertSettings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const token = localStorage.getItem("auth.token");
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ["/admin/api/alert-settings"],
@@ -49,14 +66,17 @@ export default function AlertSettings() {
     mutationFn: (data: AlertSettingsFormData) =>
       fetch("/admin/api/alert-settings", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(data),
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/admin/api/alert-settings"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/admin/api/alert-settings"],
+      });
       toast({
         title: "Configurações salvas",
-        description: "Suas preferências de alertas foram atualizadas com sucesso",
+        description:
+          "Suas preferências de alertas foram atualizadas com sucesso",
       });
     },
     onError: (error: any) => {
@@ -98,7 +118,9 @@ export default function AlertSettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Configurações de Alertas</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          Configurações de Alertas
+        </h1>
         <p className="text-muted-foreground">
           Configure como e quando você deseja receber notificações do sistema
         </p>
@@ -121,7 +143,9 @@ export default function AlertSettings() {
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">
-                      <FormLabel className="text-base">Notificações no Navegador</FormLabel>
+                      <FormLabel className="text-base">
+                        Notificações no Navegador
+                      </FormLabel>
                       <FormDescription>
                         Receba notificações push diretamente no seu navegador
                       </FormDescription>
@@ -142,7 +166,9 @@ export default function AlertSettings() {
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">
-                      <FormLabel className="text-base">Alertas por Email</FormLabel>
+                      <FormLabel className="text-base">
+                        Alertas por Email
+                      </FormLabel>
                       <FormDescription>
                         Receba alertas importantes por email
                       </FormDescription>
@@ -227,7 +253,8 @@ export default function AlertSettings() {
                         Alertas de Métricas
                       </FormLabel>
                       <FormDescription>
-                        Receba alertas quando métricas não atingirem os valores mínimos
+                        Receba alertas quando métricas não atingirem os valores
+                        mínimos
                       </FormDescription>
                     </div>
                     <FormControl>
@@ -246,9 +273,12 @@ export default function AlertSettings() {
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">
-                      <FormLabel className="text-base">Mudanças no Ranking</FormLabel>
+                      <FormLabel className="text-base">
+                        Mudanças no Ranking
+                      </FormLabel>
                       <FormDescription>
-                        Seja notificado sobre mudanças significativas no ranking de corretores
+                        Seja notificado sobre mudanças significativas no ranking
+                        de corretores
                       </FormDescription>
                     </div>
                     <FormControl>
@@ -304,11 +334,10 @@ export default function AlertSettings() {
             >
               Cancelar
             </Button>
-            <Button
-              type="submit"
-              disabled={saveSettingsMutation.isPending}
-            >
-              {saveSettingsMutation.isPending ? "Salvando..." : "Salvar Configurações"}
+            <Button type="submit" disabled={saveSettingsMutation.isPending}>
+              {saveSettingsMutation.isPending
+                ? "Salvando..."
+                : "Salvar Configurações"}
             </Button>
           </div>
         </form>
