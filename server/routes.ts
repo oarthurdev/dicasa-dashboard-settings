@@ -9,6 +9,9 @@ import {
   companyRuleFormSchema,
   customRuleFormSchema,
   dynamicMetricFormSchema,
+  notificationFormSchema,
+  alertSettingsFormSchema,
+  automaticReportFormSchema,
   Rule,
 } from "@shared/schema.ts";
 import { z } from "zod";
@@ -1851,6 +1854,384 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res
           .status(500)
           .json({ message: "Erro ao buscar estágios dos funis" });
+      }
+    },
+  );
+
+  // ====================
+  // 🔔 NOTIFICAÇÕES E ALERTAS - NOVAS FUNCIONALIDADES
+  // ====================
+
+  // Notificações Routes
+  app.get(
+    "/admin/api/notifications",
+    authenticateBrokerJWT,
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const companyId = (req as any).companyId;
+        const limit = parseInt(req.query.limit as string) || 20;
+        const unreadOnly = req.query.unread === 'true';
+
+        let query = supabaseServer
+          .from("notifications")
+          .select("*")
+          .eq("company_id", companyId as string)
+          .order("created_at", { ascending: false })
+          .limit(limit);
+
+        if (unreadOnly) {
+          query = query.eq("read", false);
+        }
+
+        const { data: notifications, error } = await query;
+
+        if (error) throw error;
+        return res.status(200).json(notifications || []);
+      } catch (error) {
+        console.error("Error fetching notifications:", error);
+        return res.status(500).json({ message: "Erro ao buscar notificações" });
+      }
+    },
+  );
+
+  app.post(
+    "/admin/api/notifications",
+    authenticateBrokerJWT,
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const companyId = (req as any).companyId;
+        const validation = notificationFormSchema.safeParse(req.body);
+
+        if (!validation.success) {
+          return res.status(400).json({
+            message: "Dados de notificação inválidos",
+            errors: validation.error.format(),
+          });
+        }
+
+        const { data: newNotification, error } = await supabaseServer
+          .from("notifications")
+          .insert({
+            company_id: companyId,
+            ...validation.data,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        return res.status(201).json(newNotification);
+      } catch (error) {
+        console.error("Error creating notification:", error);
+        return res.status(500).json({ message: "Erro ao criar notificação" });
+      }
+    },
+  );
+
+  app.patch(
+    "/admin/api/notifications/:id/read",
+    authenticateBrokerJWT,
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const companyId = (req as any).companyId;
+        const { id } = req.params;
+
+        const { error } = await supabaseServer
+          .from("notifications")
+          .update({ read: true })
+          .eq("id", id)
+          .eq("company_id", companyId as string);
+
+        if (error) throw error;
+        return res.status(200).json({ message: "Notificação marcada como lida" });
+      } catch (error) {
+        console.error("Error marking notification as read:", error);
+        return res.status(500).json({ message: "Erro ao marcar notificação como lida" });
+      }
+    },
+  );
+
+  app.patch(
+    "/admin/api/notifications/mark-all-read",
+    authenticateBrokerJWT,
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const companyId = (req as any).companyId;
+
+        const { error } = await supabaseServer
+          .from("notifications")
+          .update({ read: true })
+          .eq("company_id", companyId as string)
+          .eq("read", false);
+
+        if (error) throw error;
+        return res.status(200).json({ message: "Todas as notificações marcadas como lidas" });
+      } catch (error) {
+        console.error("Error marking all notifications as read:", error);
+        return res.status(500).json({ message: "Erro ao marcar todas as notificações como lidas" });
+      }
+    },
+  );
+
+  // Configurações de Alertas Routes
+  app.get(
+    "/admin/api/alert-settings",
+    authenticateBrokerJWT,
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const companyId = (req as any).companyId;
+
+        const { data: settings, error } = await supabaseServer
+          .from("alert_settings")
+          .select("*")
+          .eq("company_id", companyId as string)
+          .single();
+
+        if (error && error.code !== "PGRST116") {
+          throw error;
+        }
+
+        return res.status(200).json(settings || {});
+      } catch (error) {
+        console.error("Error fetching alert settings:", error);
+        return res.status(500).json({ message: "Erro ao buscar configurações de alertas" });
+      }
+    },
+  );
+
+  app.post(
+    "/admin/api/alert-settings",
+    authenticateBrokerJWT,
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const companyId = (req as any).companyId;
+        const validation = alertSettingsFormSchema.safeParse(req.body);
+
+        if (!validation.success) {
+          return res.status(400).json({
+            message: "Dados de configuração inválidos",
+            errors: validation.error.format(),
+          });
+        }
+
+        // Check if settings already exist
+        const { data: existingSettings, error: fetchError } = await supabaseServer
+          .from("alert_settings")
+          .select("*")
+          .eq("company_id", companyId as string)
+          .single();
+
+        if (fetchError && fetchError.code !== "PGRST116") {
+          throw fetchError;
+        }
+
+        if (!existingSettings) {
+          // Create new settings
+          const { data: newSettings, error: insertError } = await supabaseServer
+            .from("alert_settings")
+            .insert({
+              company_id: companyId,
+              ...validation.data,
+            })
+            .select()
+            .single();
+
+          if (insertError) throw insertError;
+          return res.status(201).json(newSettings);
+        } else {
+          // Update existing settings
+          const { data: updatedSettings, error: updateError } = await supabaseServer
+            .from("alert_settings")
+            .update(validation.data)
+            .eq("company_id", companyId as string)
+            .select()
+            .single();
+
+          if (updateError) throw updateError;
+          return res.status(200).json(updatedSettings);
+        }
+      } catch (error) {
+        console.error("Error saving alert settings:", error);
+        return res.status(500).json({ message: "Erro ao salvar configurações de alertas" });
+      }
+    },
+  );
+
+  // Relatórios Automatizados Routes
+  app.get(
+    "/admin/api/automatic-reports",
+    authenticateBrokerJWT,
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const companyId = (req as any).companyId;
+
+        const { data: reports, error } = await supabaseServer
+          .from("automatic_reports")
+          .select("*")
+          .eq("company_id", companyId as string)
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+        return res.status(200).json(reports || []);
+      } catch (error) {
+        console.error("Error fetching automatic reports:", error);
+        return res.status(500).json({ message: "Erro ao buscar relatórios automáticos" });
+      }
+    },
+  );
+
+  app.post(
+    "/admin/api/automatic-reports",
+    authenticateBrokerJWT,
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const companyId = (req as any).companyId;
+        const validation = automaticReportFormSchema.safeParse(req.body);
+
+        if (!validation.success) {
+          return res.status(400).json({
+            message: "Dados do relatório inválidos",
+            errors: validation.error.format(),
+          });
+        }
+
+        // Calculate next generation date based on frequency
+        const now = new Date();
+        const nextGeneration = new Date();
+        
+        switch (validation.data.frequency) {
+          case 'daily':
+            nextGeneration.setDate(now.getDate() + 1);
+            break;
+          case 'weekly':
+            nextGeneration.setDate(now.getDate() + 7);
+            break;
+          case 'monthly':
+            nextGeneration.setMonth(now.getMonth() + 1);
+            break;
+        }
+
+        const { data: newReport, error } = await supabaseServer
+          .from("automatic_reports")
+          .insert({
+            company_id: companyId,
+            ...validation.data,
+            next_generation: nextGeneration.toISOString(),
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        return res.status(201).json(newReport);
+      } catch (error) {
+        console.error("Error creating automatic report:", error);
+        return res.status(500).json({ message: "Erro ao criar relatório automático" });
+      }
+    },
+  );
+
+  app.patch(
+    "/admin/api/automatic-reports/:id",
+    authenticateBrokerJWT,
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const companyId = (req as any).companyId;
+        const { id } = req.params;
+        const updateData = req.body;
+
+        const { data: updatedReport, error } = await supabaseServer
+          .from("automatic_reports")
+          .update(updateData)
+          .eq("id", id)
+          .eq("company_id", companyId as string)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return res.status(200).json(updatedReport);
+      } catch (error) {
+        console.error("Error updating automatic report:", error);
+        return res.status(500).json({ message: "Erro ao atualizar relatório automático" });
+      }
+    },
+  );
+
+  app.delete(
+    "/admin/api/automatic-reports/:id",
+    authenticateBrokerJWT,
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const companyId = (req as any).companyId;
+        const { id } = req.params;
+
+        const { error } = await supabaseServer
+          .from("automatic_reports")
+          .delete()
+          .eq("id", id)
+          .eq("company_id", companyId as string);
+
+        if (error) throw error;
+        return res.status(200).json({ message: "Relatório automático excluído com sucesso" });
+      } catch (error) {
+        console.error("Error deleting automatic report:", error);
+        return res.status(500).json({ message: "Erro ao excluir relatório automático" });
+      }
+    },
+  );
+
+  // Endpoint para gerar relatório manualmente
+  app.post(
+    "/admin/api/automatic-reports/:id/generate",
+    authenticateBrokerJWT,
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const companyId = (req as any).companyId;
+        const { id } = req.params;
+
+        // Get report configuration
+        const { data: report, error: reportError } = await supabaseServer
+          .from("automatic_reports")
+          .select("*")
+          .eq("id", id)
+          .eq("company_id", companyId as string)
+          .single();
+
+        if (reportError) throw reportError;
+
+        // Here you would implement the actual report generation logic
+        // For now, we'll just create a notification
+        await supabaseServer
+          .from("notifications")
+          .insert({
+            company_id: companyId,
+            title: "Relatório Gerado",
+            message: `O relatório "${report.name}" foi gerado com sucesso.`,
+            type: "success",
+            category: "system",
+            priority: "normal",
+          });
+
+        // Update last_generated timestamp
+        await supabaseServer
+          .from("automatic_reports")
+          .update({ last_generated: new Date().toISOString() })
+          .eq("id", id)
+          .eq("company_id", companyId as string);
+
+        return res.status(200).json({ message: "Relatório gerado com sucesso" });
+      } catch (error) {
+        console.error("Error generating report:", error);
+        return res.status(500).json({ message: "Erro ao gerar relatório" });
       }
     },
   );

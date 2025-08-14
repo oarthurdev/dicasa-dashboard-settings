@@ -132,6 +132,62 @@ export const metricResults = pgTable("metric_results", {
   updated_at: timestamp("updated_at").defaultNow(),
 });
 
+// Sistema de Notificações e Alertas
+export const notifications = pgTable("notifications", {
+  id: integer("id").primaryKey(),
+  company_id: uuid("company_id")
+    .references(() => companies.id)
+    .notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  type: text("type").notNull(), // "success", "warning", "error", "info", "alert"
+  priority: text("priority").notNull().default("normal"), // "low", "normal", "high", "urgent"
+  category: text("category").notNull(), // "system", "ranking", "kommo", "metrics", "rules"
+  read: boolean("read").default(false),
+  action_url: text("action_url"), // URL para ação relacionada
+  metadata: jsonb("metadata"), // dados extras como user_id, metric_id, etc
+  expires_at: timestamp("expires_at"), // notificações que expiram
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+// Configurações de Alertas por Empresa
+export const alertSettings = pgTable("alert_settings", {
+  id: integer("id").primaryKey(),
+  company_id: uuid("company_id")
+    .references(() => companies.id)
+    .notNull()
+    .unique(),
+  email_alerts: boolean("email_alerts").default(true),
+  browser_notifications: boolean("browser_notifications").default(true),
+  daily_summary: boolean("daily_summary").default(true),
+  sync_failure_alerts: boolean("sync_failure_alerts").default(true),
+  ranking_change_alerts: boolean("ranking_change_alerts").default(false),
+  metric_threshold_alerts: boolean("metric_threshold_alerts").default(true),
+  admin_email: text("admin_email"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Relatórios Automatizados
+export const automaticReports = pgTable("automatic_reports", {
+  id: integer("id").primaryKey(),
+  company_id: uuid("company_id")
+    .references(() => companies.id)
+    .notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  frequency: text("frequency").notNull(), // "daily", "weekly", "monthly"
+  report_type: text("report_type").notNull(), // "ranking", "metrics", "kommo_sync", "full"
+  email_recipients: text("email_recipients").array(), // array de emails
+  include_charts: boolean("include_charts").default(true),
+  include_comparisons: boolean("include_comparisons").default(true),
+  active: boolean("active").default(true),
+  last_generated: timestamp("last_generated"),
+  next_generation: timestamp("next_generation"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
 export const insertRuleSchema = createInsertSchema(rules).pick({
   nome: true,
   pontos: true,
@@ -172,6 +228,23 @@ export const insertCustomRuleSchema = createInsertSchema(customRules).omit({
 });
 
 export const insertDynamicMetricSchema = createInsertSchema(dynamicMetrics).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  created_at: true,
+});
+
+export const insertAlertSettingsSchema = createInsertSchema(alertSettings).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
+export const insertAutomaticReportSchema = createInsertSchema(automaticReports).omit({
   id: true,
   created_at: true,
   updated_at: true,
@@ -233,6 +306,15 @@ export type MetricResult = typeof metricResults.$inferSelect;
 
 export type InsertCompanyBranding = z.infer<typeof insertCompanyBrandingSchema>;
 export type CompanyBranding = typeof companyBranding.$inferSelect;
+
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type Notification = typeof notifications.$inferSelect;
+
+export type InsertAlertSettings = z.infer<typeof insertAlertSettingsSchema>;
+export type AlertSettings = typeof alertSettings.$inferSelect;
+
+export type InsertAutomaticReport = z.infer<typeof insertAutomaticReportSchema>;
+export type AutomaticReport = typeof automaticReports.$inferSelect;
 
 // Validation schemas for forms
 export const ruleFormSchema = z.object({
@@ -319,4 +401,36 @@ export const companyBrandingFormSchema = z.object({
   company_name_display: z.string().min(1, "Nome para exibição é obrigatório"),
   dashboard_title: z.string().min(1, "Título do dashboard é obrigatório"),
   theme_mode: z.enum(["light", "dark", "auto"]),
+});
+
+// Novos schemas para notificações e alertas
+export const notificationFormSchema = z.object({
+  title: z.string().min(1, "Título é obrigatório"),
+  message: z.string().min(1, "Mensagem é obrigatória"),
+  type: z.enum(["success", "warning", "error", "info", "alert"]),
+  priority: z.enum(["low", "normal", "high", "urgent"]).default("normal"),
+  category: z.enum(["system", "ranking", "kommo", "metrics", "rules"]),
+  action_url: z.string().optional(),
+  expires_at: z.string().optional(),
+});
+
+export const alertSettingsFormSchema = z.object({
+  email_alerts: z.boolean().default(true),
+  browser_notifications: z.boolean().default(true),
+  daily_summary: z.boolean().default(true),
+  sync_failure_alerts: z.boolean().default(true),
+  ranking_change_alerts: z.boolean().default(false),
+  metric_threshold_alerts: z.boolean().default(true),
+  admin_email: z.string().email("Email inválido").optional(),
+});
+
+export const automaticReportFormSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+  description: z.string().optional(),
+  frequency: z.enum(["daily", "weekly", "monthly"]),
+  report_type: z.enum(["ranking", "metrics", "kommo_sync", "full"]),
+  email_recipients: z.array(z.string().email("Email inválido")).min(1, "Pelo menos um destinatário é obrigatório"),
+  include_charts: z.boolean().default(true),
+  include_comparisons: z.boolean().default(true),
+  active: z.boolean().default(true),
 });

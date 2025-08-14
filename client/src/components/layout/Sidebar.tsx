@@ -9,6 +9,10 @@ import {
   BarChart3,
   LogOut,
   Target,
+  Bell,
+  FileText,
+  Palette,
+  AlertTriangle,
 } from "lucide-react";
 import {
   Collapsible,
@@ -83,6 +87,20 @@ export default function Sidebar() {
           >
             Métricas Dinâmicas
           </SidebarItem>
+          <SidebarItem
+            href="/admin/notifications"
+            icon={<Bell size={20} />}
+            active={location === "/admin/notifications"}
+          >
+            Notificações
+          </SidebarItem>
+          <SidebarItem
+            href="/admin/monitoring"
+            icon={<BarChart3 size={20} />}
+            active={location === "/admin/monitoring"}
+          >
+            Monitoramento
+          </SidebarItem>
           <li>
             <Collapsible>
               <CollapsibleTrigger className="flex items-center w-full px-4 py-3 text-gray-700 hover:bg-gray-100 pl-6">
@@ -106,6 +124,27 @@ export default function Sidebar() {
                     active={location === "/admin/settings/kommo"}
                   >
                     Kommo
+                  </SidebarItem>
+                  <SidebarItem
+                    href="/admin/settings/alerts"
+                    icon={<AlertTriangle size={16} />}
+                    active={location === "/admin/settings/alerts"}
+                  >
+                    Alertas
+                  </SidebarItem>
+                  <SidebarItem
+                    href="/admin/settings/reports"
+                    icon={<FileText size={16} />}
+                    active={location === "/admin/settings/reports"}
+                  >
+                    Relatórios
+                  </SidebarItem>
+                  <SidebarItem
+                    href="/admin/settings/company-branding"
+                    icon={<Palette size={16} />}
+                    active={location === "/admin/settings/company-branding"}
+                  >
+                    Marca
                   </SidebarItem>
                 </ul>
               </CollapsibleContent>

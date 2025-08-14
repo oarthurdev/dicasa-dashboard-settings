@@ -9,6 +9,9 @@ import KommoConfig from "@/pages/KommoConfig";
 import DynamicMetrics from "@/pages/DynamicMetrics";
 import Monitoring from "@/pages/Monitoring";
 import CompanyBranding from "@/pages/CompanyBranding";
+import Notifications from "@/pages/Notifications";
+import AlertSettings from "@/pages/AlertSettings";
+import AutomaticReports from "@/pages/AutomaticReports";
 import AuthWrapper from "@/components/layout/AuthWrapper";
 import { useEffect } from "react";
 import GeneralSettings from "@/pages/GeneralSettings";
@@ -65,6 +68,9 @@ function Router() {
           component={CompanyBranding}
         />
         <Route path="/admin/monitoring" component={Monitoring} />
+        <Route path="/admin/notifications" component={Notifications} />
+        <Route path="/admin/settings/alerts" component={AlertSettings} />
+        <Route path="/admin/settings/reports" component={AutomaticReports} />
         <Route component={NotFound} />
       </Switch>
     </AuthWrapper>
