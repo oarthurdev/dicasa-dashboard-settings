@@ -750,7 +750,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Import KommoAuthManager
-        const { KommoAuthManager } = await import("./kommoAuth.ts");
+        //const { KommoAuthManager } = await import("./kommoAuth.ts");
 
         // Fetch pipeline stages from Kommo API
         const allStages = [];
@@ -761,14 +761,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const baseUrl = config.api_url.replace(/\/+$/, "");
             const statusesUrl = `${baseUrl}/leads/pipelines/${pipelineId}/statuses`;
 
+            const response = await fetch(statusesUrl, {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${config.access_token}`,
+              }
+            });
+            
             console.log(
               `Fetching stages for pipeline ${pipelineId} from: ${statusesUrl}`,
             );
 
+            /*
             const response = await KommoAuthManager.makeAuthenticatedRequest(
               companyId,
               statusesUrl,
             );
+            */
 
             if (response.ok) {
               const data = await response.json();
@@ -776,10 +786,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Get pipeline name first
               const pipelineUrl = `${baseUrl}/leads/pipelines/${pipelineId}`;
               const pipelineResponse =
-                await KommoAuthManager.makeAuthenticatedRequest(
-                  companyId,
-                  pipelineUrl,
-                );
+                await fetch(pipelineUrl, {
+                  method: "GET",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${config.access_token}`,
+                  },
+                });
 
               let pipelineName = `Pipeline ${pipelineId}`;
               if (pipelineResponse.ok) {
@@ -803,7 +816,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   });
                 }
               }
-            } else {
+             } else {
               const errorText = await response.text();
               console.error(
                 `Error fetching stages for pipeline ${pipelineId}:`,
@@ -854,16 +867,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Import KommoAuthManager
-        const { KommoAuthManager } = await import("./kommoAuth.ts");
+        //const { KommoAuthManager } = await import("./kommoAuth.ts");
 
         // Fetch ALL pipelines from Kommo API
         const baseUrl = config.api_url.replace(/\/+$/, "");
         const pipelinesUrl = `${baseUrl}/leads/pipelines`;
 
+        /*
         const response = await KommoAuthManager.makeAuthenticatedRequest(
           companyId,
           pipelinesUrl,
         );
+        */
+        const response = await fetch(pipelinesUrl, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${config.access_token}`,
+          },
+        });
 
         if (!response.ok) {
           const errorText = await response.text();
