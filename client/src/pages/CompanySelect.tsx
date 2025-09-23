@@ -21,7 +21,7 @@ export default function CompanySelect() {
   }, []);
 
   const loadCompanies = async () => {
-    const { data } = await supabase.from("companies").select("id, name");
+    const { data } = await supabase.schema("cf_companies").from("companies").select("id, name");
     if (data) {
       setCompanies(data);
     }

@@ -158,6 +158,7 @@ export const supabase = {
    */
   async getKommoConfig(): Promise<KommoConfig | undefined> {
     const { data, error } = await supabaseClient
+      .schema("cf_kommo")
       .from("kommo_config")
       .select("*")
       .single();
@@ -177,6 +178,7 @@ export const supabase = {
    */
   async createKommoConfig(config: InsertKommoConfig): Promise<KommoConfig> {
     const { data, error } = await supabaseClient
+      .schema("cf_kommo")
       .from("kommo_config")
       .insert(config)
       .select()
@@ -196,6 +198,7 @@ export const supabase = {
    */
   async updateKommoConfig(config: KommoConfig): Promise<KommoConfig> {
     const { data, error } = await supabaseClient
+      .schema("cf_kommo")
       .from("kommo_config")
       .update(config)
       .eq("id", config.id)

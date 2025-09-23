@@ -60,6 +60,7 @@ export class KommoAuthManager {
   static async getValidAccessToken(companyId: string): Promise<string> {
     // Get current config from database
     const { data: config, error } = await supabaseClient
+      .schema("cf_kommo")
       .from("kommo_config")
       .select("*")
       .eq("company_id", companyId)

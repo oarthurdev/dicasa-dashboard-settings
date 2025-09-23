@@ -721,6 +721,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Get company's Kommo config
         const { data: config } = await supabaseServer
+          .schema("cf_kommo")
           .from("kommo_config")
           .select("*")
           .eq("company_id", companyId)
@@ -857,6 +858,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Get company's Kommo config
         const { data: config } = await supabaseServer
+          .schema("cf_kommo")
           .from("kommo_config")
           .select("*")
           .eq("company_id", companyId)
@@ -954,6 +956,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const companyId = (req as any).companyId;
 
         const { data: config, error } = await supabaseServer
+          .schema("cf_kommo")
           .from("kommo_config")
           .select("*")
           .eq("company_id", companyId as string)
@@ -1052,6 +1055,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Verificar se já existe config para a empresa
         const { data: existingConfig, error: fetchError } = await supabaseServer
+          .schema("cf_kommo")
           .from("kommo_config")
           .select("*")
           .eq("company_id", company_id)
@@ -1270,6 +1274,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const companyId = (req as any).companyId;
 
         const { data: config } = await supabaseServer
+          .schema("cf_kommo")
           .from("kommo_config")
           .select("*")
           .eq("company_id", companyId as string)
@@ -1463,6 +1468,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Get Kommo connection status
         const { data: kommoConfig } = await supabaseServer
+          .schema("cf_kommo")
           .from("kommo_config")
           .select("active")
           .eq("company_id", companyId as string)
@@ -1479,6 +1485,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Get next sync time from config
         const { data: syncConfig } = await supabaseServer
+          .schema("cf_kommo")
           .from("kommo_config")
           .select("next_sync")
           .eq("company_id", companyId as string)
@@ -1549,6 +1556,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const companyId = (req as any).companyId;
 
         const { data: config } = await supabaseServer
+          .schema("cf_kommo")
           .from("kommo_config")
           .select("*")
           .eq("company_id", companyId as string)
@@ -1839,6 +1847,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Get Kommo config to find selected pipelines
         const { data: kommoConfig } = await supabaseServer
+          .schema("cf_kommo")
           .from("kommo_config")
           .select("pipeline_id")
           .eq("company_id", companyId as string)
