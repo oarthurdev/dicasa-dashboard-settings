@@ -188,6 +188,18 @@ export const automaticReports = pgTable("automatic_reports", {
   updated_at: timestamp("updated_at").defaultNow(),
 });
 
+// Sistema de Autenticação
+export const authSystem = pgTable("auth_system", {
+  id: integer("id").primaryKey(),
+  company_id: uuid("company_id")
+    .references(() => companies.id)
+    .notNull()
+    .unique(),
+  password: text("password").notNull(),
+  expire_at: timestamp("expire_at").notNull(),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
 export const insertRuleSchema = createInsertSchema(rules).pick({
   nome: true,
   pontos: true,
@@ -256,6 +268,11 @@ export const insertMetricResultSchema = createInsertSchema(metricResults).omit({
   updated_at: true,
 });
 
+export const insertAuthSystemSchema = createInsertSchema(authSystem).omit({
+  id: true,
+  created_at: true,
+});
+
 export type InsertRule = z.infer<typeof insertRuleSchema>;
 export type Rule = typeof rules.$inferSelect;
 
@@ -315,6 +332,9 @@ export type AlertSettings = typeof alertSettings.$inferSelect;
 
 export type InsertAutomaticReport = z.infer<typeof insertAutomaticReportSchema>;
 export type AutomaticReport = typeof automaticReports.$inferSelect;
+
+export type InsertAuthSystem = z.infer<typeof insertAuthSystemSchema>;
+export type AuthSystem = typeof authSystem.$inferSelect;
 
 // Validation schemas for forms
 export const ruleFormSchema = z.object({
@@ -433,4 +453,9 @@ export const automaticReportFormSchema = z.object({
   include_charts: z.boolean().default(true),
   include_comparisons: z.boolean().default(true),
   active: z.boolean().default(true),
+});
+
+export const authSystemFormSchema = z.object({
+  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
+  expire_at: z.string().min(1, "Data de expiração é obrigatória"),
 });

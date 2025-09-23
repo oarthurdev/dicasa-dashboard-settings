@@ -12,6 +12,7 @@ import {
   notificationFormSchema,
   alertSettingsFormSchema,
   automaticReportFormSchema,
+  authSystemFormSchema,
   Rule,
 } from "@shared/schema.ts";
 import { z } from "zod";
@@ -2089,6 +2090,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         console.error("Error saving alert settings:", error);
         return res.status(500).json({ message: "Erro ao salvar configurações de alertas" });
+      }
+    },
+  );
+
+  // Auth system routes
+  app.get(
+    "/admin/api/auth-system",
+    authenticateBrokerJWT,
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const companyId = (req as any).companyId;
+
+        const { data: settings, error } = await supabaseServer
+          .from("auth_system")
+          .select("*")
+          .eq("company_id", companyId as string)
+          .single();
+
+        if (error && error.code !== "PGRST116") {
+          throw error;
+        }
+
+        // Never return the password field for security
+        if (settings) {
+          const { password, ...safeSettings } = settings;
+          return res.status(200).json(safeSettings);
+        }
+
+        return res.status(200).json({});
+      } catch (error) {
+        console.error("Error fetching auth system settings:", error);
+        return res.status(500).json({ message: "Erro ao buscar configurações do sistema de autenticação" });
+      }
+    },
+  );
+
+  app.post(
+    "/admin/api/auth-system",
+    authenticateBrokerJWT,
+    companyContext,
+    async (req: Request, res: Response) => {
+      try {
+        const companyId = (req as any).companyId;
+        const validation = authSystemFormSchema.safeParse(req.body);
+
+        if (!validation.success) {
+          return res.status(400).json({
+            message: "Dados de configuração inválidos",
+            errors: validation.error.format(),
+          });
+        }
+
+        // Hash the password before storing
+        const hashedPassword = await bcrypt.hash(validation.data.password, 10);
+
+        // Check if settings already exist
+        const { data: existingSettings, error: fetchError } = await supabaseServer
+          .from("auth_system")
+          .select("*")
+          .eq("company_id", companyId as string)
+          .single();
+
+        if (fetchError && fetchError.code !== "PGRST116") {
+          throw fetchError;
+        }
+
+        const settingsData = {
+          password: hashedPassword,
+          expire_at: validation.data.expire_at,
+        };
+
+        if (!existingSettings) {
+          // Create new settings
+          const { data: newSettings, error: insertError } = await supabaseServer
+            .from("auth_system")
+            .insert({
+              company_id: companyId,
+              ...settingsData,
+            })
+            .select()
+            .single();
+
+          if (insertError) throw insertError;
+          
+          // Return without password
+          const { password, ...safeSettings } = newSettings;
+          return res.status(201).json(safeSettings);
+        } else {
+          // Update existing settings
+          const { data: updatedSettings, error: updateError } = await supabaseServer
+            .from("auth_system")
+            .update(settingsData)
+            .eq("company_id", companyId as string)
+            .select()
+            .single();
+
+          if (updateError) throw updateError;
+          
+          // Return without password
+          const { password, ...safeSettings } = updatedSettings;
+          return res.status(200).json(safeSettings);
+        }
+      } catch (error) {
+        console.error("Error saving auth system settings:", error);
+        return res.status(500).json({ message: "Erro ao salvar configurações do sistema de autenticação" });
       }
     },
   );

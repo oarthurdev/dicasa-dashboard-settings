@@ -13,6 +13,7 @@ import {
   FileText,
   Palette,
   AlertTriangle,
+  Shield,
 } from "lucide-react";
 import {
   Collapsible,
@@ -142,6 +143,13 @@ export default function Sidebar() {
                     active={location === "/admin/settings/company-branding"}
                   >
                     Marca
+                  </SidebarItem>
+                  <SidebarItem
+                    href="/admin/settings/auth-system"
+                    icon={<Shield size={16} />}
+                    active={location === "/admin/settings/auth-system"}
+                  >
+                    Sistema de Auth
                   </SidebarItem>
                 </ul>
               </CollapsibleContent>

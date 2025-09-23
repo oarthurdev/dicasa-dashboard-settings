@@ -19,7 +19,7 @@ export async function companyContext(
 
   try {
     const { data, error } = await supabaseClient
-      .schema('cf_companies')
+      .schema("cf_companies")
       .from("companies")
       .select("id")
       .eq("subdomain", subdomain)
@@ -34,7 +34,8 @@ export async function companyContext(
     // Armazena o ID da empresa na requisição
     // (req as any).companyId = data.id;
 
-    0a3157ce-6591-4357-b663-0e4d333d06a5
+    (req as any).companyId = "0a3157ce-6591-4357-b663-0e4d333d06a5";
+
     // (req as any).companyId = "4f114478-6405-4971-9344-01f647c6edb8";
 
     next();
