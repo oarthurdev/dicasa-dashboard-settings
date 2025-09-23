@@ -27,14 +27,12 @@ export async function companyContext(
 
     console.log("Empresa encontrada: ", data);
 
-    // if (error || !data) {
-    //   return res.status(404).json({ message: "Empresa não encontrada" });
-    // }
+    if (error || !data) {
+      return res.status(404).json({ message: "Empresa não encontrada" });
+    }
 
     // Armazena o ID da empresa na requisição
-    // (req as any).companyId = data.id;
-
-    (req as any).companyId = "0a3157ce-6591-4357-b663-0e4d333d06a5";
+    (req as any).companyId = data.id;
 
     // (req as any).companyId = "4f114478-6405-4971-9344-01f647c6edb8";
 
