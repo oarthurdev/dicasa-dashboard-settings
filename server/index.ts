@@ -24,7 +24,10 @@ app.use(
         const domain = url.host;
 
         // Allow localhost in development
-        if (process.env.NODE_ENV !== "production" && (domain.startsWith("localhost") || domain.startsWith("127.0.0.1"))) {
+        if (
+          process.env.NODE_ENV !== "production" &&
+          (domain.startsWith("localhost") || domain.startsWith("127.0.0.1"))
+        ) {
           return callback(null, true);
         }
 
@@ -106,7 +109,7 @@ app.use((req, res, next) => {
     await setupVite(app, server); // Configuração do Vite em dev
   }
 
-  const port = process.env.PORT || 5000;
+  const port = process.env.PORT || 5001;
   server.listen(
     {
       port,
