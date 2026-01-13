@@ -356,15 +356,6 @@ export default function AutomaticReports() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="ranking">
-                            Ranking de Corretores
-                          </SelectItem>
-                          <SelectItem value="metrics">
-                            Métricas Dinâmicas
-                          </SelectItem>
-                          <SelectItem value="kommo_sync">
-                            Sincronização Kommo
-                          </SelectItem>
                           <SelectItem value="full">
                             Relatório Completo
                           </SelectItem>
@@ -420,49 +411,6 @@ export default function AutomaticReports() {
                     </div>
                   )}
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="include_charts"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-sm">
-                            Incluir Gráficos
-                          </FormLabel>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="include_comparisons"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-sm">
-                            Incluir Comparações
-                          </FormLabel>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
                 <div className="flex justify-end space-x-4">
                   <Button
                     type="button"

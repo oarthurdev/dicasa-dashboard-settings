@@ -1,7 +1,7 @@
 
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
-import { convertToSnakeCase } from "./utils.ts";
+import { convertToSnakeCase, } from "./utils.ts";
 import {
   ruleFormSchema,
   kommoConfigFormSchema,
@@ -20,8 +20,44 @@ import { supabase, supabaseClient as supabaseServer } from "./supabase.ts";
 import { companyContext } from "./middlewares/companyContext.ts";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { generateFullReportPDF } from "./helper/generateFullReportPDF.ts";
+import { sendReportEmail } from "./utils/mailer"; // ajuste o path
+import { getRangeByFrequency } from "./utils/date.ts";
+import { processAutomaticReports } from "./jobs/processAutomaticReports.ts";
+
+const LEADS_DATE_COL = "criado_em"; // TROQUE se no seu schema for "created_at"
+const LOST_STATUS_ID = 143;
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+
+function throwIfError(step: string, error: any) {
+  if (!error) return;
+  console.error(`[REPORT][${step}]`, {
+    message: error?.message,
+    details: error?.details,
+    hint: error?.hint,
+    code: error?.code,
+  });
+  throw new Error(`Falha no passo: ${step} | ${error?.message || "Sem mensagem"}`);
+}
+
+function getCurrentMonthRange() {
+  const now = new Date();
+
+  const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+
+  // último ms do mês
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+  return { start, end };
+}
+
+function formatBR(date: Date) {
+  const dd = String(date.getDate()).padStart(2, "0");
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const yyyy = date.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+}
 
 // Middleware de autenticação usando tabela brokers
 const authenticateBrokerJWT = async (
@@ -2226,7 +2262,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post(
     "/admin/api/automatic-reports",
-    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
@@ -2329,50 +2364,182 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Endpoint para gerar relatório manualmente
   app.post(
     "/admin/api/automatic-reports/:id/generate",
-    authenticateBrokerJWT,
     companyContext,
     async (req: Request, res: Response) => {
       try {
-        const companyId = (req as any).companyId;
+        const companyId = (req as any).companyId as string;
         const { id } = req.params;
 
-        // Get report configuration
         const { data: report, error: reportError } = await supabaseServer
           .from("automatic_reports")
           .select("*")
           .eq("id", id)
-          .eq("company_id", companyId as string)
+          .eq("company_id", companyId)
           .single();
 
-        if (reportError) throw reportError;
+        throwIfError("load_automatic_report", reportError);
 
-        // Here you would implement the actual report generation logic
-        // For now, we'll just create a notification
-        await supabaseServer
-          .from("notifications")
-          .insert({
-            company_id: companyId,
-            title: "Relatório Gerado",
-            message: `O relatório "${report.name}" foi gerado com sucesso.`,
-            type: "success",
-            category: "system",
-            priority: "normal",
+        if (report.report_type !== "full") {
+          return res.status(200).json({ message: "Tipo de relatório não implementado" });
+        }
+
+        // ✅ Período baseado na frequência: daily | weekly | monthly
+        const { start, end } = getRangeByFrequency(report.frequency);
+        const startISO = start.toISOString();
+        const endISO = end.toISOString();
+
+        const LEADS_DATE_COL = "criado_em";
+
+        const recipients: string[] = Array.isArray(report.email_recipients)
+          ? report.email_recipients.filter((e: any) => typeof e === "string" && e.includes("@"))
+          : [];
+
+        const { data: brokers, error: brokersError } = await supabaseServer
+          .from("brokers")
+          .select("id, nome")
+          .eq("cargo", "Corretor")
+          .eq("company_id", companyId);
+
+        throwIfError("load_brokers", brokersError);
+
+        const rows: any[] = [];
+
+        // unix range para repiques
+        const startUnix = Math.floor(start.getTime() / 1000);
+        const endUnix = Math.floor(end.getTime() / 1000);
+
+        for (const broker of brokers ?? []) {
+          // 1) leads do corretor no período
+          const { data: leadIdsData, error: leadIdsError } = await supabaseServer
+            .from("leads")
+            .select("id")
+            .eq("company_id", companyId)
+            .eq("responsavel_id", broker.id)
+            .gte(LEADS_DATE_COL as any, startISO)
+            .lte(LEADS_DATE_COL as any, endISO);
+
+          throwIfError(`lead_ids(${broker.id})`, leadIdsError);
+
+          const leadIds = (leadIdsData ?? []).map((x: any) => x.id);
+          const leads = leadIds.length;
+
+          // 2) repiques no período (sem join, sem IN gigante)
+          const { count: repCount, error: repError } = await supabaseServer
+            .from("leads_com_repique")
+            .select("id", { count: "exact", head: true })
+            .eq("company_id", companyId)
+            .eq("responsavel_id", broker.id)
+            .gte("data_repique_unix" as any, startUnix)
+            .lte("data_repique_unix" as any, endUnix);
+
+          throwIfError(`repiques(${broker.id})`, repError);
+
+          const repiques = repCount ?? 0;
+
+          // 3) perdidos no período
+          const { count: lostCount, error: lostError } = await supabaseServer
+            .from("leads")
+            .select("id", { count: "exact", head: true })
+            .eq("company_id", companyId)
+            .eq("responsavel_id", broker.id)
+            .eq("status_id", LOST_STATUS_ID)
+            .gte(LEADS_DATE_COL as any, startISO)
+            .lte(LEADS_DATE_COL as any, endISO);
+
+          throwIfError(`perdidos(${broker.id})`, lostError);
+
+          const perdidos = lostCount ?? 0;
+          const total = leads + repiques;
+          const soma = total + perdidos;
+
+          rows.push({
+            corretor: broker.nome ?? String(broker.id),
+            leads,
+            repiques,
+            total,
+            perdidos,
+            soma,
           });
+        }
 
-        // Update last_generated timestamp
+        // TOTAL
+        const totals = rows.reduce(
+          (acc, r) => {
+            acc.leads += r.leads;
+            acc.repiques += r.repiques;
+            acc.total += r.total;
+            acc.perdidos += r.perdidos;
+            acc.soma += r.soma;
+            return acc;
+          },
+          { leads: 0, repiques: 0, total: 0, perdidos: 0, soma: 0 },
+        );
+
+        rows.push({ corretor: "TOTAL", ...totals });
+
+        const periodLabel = `${formatBR(start)} a ${formatBR(end)}`;
+        const pdfTitle = `RELATÓRIO ${periodLabel}`;
+
+        const pdfPath = await generateFullReportPDF(rows, pdfTitle);
+
+        // EMAIL
+        if (recipients.length > 0) {
+          await sendReportEmail({
+            to: recipients,
+            subject: `Relatório ${report.name} (${periodLabel})`,
+            html: `<p>Segue em anexo o relatório <b>${report.name}</b> do período <b>${periodLabel}</b>.</p>`,
+            attachmentPath: pdfPath,
+            attachmentName: `relatorio-${report.name}-${report.frequency}-${start.getFullYear()}-${String(
+              start.getMonth() + 1
+            ).padStart(2, "0")}-${String(start.getDate()).padStart(2, "0")}.pdf`,
+          });
+        }
+
         await supabaseServer
           .from("automatic_reports")
           .update({ last_generated: new Date().toISOString() })
           .eq("id", id)
-          .eq("company_id", companyId as string);
+          .eq("company_id", companyId);
 
-        return res.status(200).json({ message: "Relatório gerado com sucesso" });
-      } catch (error) {
-        console.error("Error generating report:", error);
-        return res.status(500).json({ message: "Erro ao gerar relatório" });
+        await supabaseServer.from("notifications").insert({
+          company_id: companyId,
+          title: "Relatório Gerado",
+          message: `Relatório "${report.name}" (${report.frequency}) (${periodLabel}) gerado${
+            recipients.length ? ` e enviado para ${recipients.join(", ")}` : ""
+          }.`,
+          type: "success",
+          category: "system",
+          priority: "normal",
+        });
+
+        return res.status(200).json({
+          message: "Relatório gerado com sucesso",
+          frequency: report.frequency,
+          period: { start: startISO, end: endISO },
+          emailed_to: recipients,
+          leads_date_col: LEADS_DATE_COL,
+        });
+      } catch (error: any) {
+        console.error("Error generating report:", error?.message || error);
+        return res.status(500).json({ message: error?.message || "Erro ao gerar relatório" });
       }
-    },
+    }
   );
+
+  app.post("/internal/cron/automatic-reports/run", async (req: Request, res: Response) => {
+    try {
+      const secret = req.headers["x-cron-secret"];
+      if (!secret || secret !== process.env.CRON_SECRET) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const result = await processAutomaticReports();
+      return res.status(200).json({ ok: true, ...result });
+    } catch (e: any) {
+      console.error("cron automatic reports error:", e?.message || e);
+      return res.status(500).json({ ok: false, message: e?.message || "Erro" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
