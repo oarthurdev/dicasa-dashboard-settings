@@ -14,32 +14,67 @@ function getCurrentMonthRange(base = new Date()) {
   return { start, end };
 }
 
+const UTC_MINUS_3 = -3;
+
+/**
+ * Converte Date para "data base" em UTC-3
+ */
+function toUTCMinus3(date: any) {
+  const d = new Date(date);
+  d.setHours(d.getHours() + UTC_MINUS_3);
+  return d;
+}
+
+function isWeekend(date: any) {
+  const day = date.getUTCDay();
+  return day === 0 || day === 6;
+}
+
+function nextBusinessDay(date: any) {
+  const d = new Date(date);
+
+  while (isWeekend(d)) {
+    d.setUTCDate(d.getUTCDate() + 1);
+  }
+
+  return d;
+}
+
 function getBusinessWeekRange(base = new Date()) {
-  // Semana começa na segunda (BR)
-  const day = base.getDay(); // 0 dom ... 6 sáb
-  const diffToMonday = (day === 0 ? -6 : 1) - day;
+  // Converte base para UTC-3
+  const baseUTC = new Date(base);
+  baseUTC.setHours(baseUTC.getHours() - 3);
 
-  const monday = new Date(base);
-  monday.setDate(base.getDate() + diffToMonday);
+  const day = baseUTC.getUTCDay(); // 0 dom ... 5 sex
 
-  // Segunda 09:00
-  const start = new Date(
-    monday.getFullYear(),
-    monday.getMonth(),
-    monday.getDate(),
-    9, 0, 0, 0
-  );
+  // Sexta-feira = 5
+  // Se hoje já passou da sexta, usa esta; senão, volta para a última
+  const diffToCurrentFriday =
+    day >= 5 ? 5 - day : -(7 - (5 - day));
 
-  // Sexta 18:00
-  const friday = new Date(start);
-  friday.setDate(start.getDate() + 4);
+  // Sexta atual
+  const currentFriday = new Date(baseUTC);
+  currentFriday.setUTCDate(baseUTC.getUTCDate() + diffToCurrentFriday);
 
-  const end = new Date(
-    friday.getFullYear(),
-    friday.getMonth(),
-    friday.getDate(),
-    18, 0, 0, 0
-  );
+  // Sexta passada
+  const lastFriday = new Date(currentFriday);
+  lastFriday.setUTCDate(currentFriday.getUTCDate() - 7);
+
+  // Start: sexta passada 08:00 UTC-3 (11:00 UTC)
+  const start = new Date(Date.UTC(
+    lastFriday.getUTCFullYear(),
+    lastFriday.getUTCMonth(),
+    lastFriday.getUTCDate(),
+    11, 0, 0, 0
+  ));
+
+  // End: sexta atual 18:00 UTC-3 (21:00 UTC)
+  const end = new Date(Date.UTC(
+    currentFriday.getUTCFullYear(),
+    currentFriday.getUTCMonth(),
+    currentFriday.getUTCDate(),
+    21, 0, 0, 0
+  ));
 
   return { start, end };
 }
